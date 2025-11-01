@@ -1,0 +1,103 @@
+--// NoobRoblox GUI Script //--
+
+-- Tạo GUI chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NoobRoblox"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Tạo khung hình chữ nhật bo góc
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.Parent = ScreenGui
+
+-- Bo góc 20°
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 20)
+Corner.Parent = MainFrame
+
+-- Nút Start
+local StartButton = Instance.new("TextButton")
+StartButton.Size = UDim2.new(0, 120, 0, 50)
+StartButton.Position = UDim2.new(0.5, -60, 0.5, -25)
+StartButton.Text = "Start"
+StartButton.TextScaled = true
+StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartButton.BackgroundColor3 = Color3.fromRGB(60, 150, 255)
+StartButton.Font = Enum.Font.SourceSansBold
+StartButton.Parent = MainFrame
+
+-- Bo góc cho nút
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 10)
+BtnCorner.Parent = StartButton
+
+-- Label hiển thị số
+local CounterLabel = Instance.new("TextLabel")
+CounterLabel.Size = UDim2.new(1, 0, 1, 0)
+CounterLabel.BackgroundTransparency = 1
+CounterLabel.Text = ""
+CounterLabel.TextScaled = true
+CounterLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+CounterLabel.Font = Enum.Font.SourceSansBold
+CounterLabel.Visible = false
+CounterLabel.Parent = MainFrame
+
+-- Dấu tích ✔️
+local TickLabel = Instance.new("TextLabel")
+TickLabel.Size = UDim2.new(1, 0, 1, 0)
+TickLabel.BackgroundTransparency = 1
+TickLabel.Text = "✔️"
+TickLabel.TextScaled = true
+TickLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+TickLabel.Font = Enum.Font.SourceSansBold
+TickLabel.Visible = false
+TickLabel.Parent = MainFrame
+
+-- Thêm hiệu ứng tween
+local TweenService = game:GetService("TweenService")
+
+-- Hàm hiệu ứng phóng to - thu nhỏ
+local function pulseEffect(label)
+	for i = 1, 5 do
+		local grow = TweenService:Create(label, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			TextSize = 90
+		})
+		local shrink = TweenService:Create(label, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			TextSize = 70
+		})
+		grow:Play()
+		grow.Completed:Wait()
+		shrink:Play()
+		shrink.Completed:Wait()
+	end
+end
+
+-- Hàm đếm
+local function startCounting()
+	StartButton.Visible = false
+	CounterLabel.Visible = true
+
+	for i = 0, 1971 do
+		CounterLabel.Text = tostring(i)
+		task.wait(0.002)
+	end
+
+	-- Khi đếm xong -> hiện dấu tích có hiệu ứng
+	CounterLabel.Visible = false
+	TickLabel.Visible = true
+	TickLabel.TextSize = 70 -- cỡ chữ gốc
+
+	pulseEffect(TickLabel) -- chạy hiệu ứng phóng to - thu nhỏ
+
+	-- Nhấp nháy nhẹ khi xong hiệu ứng
+	for i = 1, 6 do
+		TickLabel.Visible = not TickLabel.Visible
+		task.wait(0.25)
+	end
+	TickLabel.Visible = true
+end
+
+-- Gán sự kiện click cho nút Start
+StartButton.MouseButton1Click:Connect(startCounting)
