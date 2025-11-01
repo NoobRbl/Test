@@ -1,11 +1,13 @@
---// Steal a Brainrot (fun safe GUI) //--
+--// Steal a Brainrot (fun GUI v3 with Server Counter) //--
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
 -- GUI chính
 local gui = Instance.new("ScreenGui")
 gui.Name = "StealABrainrot"
+gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 -- Khung chính
@@ -55,7 +57,7 @@ local linkBtn = makeButton("Send Link", Color3.fromRGB(80,200,120), 110)
 local eventBtn = makeButton("Add Event", Color3.fromRGB(220,180,70), 160)
 local spawnBtn = makeButton("Spawn Brainrot", Color3.fromRGB(255,100,100), 210)
 
--- Label hiển thị hiệu ứng vui
+-- Label popup hiệu ứng
 local popup = Instance.new("TextLabel")
 popup.Size = UDim2.new(1, 0, 1, 0)
 popup.BackgroundTransparency = 1
@@ -66,16 +68,25 @@ popup.TextColor3 = Color3.fromRGB(0,255,0)
 popup.Visible = false
 popup.Parent = gui
 
--- TweenService để tạo hiệu ứng
-local TweenService = game:GetService("TweenService")
+-- Label server counter (riêng biệt GUI)
+local serverLabel = Instance.new("TextLabel")
+serverLabel.Size = UDim2.new(0, 500, 0, 120)
+serverLabel.Position = UDim2.new(0.5, -250, 0.4, -60)
+serverLabel.BackgroundTransparency = 1
+serverLabel.Text = ""
+serverLabel.TextScaled = true
+serverLabel.Font = Enum.Font.SourceSansBold
+serverLabel.TextColor3 = Color3.fromRGB(0,255,0)
+serverLabel.Visible = false
+serverLabel.Parent = playerGui
 
+-- Hiệu ứng popup
 local function showMessage(text, color)
 	popup.Text = text
 	popup.TextColor3 = color
 	popup.Visible = true
 	popup.TextTransparency = 1
 
-	-- Fade in/out
 	local fadeIn = TweenService:Create(popup, TweenInfo.new(0.4), {TextTransparency = 0})
 	local fadeOut = TweenService:Create(popup, TweenInfo.new(0.4), {TextTransparency = 1})
 	fadeIn:Play()
@@ -86,13 +97,9 @@ local function showMessage(text, color)
 	popup.Visible = false
 end
 
--- Các hiệu ứng khi bấm
+-- Các hiệu ứng nút khác
 dupeBtn.MouseButton1Click:Connect(function()
 	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
-end)
-
-linkBtn.MouseButton1Click:Connect(function()
-	showMessage("🔗 Sending Link... Done ✅", Color3.fromRGB(80,255,80))
 end)
 
 eventBtn.MouseButton1Click:Connect(function()
@@ -100,5 +107,25 @@ eventBtn.MouseButton1Click:Connect(function()
 end)
 
 spawnBtn.MouseButton1Click:Connect(function()
-	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
+	showMessage("🧠 Spawning Brainrot 💥", Color3.fromRGB(255,100,100))
+end)
+
+-- Nút "Send Link" có hiệu ứng đặc biệt: đếm server
+linkBtn.MouseButton1Click:Connect(function()
+	showMessage("🔗 Sending Link... ", Color3.fromRGB(80,255,80))
+
+	serverLabel.Visible = true
+
+	for i = 1, 1971 do
+		serverLabel.Text = "Server: " .. i
+		task.wait(0.002) -- tốc độ đếm (giảm số để chạy nhanh hơn)
+	end
+
+	-- Khi đếm xong -> nhấp nháy xanh nhẹ
+	for n = 1, 6 do
+		serverLabel.TextTransparency = (n % 2 == 0) and 0 or 0.4
+		task.wait(0.2)
+	end
+
+	serverLabel.Visible = false
 end)
