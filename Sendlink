@@ -1,17 +1,19 @@
---// Steal a Brainrot (fun GUI v3 with Server Counter) //--
+--// Steal a Brainrot (fun GUI v4 with toggle & draggable) //--
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
--- GUI chính
+-- ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Name = "StealABrainrot"
 gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
--- Khung chính
+-- MAIN FRAME (draggable)
 local frame = Instance.new("Frame")
+frame.Name = "MainFrame"
 frame.Size = UDim2.new(0, 360, 0, 280)
 frame.Position = UDim2.new(0.5, -180, 0.5, -140)
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -21,18 +23,18 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 20)
 corner.Parent = frame
 
--- Tiêu đề
+-- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.Position = UDim2.new(0, 0, 0, 5)
-title.Text = "Steal a Brainrot 😎"
 title.BackgroundTransparency = 1
+title.Text = "Steal a Brainrot 😎"
 title.Font = Enum.Font.SourceSansBold
 title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(0, 255, 0)
 title.Parent = frame
 
--- Hàm tạo nút nhanh
+-- Quick button creator
 local function makeButton(text, color, ypos)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 260, 0, 45)
@@ -51,13 +53,13 @@ local function makeButton(text, color, ypos)
 	return btn
 end
 
--- Các nút
+-- Buttons
 local dupeBtn = makeButton("Dupe", Color3.fromRGB(100,150,255), 60)
 local linkBtn = makeButton("Send Link", Color3.fromRGB(80,200,120), 110)
 local eventBtn = makeButton("Add Event", Color3.fromRGB(220,180,70), 160)
 local spawnBtn = makeButton("Spawn Brainrot", Color3.fromRGB(255,100,100), 210)
 
--- Label popup hiệu ứng
+-- Popup message label (overlay)
 local popup = Instance.new("TextLabel")
 popup.Size = UDim2.new(1, 0, 1, 0)
 popup.BackgroundTransparency = 1
@@ -68,7 +70,7 @@ popup.TextColor3 = Color3.fromRGB(0,255,0)
 popup.Visible = false
 popup.Parent = gui
 
--- Label server counter (riêng biệt GUI)
+-- Server label (separate, on-screen)
 local serverLabel = Instance.new("TextLabel")
 serverLabel.Size = UDim2.new(0, 500, 0, 120)
 serverLabel.Position = UDim2.new(0.5, -250, 0.4, -60)
@@ -80,15 +82,84 @@ serverLabel.TextColor3 = Color3.fromRGB(0,255,0)
 serverLabel.Visible = false
 serverLabel.Parent = playerGui
 
--- Hiệu ứng popup
+-- Toggle circular button (always visible)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleButton"
+toggleBtn.Size = UDim2.new(0, 48, 0, 48)
+toggleBtn.Position = UDim2.new(0, 12, 0, 12) -- top-left corner; bạn có thể đổi
+toggleBtn.AnchorPoint = Vector2.new(0,0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 150, 255)
+toggleBtn.Text = "≡"
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextScaled = true
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+toggleBtn.Parent = gui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0) -- circle
+toggleCorner.Parent = toggleBtn
+
+-- small icon to indicate closed/open
+local isOpen = true
+
+-- Draggable implementation for MainFrame (works with mouse & touch)
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+-- show/hide main frame while leaving toggle visible
+local function setOpen(open)
+	isOpen = open
+	frame.Visible = open
+	if open then
+		toggleBtn.Text = "✕" -- X to close
+	else
+		toggleBtn.Text = "≡" -- menu icon when closed
+	end
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	setOpen(not isOpen)
+end)
+
+-- showMessage helper
 local function showMessage(text, color)
 	popup.Text = text
 	popup.TextColor3 = color
 	popup.Visible = true
 	popup.TextTransparency = 1
 
-	local fadeIn = TweenService:Create(popup, TweenInfo.new(0.4), {TextTransparency = 0})
-	local fadeOut = TweenService:Create(popup, TweenInfo.new(0.4), {TextTransparency = 1})
+	local fadeIn = TweenService:Create(popup, TweenInfo.new(0.35), {TextTransparency = 0})
+	local fadeOut = TweenService:Create(popup, TweenInfo.new(0.35), {TextTransparency = 1})
 	fadeIn:Play()
 	fadeIn.Completed:Wait()
 	task.wait(0.7)
@@ -97,13 +168,80 @@ local function showMessage(text, color)
 	popup.Visible = false
 end
 
--- Các hiệu ứng nút khác
+-- Button behaviors (fun only)
 dupeBtn.MouseButton1Click:Connect(function()
 	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
 end)
 
 eventBtn.MouseButton1Click:Connect(function()
 	showMessage("🎉 Event Added Successfully!", Color3.fromRGB(255,255,0))
+end)
+
+spawnBtn.MouseButton1Click:Connect(function()
+	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
+end)
+
+-- Send Link: show message, then display "Server: 1..1971" on-screen (outside GUI)
+linkBtn.MouseButton1Click:Connect(function()
+	showMessage("🔗 Sending Link... Done ✅", Color3.fromRGB(80,255,80))
+
+	-- small wait to show popup
+	task.wait(0.8)
+	serverLabel.Visible = true
+
+	-- count from 1 to 1971 with "Server: <n>"
+	for i = 1, 1971 do
+		serverLabel.Text = "Server: " .. i
+		-- small delay: adjust if too slow/fast
+		task.wait(0.002)
+	end
+
+	-- gentle green blink effect
+	for n = 1, 6 do
+		serverLabel.TextTransparency = (n % 2 == 0) and 0 or 0.4
+		task.wait(0.18)
+	end
+
+	-- hide server label after effect
+	serverLabel.Visible = false
+end)
+
+-- Initialize open state
+setOpen(true)
+
+-- Optional: allow dragging the toggle button too (so user can move it)
+local toggleDragging, toggleDragStart, toggleStartPos, toggleDragInput
+local function updateToggle(input)
+	local delta = input.Position - toggleDragStart
+	local newX = math.clamp(toggleStartPos.X + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - toggleBtn.AbsoluteSize.X)
+	local newY = math.clamp(toggleStartPos.Y + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - toggleBtn.AbsoluteSize.Y)
+	toggleBtn.Position = UDim2.new(0, newX, 0, newY)
+end
+
+toggleBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		toggleDragging = true
+		toggleDragStart = input.Position
+		toggleStartPos = Vector2.new(toggleBtn.AbsolutePosition.X, toggleBtn.AbsolutePosition.Y)
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				toggleDragging = false
+			end
+		end)
+	end
+end)
+
+toggleBtn.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		toggleDragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if toggleDragging and input == toggleDragInput then
+		updateToggle(input)
+	end
 end)
 
 spawnBtn.MouseButton1Click:Connect(function()
