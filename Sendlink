@@ -216,11 +216,11 @@ end)
 
 -- Send Link: progress + Done + Sound
 linkBtn.MouseButton1Click:Connect(function()
-	showMessage("🔗 Sending Link...", Color3.fromRGB(80,255,80))
+	showMessage("🔗 Sending Link...Done ", Color3.fromRGB(80,255,80))
 	task.wait(0.4)
 
 	progressContainer.Visible = true
-	progressText.Text = "Sending Link...Done"
+	progressText.Text = "Done"
 	barFill.Size = UDim2.new(0, 0, 1, 0)
 
 	local duration = 10
