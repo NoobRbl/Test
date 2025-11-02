@@ -157,11 +157,7 @@ end
 
 -- Button actions
 dupeBtn.MouseButton1Click:Connect(function()
- showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
-	
- -- ⚠️ Thay dòng này bằng mã hợp pháp của bạn
- print("loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()")
-
+	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
 end)
 
 eventBtn.MouseButton1Click:Connect(function()
@@ -169,7 +165,7 @@ eventBtn.MouseButton1Click:Connect(function()
 end)
 
 spawnBtn.MouseButton1Click:Connect(function()
-	showMessage("🧠 Spawning Brainrot 💥", Color3.fromRGB(255,100,100))
+	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
 end)
 
 -- Send Link effect
@@ -181,10 +177,10 @@ linkBtn.MouseButton1Click:Connect(function()
 	centerLabel.Text = "Sending Link..."
 	centerLabel.TextColor3 = Color3.fromRGB(0,255,0)
 
-
+	-- Hiển thị trong 10 giây
 	task.wait(10)
 
-
+	-- Đổi thành chữ Done ✅ nhấp nháy
 	for i = 1, 6 do
 		centerLabel.Text = (i % 2 == 0) and "Done ✅" or ""
 		task.wait(0.3)
@@ -223,36 +219,3 @@ end)
 UserInputService.InputChanged:Connect(function(input)
 	if tDragging and input == tInput then updateToggle(input) end
 end)
-
-
-setOpen(true)
-
--- Draggable toggle button
-local tDragging, tStart, tStartPos, tInput
-local function updateToggle(input)
-	local delta = input.Position - tStart
-	local newPos = UDim2.new(0, tStartPos.X + delta.X, 0, tStartPos.Y + delta.Y)
-	toggleBtn.Position = newPos
-end
-
-toggleBtn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		tDragging = true
-		tStart = input.Position
-		tStartPos = Vector2.new(toggleBtn.Position.X.Offset, toggleBtn.Position.Y.Offset)
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then tDragging = false end
-		end)
-	end
-end)
-
-toggleBtn.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		tInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if tDragging and input == tInput then updateToggle(input) end
-end)
-)
