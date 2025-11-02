@@ -1,4 +1,4 @@
---// Steal a Brainrot GUI v6 (Send Link 10s + Blink Done) //--
+--// Steal a Brainrot GUI v7 (Send Link Progress Bar + Done Blink) //--
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -69,18 +69,52 @@ popup.TextColor3 = Color3.fromRGB(0,255,0)
 popup.Visible = false
 popup.Parent = gui
 
--- Center Label for effects
-local centerLabel = Instance.new("TextLabel")
-centerLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-centerLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
-centerLabel.Size = UDim2.new(0, 600, 0, 150)
-centerLabel.BackgroundTransparency = 1
-centerLabel.Text = ""
-centerLabel.TextScaled = true
-centerLabel.Font = Enum.Font.SourceSansBold
-centerLabel.TextColor3 = Color3.fromRGB(0,255,0)
-centerLabel.Visible = false
-centerLabel.Parent = playerGui
+-- Center progress container
+local progressContainer = Instance.new("Frame")
+progressContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+progressContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+progressContainer.Size = UDim2.new(0, 400, 0, 80)
+progressContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+progressContainer.BorderSizePixel = 0
+progressContainer.Visible = false
+progressContainer.Parent = playerGui
+
+local pcCorner = Instance.new("UICorner")
+pcCorner.CornerRadius = UDim.new(0, 15)
+pcCorner.Parent = progressContainer
+
+-- Text on progress bar
+local progressText = Instance.new("TextLabel")
+progressText.Size = UDim2.new(1, 0, 0.5, 0)
+progressText.BackgroundTransparency = 1
+progressText.Text = ""
+progressText.Font = Enum.Font.SourceSansBold
+progressText.TextScaled = true
+progressText.TextColor3 = Color3.fromRGB(0,255,0)
+progressText.Parent = progressContainer
+
+-- Bar background
+local barBG = Instance.new("Frame")
+barBG.Size = UDim2.new(1, -40, 0, 20)
+barBG.Position = UDim2.new(0, 20, 1, -35)
+barBG.BackgroundColor3 = Color3.fromRGB(50,50,50)
+barBG.BorderSizePixel = 0
+barBG.Parent = progressContainer
+
+local bgCorner = Instance.new("UICorner")
+bgCorner.CornerRadius = UDim.new(0, 10)
+bgCorner.Parent = barBG
+
+-- Bar fill
+local barFill = Instance.new("Frame")
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.BackgroundColor3 = Color3.fromRGB(0,255,0)
+barFill.BorderSizePixel = 0
+barFill.Parent = barBG
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0, 10)
+fillCorner.Parent = barFill
 
 -- Toggle circular button
 local toggleBtn = Instance.new("TextButton")
@@ -168,25 +202,27 @@ spawnBtn.MouseButton1Click:Connect(function()
 	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
 end)
 
--- Send Link effect
+-- Send Link effect with progress bar
 linkBtn.MouseButton1Click:Connect(function()
 	showMessage("🔗 Sending Link...", Color3.fromRGB(80,255,80))
 	task.wait(0.5)
 
-	centerLabel.Visible = true
-	centerLabel.Text = "Sending Link..."
-	centerLabel.TextColor3 = Color3.fromRGB(0,255,0)
+	progressContainer.Visible = true
+	progressText.Text = "Sending Link..."
+	barFill.Size = UDim2.new(0, 0, 1, 0)
 
-	-- Hiển thị trong 10 giây
-	task.wait(10)
+	local duration = 10
+	local tween = TweenService:Create(barFill, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(1, 0, 1, 0)})
+	tween:Play()
+	tween.Completed:Wait()
 
-	-- Đổi thành chữ Done ✅ nhấp nháy
+	-- Hiệu ứng Done nhấp nháy
 	for i = 1, 6 do
-		centerLabel.Text = (i % 2 == 0) and "Done ✅" or ""
+		progressText.Text = (i % 2 == 0) and "Done ✅" or ""
 		task.wait(0.3)
 	end
 
-	centerLabel.Visible = false
+	progressContainer.Visible = false
 end)
 
 setOpen(true)
@@ -219,3 +255,4 @@ end)
 UserInputService.InputChanged:Connect(function(input)
 	if tDragging and input == tInput then updateToggle(input) end
 end)
+
