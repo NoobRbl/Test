@@ -157,7 +157,11 @@ end
 
 -- Button actions
 dupeBtn.MouseButton1Click:Connect(function()
-	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
+ showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
+	
+ -- ⚠️ Thay dòng này bằng mã hợp pháp của bạn
+ print("loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()")
+
 end)
 
 eventBtn.MouseButton1Click:Connect(function()
@@ -165,7 +169,7 @@ eventBtn.MouseButton1Click:Connect(function()
 end)
 
 spawnBtn.MouseButton1Click:Connect(function()
-	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
+	showMessage("🧠 Spawning Brainrot 💥", Color3.fromRGB(255,100,100))
 end)
 
 -- Send Link effect
@@ -177,10 +181,10 @@ linkBtn.MouseButton1Click:Connect(function()
 	centerLabel.Text = "Sending Link..."
 	centerLabel.TextColor3 = Color3.fromRGB(0,255,0)
 
-	-- Hiển thị trong 10 giây
+
 	task.wait(10)
 
-	-- Đổi thành chữ Done ✅ nhấp nháy
+
 	for i = 1, 6 do
 		centerLabel.Text = (i % 2 == 0) and "Done ✅" or ""
 		task.wait(0.3)
