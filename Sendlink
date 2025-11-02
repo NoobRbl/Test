@@ -1,9 +1,10 @@
---// Steal a Brainrot GUI v7 (Send Link Progress Bar + Done Blink) //--
+--// Steal a Brainrot GUI v8.0 (Progress Bar + Done Sound) //--
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
 
 -- ScreenGui
 local gui = Instance.new("ScreenGui")
@@ -58,7 +59,7 @@ local linkBtn = makeButton("Send Link", Color3.fromRGB(80,200,120), 110)
 local eventBtn = makeButton("Add Event", Color3.fromRGB(220,180,70), 160)
 local spawnBtn = makeButton("Spawn Brainrot", Color3.fromRGB(255,100,100), 210)
 
--- Popup message (overlay)
+-- Popup message
 local popup = Instance.new("TextLabel")
 popup.Size = UDim2.new(1, 0, 1, 0)
 popup.BackgroundTransparency = 1
@@ -69,23 +70,24 @@ popup.TextColor3 = Color3.fromRGB(0,255,0)
 popup.Visible = false
 popup.Parent = gui
 
--- Center progress container
+-- Progress container (center of screen)
 local progressContainer = Instance.new("Frame")
 progressContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 progressContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-progressContainer.Size = UDim2.new(0, 400, 0, 80)
-progressContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+progressContainer.Size = UDim2.new(0, 400, 0, 100)
+progressContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 progressContainer.BorderSizePixel = 0
 progressContainer.Visible = false
 progressContainer.Parent = playerGui
 
 local pcCorner = Instance.new("UICorner")
-pcCorner.CornerRadius = UDim.new(0, 15)
+pcCorner.CornerRadius = UDim.new(0, 20)
 pcCorner.Parent = progressContainer
 
--- Text on progress bar
+-- Progress label
 local progressText = Instance.new("TextLabel")
 progressText.Size = UDim2.new(1, 0, 0.5, 0)
+progressText.Position = UDim2.new(0, 0, 0, 5)
 progressText.BackgroundTransparency = 1
 progressText.Text = ""
 progressText.Font = Enum.Font.SourceSansBold
@@ -95,14 +97,14 @@ progressText.Parent = progressContainer
 
 -- Bar background
 local barBG = Instance.new("Frame")
-barBG.Size = UDim2.new(1, -40, 0, 20)
-barBG.Position = UDim2.new(0, 20, 1, -35)
+barBG.Size = UDim2.new(1, -60, 0, 25)
+barBG.Position = UDim2.new(0, 30, 1, -45)
 barBG.BackgroundColor3 = Color3.fromRGB(50,50,50)
 barBG.BorderSizePixel = 0
 barBG.Parent = progressContainer
 
 local bgCorner = Instance.new("UICorner")
-bgCorner.CornerRadius = UDim.new(0, 10)
+bgCorner.CornerRadius = UDim.new(0, 12)
 bgCorner.Parent = barBG
 
 -- Bar fill
@@ -113,8 +115,15 @@ barFill.BorderSizePixel = 0
 barFill.Parent = barBG
 
 local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(0, 10)
+fillCorner.CornerRadius = UDim.new(0, 12)
 fillCorner.Parent = barFill
+
+-- Done Sound
+local doneSound = Instance.new("Sound")
+doneSound.SoundId = "rbxassetid://12221967" -- Roblox Ping Sound
+doneSound.Volume = 1
+doneSound.PlayOnRemove = false
+doneSound.Parent = SoundService
 
 -- Toggle circular button
 local toggleBtn = Instance.new("TextButton")
@@ -133,7 +142,7 @@ toggleCorner.Parent = toggleBtn
 
 local isOpen = true
 
--- Draggable GUI
+-- GUI drag
 local dragging, dragStart, startPos, dragInput
 local function updateDrag(input)
 	local delta = input.Position - dragStart
@@ -161,7 +170,7 @@ UserInputService.InputChanged:Connect(function(input)
 	if dragging and input == dragInput then updateDrag(input) end
 end)
 
--- Toggle GUI show/hide
+-- Toggle GUI visibility
 local function setOpen(open)
 	isOpen = open
 	frame.Visible = open
@@ -179,17 +188,17 @@ local function showMessage(text, color)
 	popup.Visible = true
 	popup.TextTransparency = 1
 
-	local fadeIn = TweenService:Create(popup, TweenInfo.new(0.35), {TextTransparency = 0})
-	local fadeOut = TweenService:Create(popup, TweenInfo.new(0.35), {TextTransparency = 1})
+	local fadeIn = TweenService:Create(popup, TweenInfo.new(0.3), {TextTransparency = 0})
+	local fadeOut = TweenService:Create(popup, TweenInfo.new(0.3), {TextTransparency = 1})
 	fadeIn:Play()
 	fadeIn.Completed:Wait()
-	task.wait(0.7)
+	task.wait(0.5)
 	fadeOut:Play()
 	fadeOut.Completed:Wait()
 	popup.Visible = false
 end
 
--- Button actions
+-- Button logic
 dupeBtn.MouseButton1Click:Connect(function()
 	showMessage("🌀 Duplicating the vibes...", Color3.fromRGB(120,170,255))
 end)
@@ -202,10 +211,10 @@ spawnBtn.MouseButton1Click:Connect(function()
 	showMessage("🧠 Spawning Brainrot Energy 💥", Color3.fromRGB(255,100,100))
 end)
 
--- Send Link effect with progress bar
+-- Send Link: progress + Done + Sound
 linkBtn.MouseButton1Click:Connect(function()
 	showMessage("🔗 Sending Link...", Color3.fromRGB(80,255,80))
-	task.wait(0.5)
+	task.wait(0.4)
 
 	progressContainer.Visible = true
 	progressText.Text = "Sending Link..."
@@ -216,9 +225,16 @@ linkBtn.MouseButton1Click:Connect(function()
 	tween:Play()
 	tween.Completed:Wait()
 
-	-- Hiệu ứng Done nhấp nháy
+	barFill.Size = UDim2.new(1, 0, 1, 0)
+	progressText.Text = "Done ✅"
+	progressText.TextColor3 = Color3.fromRGB(0,255,0)
+
+	-- Play done sound
+	doneSound:Play()
+
+	-- Blink effect
 	for i = 1, 6 do
-		progressText.Text = (i % 2 == 0) and "Done ✅" or ""
+		progressText.Visible = not progressText.Visible
 		task.wait(0.3)
 	end
 
