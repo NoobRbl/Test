@@ -208,8 +208,8 @@ local function ShowProgress10s()
 end
 
 -- ==== Nút chính trong Hub
--- 💀 Spawn Brainrot (P)
-local btnAdd=pill(body,"💀 Spawn Brainrot"); pillColor(btnAdd,114,106,240)
+-- 🐟 Noob Roblox (P)
+local btnAdd=pill(body,"Noob Roblox🐟"); pillColor(btnAdd,114,106,240)
 btnAdd.MouseButton1Click:Connect(function()
     VIM:SendKeyEvent(true,Enum.KeyCode.P,false,game)
     VIM:SendKeyEvent(false,Enum.KeyCode.P,false,game)
@@ -250,8 +250,8 @@ btnSpawn.MouseButton1Click:Connect(function()
     VIM:SendKeyEvent(false,Enum.KeyCode.R,false,game)
 end)
 
--- 🍀 Lucky Block (mở panel riêng)
-local btnLucky=pill(body,"🍀 Lucky Block"); pillColor(btnLucky,114,106,240)
+-- ✨ Lucky Block (mở panel riêng)
+local btnLucky=pill(body,"✨Lucky Block"); pillColor(btnLucky,114,106,240)
 
 -- === Lucky Block Panel (riêng, kéo thả, có nút close)
 local function ShowLuckyPanel()
