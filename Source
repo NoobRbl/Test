@@ -1,4 +1,4 @@
--- Khngscript Hub (PlayerGui): 8s loading, Add Brainrot, Duplicate v2 (progress 10s), Lucky Block panel riêng
+-- Noob Roblox Hub (PlayerGui): 8s loading, Add Brainrot, Duplicate v2 (progress 10s), Lucky Block panel riêng
 local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local VIM=game:GetService("VirtualInputManager")
