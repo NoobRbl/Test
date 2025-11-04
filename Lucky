@@ -1,4 +1,4 @@
--- LocalScript (dán vào StarterPlayerScripts hoặc vào một ScreenGui trong StarterGui)
+-- LocalScript (dán vào StarterPlayerScripts hoặc StarterGui)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ===== Tạo Panel (ScreenGui + Frame + Button) =====
+-- ===== TẠO PANEL =====
 local panelGui = Instance.new("ScreenGui")
 panelGui.Name = "LuckyPanelGui"
 panelGui.ResetOnSpawn = false
@@ -14,24 +14,23 @@ panelGui.Parent = playerGui
 
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "Panel"
-panelFrame.Size = UDim2.new(0, 220, 0, 60) -- kích thước tuỳ chỉnh
-panelFrame.Position = UDim2.new(0.05, 0, 0.85, 0) -- góc trái dưới (tuỳ chỉnh)
+panelFrame.Size = UDim2.new(0, 220, 0, 60)
+panelFrame.Position = UDim2.new(0, 20, 1, -80) -- góc trái dưới, cách mép 20px
 panelFrame.AnchorPoint = Vector2.new(0, 0)
 panelFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 panelFrame.BorderSizePixel = 0
 panelFrame.Parent = panelGui
 
--- Bo góc ~ "20" (pixel)
+-- Bo góc 20px
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 20) -- dùng 20 pixel làm bo góc
+corner.CornerRadius = UDim.new(0, 20)
 corner.Parent = panelFrame
 
--- TextButton (toàn bộ frame là nút)
+-- Nút Lucky x10
 local btn = Instance.new("TextButton")
 btn.Name = "LuckyButton"
 btn.Size = UDim2.new(1, -10, 1, -10)
 btn.Position = UDim2.new(0, 5, 0, 5)
-btn.AnchorPoint = Vector2.new(0, 0)
 btn.BackgroundTransparency = 1
 btn.Text = "Lucky x10"
 btn.Font = Enum.Font.SourceSansBold
@@ -39,13 +38,12 @@ btn.TextSize = 24
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.Parent = panelFrame
 
--- Thêm UIStroke/Shadow nếu muốn nổi bật
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 1
 stroke.Transparency = 0.6
 stroke.Parent = panelFrame
 
--- ===== Tạo % counter dưới dạng ScreenGui riêng (nằm giữa màn hình) =====
+-- ===== GUI PHẦN TRĂM =====
 local percentGui = Instance.new("ScreenGui")
 percentGui.Name = "PercentCounterGui"
 percentGui.ResetOnSpawn = false
@@ -57,34 +55,17 @@ percentLabel.Name = "PercentLabel"
 percentLabel.Size = UDim2.new(0, 300, 0, 100)
 percentLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
 percentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-percentLabel.BackgroundTransparency = 1
+percentLabel.BackgroundTransparency = 1 -- không có nền đen
 percentLabel.Text = "0%"
 percentLabel.Font = Enum.Font.GothamBold
 percentLabel.TextSize = 48
-percentLabel.TextColor3 = Color3.fromRGB(0, 255, 0) -- màu xanh
+percentLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
 percentLabel.Parent = percentGui
 percentLabel.ZIndex = 10
 
--- Tạo bóng nhẹ phía sau để đọc rõ hơn
-local back = Instance.new("Frame")
-back.Name = "Back"
-back.Size = UDim2.new(1, 0, 1, 0)
-back.Position = UDim2.new(0, 0, 0, 0)
-back.AnchorPoint = Vector2.new(0.5, 0.5)
-back.BackgroundColor3 = Color3.fromRGB(0,0,0)
-back.BackgroundTransparency = 0.55
-back.BorderSizePixel = 0
-back.Parent = percentLabel
-back.ZIndex = 9
-back.AnchorPoint = Vector2.new(0.5, 0.5)
-back.Position = UDim2.new(0.5, 0.5, 0.5, 0)
-
--- ===== Hàm hiển thị đếm % từ 0 tới 100 trong 5 giây =====
+-- ===== HÀM HIỂN THỊ ĐẾM % =====
 local function showPercent(durationSeconds)
-	if percentGui.Enabled then
-		-- Nếu đang chạy, bỏ qua lần nhấn mới (hoặc có thể reset tùy ý)
-		return
-	end
+	if percentGui.Enabled then return end
 	percentGui.Enabled = true
 	percentLabel.TextTransparency = 0
 	percentLabel.Text = "0%"
@@ -92,17 +73,15 @@ local function showPercent(durationSeconds)
 	local startTime = tick()
 	local endTime = startTime + durationSeconds
 	
-	-- update mỗi frame
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local now = tick()
 		local t = (now - startTime) / durationSeconds
 		if t >= 1 then
-			-- hoàn thành 100%
 			percentLabel.Text = "100%"
 			conn:Disconnect()
 			
-			-- Nhấp nháy (3 lần) sau khi xong rồi ẩn
+			-- Nhấp nháy sau khi hoàn thành
 			local blinkCount = 3
 			local blinkTime = 0.18
 			for i = 1, blinkCount do
@@ -113,7 +92,8 @@ local function showPercent(durationSeconds)
 				tweenIn:Play()
 				tweenIn.Completed:Wait()
 			end
-			-- ẩn hoàn toàn
+			
+			-- Ẩn sau khi xong
 			percentGui.Enabled = false
 		else
 			local percent = math.floor(t * 100 + 0.5)
@@ -122,19 +102,10 @@ local function showPercent(durationSeconds)
 	end)
 end
 
--- ===== Kết nối nút bấm =====
+-- ===== SỰ KIỆN KHI NHẤN =====
 btn.MouseButton1Click:Connect(function()
-	-- khi nhấn, gọi showPercent(5) -> 5 giây lên 0->100
 	showPercent(5)
 end)
 
--- (Tuỳ chọn) nếu muốn xóa GUI khi rời game:
-player.AncestryChanged:Connect(function()
-	if not player:IsDescendantOf(game) then
-		if panelGui then panelGui:Destroy() end
-		if percentGui then percentGui:Destroy() end
-	end
-end)
+print("LuckyPanelGui loaded successfully.")
 
--- Hoàn tất
-print("LuckyPanelGui loaded")
