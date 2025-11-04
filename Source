@@ -6,7 +6,7 @@ local TweenService=game:GetService("TweenService")
 local LP=Players.LocalPlayer
 local PG=LP:WaitForChild("PlayerGui")
 
-local GUI_NAME="NoobRoblox_TongHop"
+local GUI_NAME="NoobRoblox_TongHop_PG"
 local old=PG:FindFirstChild(GUI_NAME); if old then old:Destroy() end
 
 -- helpers
@@ -81,7 +81,7 @@ title.Font=Enum.Font.GothamBold
 title.TextSize=22
 title.TextColor3=Color3.fromRGB(255,255,255)
 title.TextXAlignment=Enum.TextXAlignment.Left
-title.Text="loading..."
+title.Text="Noob Roblox Tong Hop loading..."
 
 local barBg=Instance.new("Frame",box)
 barBg.AnchorPoint=Vector2.new(0.5,0)
@@ -134,7 +134,7 @@ t.Font=Enum.Font.GothamBlack
 t.TextSize=20
 t.TextXAlignment=Enum.TextXAlignment.Left
 t.TextColor3=Color3.fromRGB(235,235,245)
-t.Text="Khngscript Hub"
+t.Text="NoobRoblox Hub"
 dragify(titleBar,frame)
 
 local body=Instance.new("Frame",frame)
