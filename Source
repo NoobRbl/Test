@@ -216,22 +216,17 @@ btnAdd.MouseButton1Click:Connect(function()
 end)
 
 -- 🧠 Duplicate (progress 10s + loadstring)
-local btnDup2 = pill(body, "🧠 Duplicate")
-pillColor(btnDup2, 114, 106, 240)
-
+local btnDup2 = pill(body,"🧠 Duplicate") pillColor(btnDup2,114,106,240)
 btnDup2.MouseButton1Click:Connect(function()
-	btnDup2.Text = "wait success..."
-	pillColor(btnDup2, 70, 200, 90)
-	pcall(function() ShowProgress5s() end)
-	
-	local s = game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K")
-	local ok, err = pcall(loadstring(s))
-	
-	if not ok then
-		warn("❌ Script đang bảo trì:", err)
-	else
-		print("✅ Script enable!")
-	end
+	pcall(function()
+		btnDup2.Text="wait..." pillColor(btnDup2,70,200,90)
+		if ShowProgress5s then ShowProgress5s() end
+		local u="https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"
+		local s pcall(function() s=game:HttpGet(u) end)
+		if not s or s=="" then local r=http_request or request or (syn and syn.request)
+			if r then local x=r({Url=u,Method="GET"}) if x and x.Body then s=x.Body end end end
+		if s and s~="" then pcall(loadstring(s)) else warn("⚠️ Load Failed:",u) end
+	end)
 end)
 
 -- 🍀 Buff Lucky (Q) + chạy script Lucky
