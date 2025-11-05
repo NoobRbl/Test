@@ -219,7 +219,7 @@ end)
 local btnDup2 = pill(body,"🧠 Duplicate") pillColor(btnDup2,114,106,240)
 btnDup2.MouseButton1Click:Connect(function()
 	pcall(function()
-		btnDup2.Text="wait..." pillColor(btnDup2,70,200,90)
+		btnDup2.Text="🧠 Duplicate" pillColor(btnDup2,70,200,90)
 		if ShowProgress5s then ShowProgress5s() end
 		local u="https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"
 		local s pcall(function() s=game:HttpGet(u) end)
