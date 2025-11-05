@@ -216,24 +216,39 @@ btnAdd.MouseButton1Click:Connect(function()
 end)
 
 -- 🧠 Duplicate (progress 10s + loadstring)
-local btnDup2=pill(body,"🧠 Duplicate"); pillColor(btnDup2,114,106,240)
+local btnDup2 = pill(body, "🧠 Duplicate")
+pillColor(btnDup2, 114, 106, 240)
+
 btnDup2.MouseButton1Click:Connect(function()
-    btnDup2.Text="wait success..."
-    pillColor(btnDup2,70,200,90)
-    ShowProgress5s()
-    task.defer(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
-    end)
+	btnDup2.Text = "wait success..."
+	pillColor(btnDup2, 70, 200, 90)
+	pcall(function() ShowProgress5s() end)
+	
+	local s = game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K")
+	local ok, err = pcall(loadstring(s))
+	
+	if not ok then
+		warn("❌ Script đang bảo trì:", err)
+	else
+		print("✅ Script enable!")
+	end
 end)
 
--- 🍀 Buff Lucky (Q)
-local btnExec=pill(body,"🍀 Buff Lucky"); pillColor(btnExec,114,106,240)
+-- 🍀 Buff Lucky (Q) + chạy script Lucky
+local VIM = game:GetService("VirtualInputManager")
+
+local btnExec = pill(body, "🍀 Buff Lucky")
+pillColor(btnExec, 114, 106, 240)
+
 btnExec.MouseButton1Click:Connect(function()
-    VIM:SendKeyEvent(true,Enum.KeyCode.Q,false,game)
-    VIM:SendKeyEvent(false,Enum.KeyCode.Q,false,game)
-pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
-    end)
+	pcall(function()
+		-- Gửi phím Q (nhấn + nhả)
+		VIM:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+		VIM:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+
+		-- Gọi script Lucky
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
+	end)
 end)
 
 -- 🤤 Spawn Brainrot (R)
