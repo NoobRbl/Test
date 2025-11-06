@@ -208,8 +208,8 @@ local function ShowProgress10s()
 end
 
 -- ==== Nút chính trong Hub
--- 🐟 Noob Roblox (P)
-local btnAdd=pill(body,"Noob Roblox🐟"); pillColor(btnAdd,114,106,240)
+-- Execute all event 🎉 (P)
+local btnAdd=pill(body,"Execute all event 🎉"); pillColor(btnAdd,114,106,240)
 btnAdd.MouseButton1Click:Connect(function()
     VIM:SendKeyEvent(true,Enum.KeyCode.P,false,game)
     VIM:SendKeyEvent(false,Enum.KeyCode.P,false,game)
