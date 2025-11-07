@@ -1,0 +1,184 @@
+-- Lucky Block Spawner GUI (bo góc 20°)
+-- Dán vào StarterGui dưới dạng LocalScript
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "LuckyBlockPanel"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Panel chính
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 420, 0, 220)
+frame.Position = UDim2.new(0.5, -210, 0.5, -110)
+frame.BackgroundColor3 = Color3.fromRGB(27, 28, 30)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 20)
+
+-- Tiêu đề
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 36)
+title.Position = UDim2.new(0, 10, 0, 8)
+title.BackgroundTransparency = 1
+title.Text = "Lucky Block Spawner"
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(235,235,235)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
+-- Ô nhập (Mutation)
+local inputBg = Instance.new("Frame")
+inputBg.Size = UDim2.new(1, -20, 0, 44)
+inputBg.Position = UDim2.new(0, 10, 0, 52)
+inputBg.BackgroundColor3 = Color3.fromRGB(45,47,51)
+inputBg.BorderSizePixel = 0
+inputBg.Parent = frame
+Instance.new("UICorner", inputBg).CornerRadius = UDim.new(0,20)
+
+local inputBox = Instance.new("TextBox")
+inputBox.PlaceholderText = "Spooky Lucky Block"
+inputBox.Text = ""
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextSize = 16
+inputBox.ClearTextOnFocus = false
+inputBox.Size = UDim2.new(1, -16, 1, -8)
+inputBox.Position = UDim2.new(0,8,0,4)
+inputBox.BackgroundTransparency = 1
+inputBox.TextColor3 = Color3.fromRGB(230,230,230)
+inputBox.Parent = inputBg
+
+-- Hàng nút
+local row = Instance.new("Frame")
+row.Size = UDim2.new(1, -20, 0, 48)
+row.Position = UDim2.new(0,10,0,106)
+row.BackgroundTransparency = 1
+row.Parent = frame
+
+local function makeButton(name, pos, size, text, color)
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = size
+	btn.Position = pos
+	btn.Text = text
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 16
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.BackgroundColor3 = color
+	btn.BorderSizePixel = 0
+	btn.Parent = row
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,20)
+	return btn
+end
+
+local btnMutation = makeButton("MutationBtn", UDim2.new(0,0,0,0), UDim2.new(0,160,0,44), "Mutation (optional)", Color3.fromRGB(65,67,72))
+local btnLoop = makeButton("LoopBtn", UDim2.new(0,170,0,0), UDim2.new(0,96,0,44), "Loop: OFF", Color3.fromRGB(78,80,86))
+local btnSpawn = makeButton("SpawnBtn", UDim2.new(0,280,0,0), UDim2.new(0,120,0,44), "SPAWN", Color3.fromRGB(110,86,255))
+
+-- Traits
+local traitsBg = Instance.new("Frame")
+traitsBg.Size = UDim2.new(1, -20, 0, 48)
+traitsBg.Position = UDim2.new(0,10,0,166)
+traitsBg.BackgroundColor3 = Color3.fromRGB(45,47,51)
+traitsBg.BorderSizePixel = 0
+traitsBg.Parent = frame
+Instance.new("UICorner", traitsBg).CornerRadius = UDim.new(0,20)
+
+local traitsLabel = Instance.new("TextLabel")
+traitsLabel.Size = UDim2.new(1, -16, 1, -8)
+traitsLabel.Position = UDim2.new(0,8,0,4)
+traitsLabel.BackgroundTransparency = 1
+traitsLabel.Font = Enum.Font.Gotham
+traitsLabel.TextSize = 16
+traitsLabel.TextColor3 = Color3.fromRGB(200,200,200)
+traitsLabel.Text = "Traits (0)"
+traitsLabel.TextXAlignment = Enum.TextXAlignment.Left
+traitsLabel.Parent = traitsBg
+
+-- Tween helper
+local function tweenObject(obj, props, time)
+	local info = TweenInfo.new(time or 0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	game:GetService("TweenService"):Create(obj, info, props):Play()
+end
+
+-- Chức năng Loop & Spawn
+local loopOn = false
+local loopThread = nil
+local loopDelay = 1
+
+local function createLuckyBlock(mutation)
+	local part = Instance.new("Part")
+	part.Size = Vector3.new(2,2,2)
+	part.Position = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) 
+		and (player.Character.HumanoidRootPart.Position + Vector3.new(0,5,0))
+		or Vector3.new(0,5,0)
+	part.Anchored = false
+	part.BrickColor = BrickColor.new("Bright yellow")
+	part.Name = "LuckyBlock"
+	if mutation ~= "" then part.Name = "LuckyBlock - "..mutation end
+	part.Parent = workspace
+	game:GetService("Debris"):AddItem(part, 20)
+end
+
+-- Nút Spawn
+btnSpawn.MouseButton1Click:Connect(function()
+	tweenObject(btnSpawn, {BackgroundColor3 = Color3.fromRGB(90,70,230)}, 0.08)
+	task.delay(0.12, function() tweenObject(btnSpawn, {BackgroundColor3 = Color3.fromRGB(110,86,255)}, 0.12) end)
+	createLuckyBlock(inputBox.Text)
+end)
+
+-- Nút Mutation
+btnMutation.MouseButton1Click:Connect(function()
+	tweenObject(btnMutation, {BackgroundColor3 = Color3.fromRGB(85,85,90)}, 0.08)
+	task.delay(0.12, function() tweenObject(btnMutation, {BackgroundColor3 = Color3.fromRGB(65,67,72)}, 0.12) end)
+	inputBox:CaptureFocus()
+end)
+
+-- Nút Loop
+local function startLoop()
+	if loopThread then return end
+	loopThread = coroutine.create(function()
+		while loopOn do
+			createLuckyBlock(inputBox.Text)
+			task.wait(loopDelay)
+		end
+		loopThread = nil
+	end)
+	coroutine.resume(loopThread)
+end
+
+btnLoop.MouseButton1Click:Connect(function()
+	loopOn = not loopOn
+	if loopOn then
+		btnLoop.Text = "Loop: ON"
+		tweenObject(btnLoop, {BackgroundColor3 = Color3.fromRGB(100,200,120)}, 0.12)
+		startLoop()
+	else
+		btnLoop.Text = "Loop: OFF"
+		tweenObject(btnLoop, {BackgroundColor3 = Color3.fromRGB(78,80,86)}, 0.12)
+	end
+end)
+
+-- Nút đóng (X)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,28,0,28)
+closeBtn.Position = UDim2.new(1, -36, 0, 8)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 14
+closeBtn.BackgroundColor3 = Color3.fromRGB(44,45,47)
+closeBtn.TextColor3 = Color3.fromRGB(220,220,220)
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = frame
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,20)
+
+closeBtn.MouseButton1Click:Connect(function()
+	tweenObject(frame, {Position = frame.Position + UDim2.new(0,0,0,30), BackgroundTransparency = 1}, 0.18)
+	task.delay(0.15, function() gui:Destroy() end)
+end)
+
+print("Lucky Block GUI (corner 20°) loaded")
