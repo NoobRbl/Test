@@ -151,12 +151,14 @@ btnRebirth.MouseButton1Click:Connect(function()
 end)
 
 btnMorph.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
-	VIM:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+	VIM:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+	VIM:SendKeyEvent(false, Enum.KeyCode.R, false, game)
 end)
 
 btnDup.MouseButton1Click:Connect(function()
-	print("Duplicated clicked")
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
+	end)
 end)
 
 btnSpawner.MouseButton1Click:Connect(function()
@@ -169,8 +171,8 @@ btnLucky.MouseButton1Click:Connect(function()
 end)
 
 btnExec.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-	VIM:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+	VIM:SendKeyEvent(true, Enum.KeyCode.Y, false, game)
+	VIM:SendKeyEvent(false, Enum.KeyCode.Y, false, game)
 end)
 
 -- Verified click
