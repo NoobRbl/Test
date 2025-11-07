@@ -1,121 +1,172 @@
---// SAB Admin Panel GUI (v4 by ChatGPT)
+--// SAB Admin Panel v3 (by ChatGPT)
+-- Có animation mượt khi mở/đóng + nút toggle panel
 
+-- Xóa GUI cũ nếu tồn tại
 if game.CoreGui:FindFirstChild("SABPanel") then
 	game.CoreGui.SABPanel:Destroy()
 end
 
-local VU = game:GetService("VirtualUser")
-local VIM = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
-
+-- Tạo GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "SABPanel"
 gui.ResetOnSpawn = false
 
 -- Khung chính
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 380, 0, 340)
-main.Position = UDim2.new(0.5, -190, 0.5, -170)
+main.Size = UDim2.new(0, 400, 0, 370)
+main.Position = UDim2.new(0.5, -200, 0.5, -185)
 main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 main.BorderSizePixel = 2
 main.BorderColor3 = Color3.fromRGB(128, 0, 255)
-main.Visible = false
 main.Active = true
 main.Draggable = true
+main.Visible = false -- ẩn khi mới bật
 
+-- Bo góc khung
 local corner = Instance.new("UICorner", main)
 corner.CornerRadius = UDim.new(0, 20)
 
--- Animation mở
-main.BackgroundTransparency = 1
-main.Size = UDim2.new(0, 0, 0, 0)
-main.Visible = true
-TweenService:Create(main, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-	BackgroundTransparency = 0,
-	Size = UDim2.new(0, 380, 0, 340)
-}):Play()
+-- Hiệu ứng animation
+local TweenService = game:GetService("TweenService")
+
+local function showPanel()
+	main.Visible = true
+	main.Size = UDim2.new(0, 0, 0, 0)
+	main.Position = UDim2.new(0.5, 0, 0.5, 0)
+	local tween = TweenService:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 400, 0, 370),
+		Position = UDim2.new(0.5, -200, 0.5, -185)
+	})
+	tween:Play()
+end
+
+local function hidePanel()
+	local tween = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Size = UDim2.new(0, 0, 0, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0)
+	})
+	tween:Play()
+	tween.Completed:Connect(function()
+		main.Visible = false
+	end)
+end
+
+-- Nút toggle panel (nút tròn)
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
+toggleBtn.Text = "⚙️"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 22
+toggleBtn.Active = true
+toggleBtn.Draggable = true
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+
+local isOpen = false
+toggleBtn.MouseButton1Click:Connect(function()
+	if isOpen then
+		hidePanel()
+	else
+		showPanel()
+	end
+	isOpen = not isOpen
+end)
 
 -- Tiêu đề
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Admin Command Script"
+title.Text = "🧠 Admin Command Script"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
--- Nút đóng/mở
-local toggle = Instance.new("TextButton", main)
-toggle.Size = UDim2.new(0, 25, 0, 25)
-toggle.Position = UDim2.new(1, -30, 0, 5)
-toggle.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
-toggle.Text = "X"
-toggle.TextColor3 = Color3.new(1,1,1)
-toggle.Font = Enum.Font.GothamBold
-toggle.TextSize = 14
-Instance.new("UICorner", toggle)
-
--- Nút Verified
+-- Verified nút
 local verified = Instance.new("TextButton", main)
-verified.Size = UDim2.new(0.45, 0, 0, 30)
-verified.Position = UDim2.new(0.05, 0, 0.15, 0)
+verified.Size = UDim2.new(0.9, 0, 0, 35)
+verified.Position = UDim2.new(0.05, 0, 0.12, 0)
 verified.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
 verified.Text = "✔ Verified"
 verified.TextColor3 = Color3.new(1, 1, 1)
 verified.Font = Enum.Font.GothamBold
 verified.TextSize = 16
-Instance.new("UICorner", verified)
+Instance.new("UICorner", verified).CornerRadius = UDim.new(0, 10)
 
--- Ô nhập Money
+-- Ô nhập tiền
 local moneyBox = Instance.new("TextBox", main)
-moneyBox.Size = UDim2.new(0.45, 0, 0, 30)
-moneyBox.Position = UDim2.new(0.05, 0, 0.35, 0)
+moneyBox.Size = UDim2.new(0.42, 0, 0, 30)
+moneyBox.Position = UDim2.new(0.05, 0, 0.25, 0)
 moneyBox.PlaceholderText = "Enter money..."
 moneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 moneyBox.TextColor3 = Color3.new(1, 1, 1)
 moneyBox.Font = Enum.Font.Gotham
 moneyBox.TextSize = 14
-Instance.new("UICorner", moneyBox)
+Instance.new("UICorner", moneyBox).CornerRadius = UDim.new(0, 10)
 
--- Ô nhập Rebirth
+-- Ô nhập rebirth
 local rebirthBox = Instance.new("TextBox", main)
-rebirthBox.Size = UDim2.new(0.45, 0, 0, 30)
-rebirthBox.Position = UDim2.new(0.5, 0, 0.35, 0)
+rebirthBox.Size = UDim2.new(0.42, 0, 0, 30)
+rebirthBox.Position = UDim2.new(0.53, 0, 0.25, 0)
 rebirthBox.PlaceholderText = "Enter rebirth..."
 rebirthBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 rebirthBox.TextColor3 = Color3.new(1, 1, 1)
 rebirthBox.Font = Enum.Font.Gotham
 rebirthBox.TextSize = 14
-Instance.new("UICorner", rebirthBox)
+Instance.new("UICorner", rebirthBox).CornerRadius = UDim.new(0, 10)
 
--- Hàm tạo nút
+-- Hàm tạo nút nhanh
 local function createButton(text, color, posX, posY)
 	local btn = Instance.new("TextButton", main)
-	btn.Size = UDim2.new(0.45, 0, 0, 30)
+	btn.Size = UDim2.new(0.42, 0, 0, 35)
 	btn.Position = UDim2.new(posX, 0, posY, 0)
 	btn.BackgroundColor3 = color
 	btn.Text = text
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 14
-	btn.AutoButtonColor = false
-	Instance.new("UICorner", btn)
+	btn.AutoButtonColor = true
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
 	return btn
 end
 
--- Nút chức năng
-local btnMoney = createButton("💰 Set Money", Color3.fromRGB(52, 199, 89), 0.05, 0.48)
-local btnRebirth = createButton("🔁 Set Rebirth", Color3.fromRGB(52, 152, 219), 0.5, 0.48)
-local btnMorph = createButton("🧠 Brainrot Morph", Color3.fromRGB(108, 92, 231), 0.05, 0.62)
-local btnDup = createButton("🌀 Duplicated", Color3.fromRGB(155, 89, 182), 0.5, 0.62)
-local btnSpawner = createButton("🧬 Brainrots Spawner", Color3.fromRGB(93, 173, 226), 0.05, 0.76)
-local btnLucky = createButton("🎲 Lucky Block Spawner", Color3.fromRGB(46, 204, 113), 0.5, 0.76)
-local btnExec = createButton("⚡ Execute All Event", Color3.fromRGB(241, 196, 15), 0.05, 0.9)
+-- Các nút chức năng
+local btnMoney = createButton("💰 Set Money", Color3.fromRGB(52, 199, 89), 0.05, 0.38)
+local btnRebirth = createButton("🔁 Set Rebirth", Color3.fromRGB(52, 152, 219), 0.53, 0.38)
+local btnMorph = createButton("🧠 Brainrots Morph", Color3.fromRGB(108, 92, 231), 0.05, 0.52)
+local btnDup = createButton("🌀 Duplicated", Color3.fromRGB(155, 89, 182), 0.53, 0.52)
+local btnSpawner = createButton("🧬 Brainrots Spawner", Color3.fromRGB(93, 173, 226), 0.05, 0.66)
+local btnLucky = createButton("🎲 Lucky Block Spawner", Color3.fromRGB(46, 204, 113), 0.53, 0.66)
+local btnExec = createButton("⚡ Execute All Event", Color3.fromRGB(241, 196, 15), 0.05, 0.80)
 
--- Hành động từng nút
+-- Các sự kiện bấm (thay script thật nếu muốn)
+btnMoney.MouseButton1Click:Connect(function()
+	print("Set Money:", moneyBox.Text)
+end)
+
+btnRebirth.MouseButton1Click:Connect(function()
+	print("Set Rebirth:", rebirthBox.Text)
+end)
+
+btnMorph.MouseButton1Click:Connect(function(
+   VIM:SendKeyEvent(true,Enum.KeyCode.Q,false,game)
+   VIM:SendKeyEvent(false,Enum.KeyCode.Q,false,game)
+end)
+
+
+btnDup.MouseButton1Click:Connect(function()
+	print("Duplicated clicked")
+end)
+
 btnSpawner.MouseButton1Click:Connect(function()
 	VIM:SendKeyEvent(true,Enum.KeyCode.L,false,game)
     VIM:SendKeyEvent(false,Enum.KeyCode.L,false,game)
+end)
+
+btnLucky.MouseButton1Click:Connect(function()
+	print("Lucky Block Spawner clicked")
 end)
 
 btnExec.MouseButton1Click:Connect(function()
@@ -123,16 +174,9 @@ btnExec.MouseButton1Click:Connect(function()
     VIM:SendKeyEvent(false,Enum.KeyCode.R,false,game)
 end)
 
-btnMorph.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true,Enum.KeyCode.Q,false,game)
-    VIM:SendKeyEvent(false,Enum.KeyCode.Q,false,game)
-end)
-
+-- Verified hiệu ứng click
 verified.MouseButton1Click:Connect(function()
 	verified.Text = "✔ Verified ✓"
 	verified.BackgroundColor3 = Color3.fromRGB(56, 142, 60)
 end)
 
-toggle.MouseButton1Click:Connect(function()
-	main.Visible = not main.Visible
-end)
