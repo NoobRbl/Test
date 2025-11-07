@@ -4,7 +4,7 @@ if game.CoreGui:FindFirstChild("LuckyBlockGUI") then
 end
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "LuckyBlockGUI"
+gui.Name = "Brainrot Spawner Gui"
 
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 320, 0, 220)
@@ -22,7 +22,7 @@ local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Lucky Block Spawner"
+title.Text = "Brainrot Spawner"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -44,7 +44,7 @@ local madeby = Instance.new("TextLabel", main)
 madeby.Size = UDim2.new(1, 0, 0, 20)
 madeby.Position = UDim2.new(0, 0, 0, 40)
 madeby.BackgroundTransparency = 1
-madeby.Text = "Made By MozilOnTop"
+madeby.Text = "Made By NoobRoblox"
 madeby.Font = Enum.Font.Gotham
 madeby.TextSize = 14
 madeby.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -54,7 +54,7 @@ local textbox = Instance.new("TextBox", main)
 textbox.Size = UDim2.new(0.9, 0, 0, 30)
 textbox.Position = UDim2.new(0.05, 0, 0, 70)
 textbox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-textbox.Text = "Spooky Lucky Block"
+textbox.Text = "Strawberry Elephant"
 textbox.Font = Enum.Font.Gotham
 textbox.TextSize = 14
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
