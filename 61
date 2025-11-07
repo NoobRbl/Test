@@ -151,8 +151,8 @@ btnRebirth.MouseButton1Click:Connect(function()
 end)
 
 btnMorph.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-	VIM:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+	VIM:SendKeyEvent(true, Enum.KeyCode.K, false, game)
+	VIM:SendKeyEvent(false, Enum.KeyCode.K, false, game)
 end)
 
 btnDup.MouseButton1Click:Connect(function()
