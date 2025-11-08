@@ -1,70 +1,112 @@
--- Lucky Block Spawner GUI (visual only)
-if game.CoreGui:FindFirstChild("LuckyBlockGUI") then
-    game.CoreGui.LuckyBlockGUI:Destroy()
-end
+-- Lucky Block Spawner GUI (Visual Only + Animation + Draggable)
+-- Hoàn chỉnh 2025 - có thể di chuyển, không chức năng
 
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "Brainrot Spawner Gui"
+-- Xóa GUI cũ nếu tồn tại
+pcall(function()
+	if game.CoreGui:FindFirstChild("LuckyBlockGUI") then
+		game.CoreGui.LuckyBlockGUI:Destroy()
+	end
+end)
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 320, 0, 220)
-main.Position = UDim2.new(0.5, -160, 0.5, -110)
+-- Tạo GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "LuckyBlockGUI"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
+
+-- Khung chính
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 330, 0, 230)
+main.Position = UDim2.new(0.5, -165, 0.5, -115)
 main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main.BorderSizePixel = 0
 main.ClipsDescendants = true
+main.Active = true
+main.Draggable = true -- ✅ Cho phép di chuyển panel
+main.Parent = gui
 
--- Bo góc 20°
 local corner = Instance.new("UICorner", main)
 corner.CornerRadius = UDim.new(0, 20)
 
+-- Hiệu ứng mở mượt (zoom + fade)
+main.BackgroundTransparency = 1
+main.Size = UDim2.new(0, 200, 0, 140)
+main.Position = UDim2.new(0.5, -100, 0.5, -70)
+task.wait(0.1)
+game:GetService("TweenService"):Create(main, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+	BackgroundTransparency = 0,
+	Size = UDim2.new(0, 330, 0, 230),
+	Position = UDim2.new(0.5, -165, 0.5, -115)
+}):Play()
+
 -- Tiêu đề
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, -40, 0, 40)
+local title = Instance.new("TextLabel")
+title.Parent = main
+title.Size = UDim2.new(1, -45, 0, 40)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Brainrot Spawner"
+title.Text = "Lucky Block Spawner"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextXAlignment = Enum.TextXAlignment.Center
 
--- Nút đóng
-local close = Instance.new("TextButton", main)
+-- Nút đóng (có animation)
+local close = Instance.new("TextButton")
+close.Parent = main
 close.Size = UDim2.new(0, 30, 0, 30)
 close.Position = UDim2.new(1, -35, 0, 5)
+close.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
 close.Text = "X"
 close.Font = Enum.Font.GothamBold
 close.TextSize = 18
 close.TextColor3 = Color3.fromRGB(255, 255, 255)
-close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 local closeCorner = Instance.new("UICorner", close)
 closeCorner.CornerRadius = UDim.new(0, 10)
 
--- Dòng "Made by ..."
-local madeby = Instance.new("TextLabel", main)
+-- Animation khi đóng GUI
+close.MouseButton1Click:Connect(function()
+	local tween = game:GetService("TweenService"):Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 200, 0, 140),
+		Position = UDim2.new(0.5, -100, 0.5, -70)
+	})
+	tween:Play()
+	tween.Completed:Wait()
+	gui:Destroy()
+end)
+
+-- Dòng mô tả
+local madeby = Instance.new("TextLabel")
+madeby.Parent = main
 madeby.Size = UDim2.new(1, 0, 0, 20)
 madeby.Position = UDim2.new(0, 0, 0, 40)
 madeby.BackgroundTransparency = 1
-madeby.Text = "Made By NoobRoblox"
+madeby.Text = "Made By MozilOnTop"
 madeby.Font = Enum.Font.Gotham
 madeby.TextSize = 14
 madeby.TextColor3 = Color3.fromRGB(180, 180, 180)
+madeby.TextXAlignment = Enum.TextXAlignment.Center
 
--- Ô văn bản "Spooky Lucky Block"
-local textbox = Instance.new("TextBox", main)
-textbox.Size = UDim2.new(0.9, 0, 0, 30)
+-- Ô nhập văn bản
+local textbox = Instance.new("TextBox")
+textbox.Parent = main
+textbox.Size = UDim2.new(0.9, 0, 0, 35)
 textbox.Position = UDim2.new(0.05, 0, 0, 70)
 textbox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-textbox.Text = "Strawberry Elephant"
+textbox.Text = "Spooky Lucky Block"
 textbox.Font = Enum.Font.Gotham
 textbox.TextSize = 14
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textbox.ClearTextOnFocus = false
 local boxCorner = Instance.new("UICorner", textbox)
 boxCorner.CornerRadius = UDim.new(0, 10)
 
 -- Nút Mutation
-local mutation = Instance.new("TextButton", main)
-mutation.Size = UDim2.new(0.42, 0, 0, 30)
-mutation.Position = UDim2.new(0.05, 0, 0, 110)
+local mutation = Instance.new("TextButton")
+mutation.Parent = main
+mutation.Size = UDim2.new(0.42, 0, 0, 35)
+mutation.Position = UDim2.new(0.05, 0, 0, 115)
 mutation.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mutation.Text = "Mutation (optional)"
 mutation.Font = Enum.Font.Gotham
@@ -74,9 +116,10 @@ local mutCorner = Instance.new("UICorner", mutation)
 mutCorner.CornerRadius = UDim.new(0, 10)
 
 -- Nút Loop
-local loopBtn = Instance.new("TextButton", main)
-loopBtn.Size = UDim2.new(0.22, 0, 0, 30)
-loopBtn.Position = UDim2.new(0.49, 0, 0, 110)
+local loopBtn = Instance.new("TextButton")
+loopBtn.Parent = main
+loopBtn.Size = UDim2.new(0.22, 0, 0, 35)
+loopBtn.Position = UDim2.new(0.49, 0, 0, 115)
 loopBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
 loopBtn.Text = "Loop: OFF"
 loopBtn.Font = Enum.Font.Gotham
@@ -86,9 +129,10 @@ local loopCorner = Instance.new("UICorner", loopBtn)
 loopCorner.CornerRadius = UDim.new(0, 10)
 
 -- Nút Spawn
-local spawn = Instance.new("TextButton", main)
-spawn.Size = UDim2.new(0.22, 0, 0, 30)
-spawn.Position = UDim2.new(0.73, 0, 0, 110)
+local spawn = Instance.new("TextButton")
+spawn.Parent = main
+spawn.Size = UDim2.new(0.22, 0, 0, 35)
+spawn.Position = UDim2.new(0.73, 0, 0, 115)
 spawn.BackgroundColor3 = Color3.fromRGB(120, 90, 250)
 spawn.Text = "SPAWN"
 spawn.Font = Enum.Font.GothamBold
@@ -98,15 +142,18 @@ local spawnCorner = Instance.new("UICorner", spawn)
 spawnCorner.CornerRadius = UDim.new(0, 10)
 
 -- Traits (0)
-local traits = Instance.new("TextLabel", main)
-traits.Size = UDim2.new(1, -20, 0, 30)
-traits.Position = UDim2.new(0.05, 0, 0, 160)
+local traits = Instance.new("TextLabel")
+traits.Parent = main
+traits.Size = UDim2.new(0.9, 0, 0, 35)
+traits.Position = UDim2.new(0.05, 0, 0, 165)
 traits.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 traits.Text = "Traits (0)"
 traits.Font = Enum.Font.Gotham
 traits.TextSize = 14
 traits.TextColor3 = Color3.fromRGB(200, 200, 200)
+traits.TextXAlignment = Enum.TextXAlignment.Center
 local traitsCorner = Instance.new("UICorner", traits)
 traitsCorner.CornerRadius = UDim.new(0, 10)
+
 
 
