@@ -113,7 +113,7 @@ mutation.MouseLeave:Connect(function()
 	TweenService:Create(mutation, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
 end)
 
--- LOOP
+-- LOOP BUTTON
 local loopBtn = Instance.new("TextButton")
 loopBtn.Parent = main
 loopBtn.Size = UDim2.new(0.22, 0, 0, 35)
@@ -126,27 +126,31 @@ loopBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
 Instance.new("UICorner", loopBtn).CornerRadius = UDim.new(0, 10)
 
 local looping = false
-local loopConnection
+local loopThread
 
 loopBtn.MouseButton1Click:Connect(function()
 	looping = not looping
 	if looping then
 		loopBtn.Text = "Loop: ON"
 		loopBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
-		loopConnection = RunService.Heartbeat:Connect(function()
-			pcall(function()
-				VIM:SendKeyEvent(true, Enum.KeyCode.1, false, game)
-				task.wait(0.05)
-				VIM:SendKeyEvent(false, Enum.KeyCode.1, false, game)
-			end)
+
+		loopThread = task.spawn(function()
+			while looping do
+				pcall(function()
+					-- Gửi phím xuống
+					VIM:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+					task.wait(0.08) -- giữ phím 80ms (giống thật)
+					-- Nhả phím
+					VIM:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+				end)
+				task.wait(0.25) -- delay giữa các lần nhấn
+			end
 		end)
+
 	else
 		loopBtn.Text = "Loop: OFF"
 		loopBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
-		if loopConnection then
-			loopConnection:Disconnect()
-			loopConnection = nil
-		end
+		looping = false
 	end
 end)
 
