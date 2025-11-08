@@ -138,10 +138,10 @@ loopBtn.MouseButton1Click:Connect(function()
 			while looping do
 				pcall(function()
 					-- Gửi phím xuống
-					VIM:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+					VIM:SendKeyEvent(true, Enum.KeyCode.N, false, game)
 					task.wait(0.08) -- giữ phím 80ms (giống thật)
 					-- Nhả phím
-					VIM:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+					VIM:SendKeyEvent(false, Enum.KeyCode.N, false, game)
 				end)
 				task.wait(0.25) -- delay giữa các lần nhấn
 			end
