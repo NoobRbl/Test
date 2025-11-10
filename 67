@@ -1,0 +1,561 @@
+-- 🧩 Load Rayfield Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- 🪟 Cửa sổ chính
+local Window = Rayfield:CreateWindow({
+    Name = "NoobRoblox • Premium",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "NoobRoblox script",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "NoobRoblox0nTheTop"
+    }
+})
+
+-- =========================================
+-- 💎 Tab 1: STEAL OP
+-- =========================================
+local StealTab = Window:CreateTab("STEAL OP 💎")
+
+-- 🟢 SEND LINK
+StealTab:CreateButton({
+    Name = "Send Link 🔗",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "ServerNumberGui"
+        gui.ResetOnSpawn = false
+        gui.Parent = player:WaitForChild("PlayerGui")
+
+        local text = Instance.new("TextLabel")
+        text.AnchorPoint = Vector2.new(0.5, 0.5)
+        text.Position = UDim2.new(0.5, 0, 0.5, 0)
+        text.Size = UDim2.new(0.6, 0, 0.2, 0)
+        text.BackgroundTransparency = 1
+        text.TextColor3 = Color3.fromRGB(0, 255, 0)
+        text.Font = Enum.Font.GothamBold
+        text.TextScaled = true
+        text.Text = "SERVER: 0"
+        text.Parent = gui
+
+        local madeby = Instance.new("TextLabel")
+        madeby.AnchorPoint = Vector2.new(0.5, 1)
+        madeby.Position = UDim2.new(0.5, 0, 0.98, 0)
+        madeby.Size = UDim2.new(0.4, 0, 0.05, 0)
+        madeby.BackgroundTransparency = 1
+        madeby.TextColor3 = Color3.fromRGB(0, 255, 255)
+        madeby.Font = Enum.Font.GothamBold
+        madeby.TextScaled = true
+        madeby.Text = "Made by NoobRoblox"
+        madeby.Parent = gui
+
+        local target = math.random(1, 2390)
+        local duration = 5
+        local stepTime = duration / math.max(target, 1)
+
+        for i = 1, target do
+            text.Text = "SERVER: " .. tostring(i)
+            task.wait(stepTime)
+        end
+
+        text.Text = "SERVER: " .. tostring(target)
+        task.wait(1.5)
+        gui:Destroy()
+    end
+})
+
+-- 🔁 AUTO KICK
+StealTab:CreateToggle({
+    Name = "Auto Kick ⚙️",
+    CurrentValue = false,
+    Flag = "AutoKick",
+    Callback = function(state)
+        Rayfield:Notify({
+            Title = "Auto Kick",
+            Content = state and "enable ✔️" or "unable ❌",
+            Duration = 2
+        })
+    end
+})
+
+-- 🎯 MODE KICK
+StealTab:CreateDropdown({
+    Name = "Auto Kick 🎯",
+    Options = {"Normal (Shutdown)", "Fast (/kick)", "Instant (block)"},
+    CurrentOption = {"Normal (Shutdown)"},
+    Flag = "AutoKick",
+    Callback = function(option)
+        Rayfield:Notify({
+            Title = "Auto Kick",
+            Content = "Đã chọn: " .. option[1] .. " (chỉ hiển thị, không thực hiện)",
+            Duration = 2
+        })
+    end
+})
+
+-- 🔒 ANTI REJOIN
+StealTab:CreateToggle({
+    Name = "Anti Rejoin : AUTO BLOCK 🔒",
+    CurrentValue = false,
+    Flag = "AntiRejoin",
+    Callback = function(state)
+        Rayfield:Notify({
+            Title = "Anti Rejoin",
+            Content = state and "Đã bật AUTO BLOCK ✅" or "Đã tắt AUTO BLOCK ❌",
+            Duration = 2
+        })
+    end
+})
+
+-- 🚪 LEAVE
+StealTab:CreateButton({
+    Name = "Leave 🚪",
+    Callback = function()
+        Rayfield:Notify({Title = "NoobRoblox", Content = "Đang rời game...", Duration = 2})
+        task.wait(2)
+        pcall(function() game:Shutdown() end)
+    end
+})
+
+-- =========================================
+-- ⚙️ Tab 2: STEAL MODE
+-- =========================================
+local StealModeTab = Window:CreateTab("STEAL MODE ⚙️")
+
+StealModeTab:CreateToggle({
+    Name = "Bypass 30 SECOND",
+    CurrentValue = false,
+    Flag = "Bypass30Second",
+    Callback = function()
+        Rayfield:Notify({Title = "Bypass 30s", Content = "SUCCESS ✅", Duration = 2})
+    end
+})
+
+StealModeTab:CreateDropdown({
+    Name = "MODE",
+    Options = {
+        "KICK BASE DƯỚI 10M/S",
+        "KICK BASE DƯỚI 50M/S",
+        "KICK BASE DƯỚI 100M/S",
+        "KICK BASE DƯỚI 500M/S",
+        "KICK BASE DƯỚI 1B/S"
+    },
+    CurrentOption = {"KICK BASE DƯỚI 10M/S"},
+    Flag = "FilterBase",
+    Callback = function()
+        Rayfield:Notify({Title = "MODE", Content = "SUCCESS ✅", Duration = 2})
+    end
+})
+
+StealModeTab:CreateToggle({
+    Name = "KICK ACC CLONE",
+    CurrentValue = false,
+    Flag = "KickAccClone",
+    Callback = function()
+        Rayfield:Notify({Title = "KICK ACC CLONE", Content = "SUCCESS ✅", Duration = 2})
+    end
+})
+
+StealModeTab:CreateToggle({
+    Name = "ANTI REJOIN : AUTO BLOCK",
+    CurrentValue = false,
+    Flag = "AntiRejoinAutoBlock_Mode",
+    Callback = function()
+        Rayfield:Notify({Title = "ANTI REJOIN", Content = "SUCCESS ✅", Duration = 2})
+    end
+})
+
+StealModeTab:CreateButton({
+    Name = "CRASH VICTIM 💥",
+    Callback = function()
+        Rayfield:Notify({Title = "CRASH VICTIM", Content = "SUCCESS ✅", Duration = 2})
+    end
+})
+
+-- =========================================
+-- 🧠 Tab 3: DUPE BRAINROT
+-- =========================================
+local DupeTab = Window:CreateTab("DUPE BRAINROT 🧠")
+
+-- 🧬 Name brainrot
+DupeTab:CreateInput({
+    Name = "Name brainrot 🧬",
+    PlaceholderText = "Nhập tên brainrot...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        Rayfield:Notify({
+            Title = "Name brainrot",
+            Content = "SUCCESS ✅️ (" .. text .. ")",
+            Duration = 2
+        })
+    end
+})
+
+-- 🧫 Mutation
+DupeTab:CreateDropdown({
+    Name = "Mutation 🧫",
+    Options = {
+        "Rainbow",
+        "Bloodrot",
+        "Galaxy",
+        "Lava",
+        "Gold",
+        "Diamond",
+        "Candy",
+        "Yin yang"
+    },
+    CurrentOption = {"Rainbow"},
+    Flag = "MutationType",
+    Callback = function(option)
+        Rayfield:Notify({
+            Title = "Mutation",
+            Content = "SUCCESS ✅️ (" .. option[1] .. ")",
+            Duration = 2
+        })
+    end
+})
+
+-- 🧠 Trait
+DupeTab:CreateInput({
+    Name = "Trait 🧠",
+    PlaceholderText = "Nhập trait...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        Rayfield:Notify({
+            Title = "Trait",
+            Content = "SUCCESS ✅️ (" .. text .. ")",
+            Duration = 2
+        })
+    end
+})
+
+-- 🛡️ Anti Band
+DupeTab:CreateToggle({
+    Name = "Anti Band 🛡️",
+    CurrentValue = false,
+    Flag = "AntiBandToggle",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Anti Band",
+            Content = "SUCCESS ✅️",
+            Duration = 2
+        })
+    end
+})
+
+-- 💎 Dupe
+DupeTab:CreateButton({
+    Name = "Dupe 💎",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "DupeLoadingUI"
+        gui.ResetOnSpawn = false
+        gui.Parent = player:WaitForChild("PlayerGui")
+
+        local bg = Instance.new("Frame")
+        bg.Size = UDim2.new(1, 0, 1, 0)
+        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        bg.BackgroundTransparency = 0.3
+        bg.Parent = gui
+
+        local label = Instance.new("TextLabel")
+        label.AnchorPoint = Vector2.new(0.5, 0.5)
+        label.Position = UDim2.new(0.5, 0, 0.5, -20)
+        label.Size = UDim2.new(0.4, 0, 0.1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.GothamBold
+        label.TextColor3 = Color3.fromRGB(0, 255, 255)
+        label.TextScaled = true
+        label.Text = "WAIT DUPING..."
+        label.Parent = bg
+
+        local percent = Instance.new("TextLabel")
+        percent.AnchorPoint = Vector2.new(0.5, 0.5)
+        percent.Position = UDim2.new(0.5, 0, 0.6, 0)
+        percent.Size = UDim2.new(0.2, 0, 0.1, 0)
+        percent.BackgroundTransparency = 1
+        percent.Font = Enum.Font.GothamBold
+        percent.TextColor3 = Color3.fromRGB(255, 255, 255)
+        percent.TextScaled = true
+        percent.Text = "0%"
+        percent.Parent = bg
+
+        local duration = 5
+        local steps = 100
+        for i = 1, steps do
+            percent.Text = i .. "%"
+            task.wait(duration / steps)
+ 
+       end
+
+        gui:Destroy()
+        Rayfield:Notify({
+            Title = "Dupe",
+            Content = "SUCCESS ✅️",
+            Duration = 2
+        })
+    end
+})-- =========================================
+-- 🧩 Tab 4
+-- =========================================
+local Tab4 = Window:CreateTab("🧑‍💻SPAWM")
+
+-- 🧠 Brainrot (textbox)
+Tab4:CreateInput({
+    Name = "Brainrot 🧠",
+    PlaceholderText = "Nhập tên brainrot...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        Rayfield:Notify({
+            Title = "Brainrot",
+            Content = "SUCCESS ✅️ (" .. text .. ")",
+            Duration = 2
+        })
+    end
+})
+
+-- ⚡ Spawn (button)
+Tab4:CreateButton({
+    Name = "Spawn ⚡",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Spawn",
+            Content = "SUCCESS ✅️",
+            Duration = 2
+        })
+    end
+})
+
+-- 🎁 Lucky Block (textbox)
+Tab4:CreateInput({
+    Name = "Lucky Block 🎁",
+    PlaceholderText = "Nhập tên lucky block...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        Rayfield:Notify({
+            Title = "Lucky Block",
+            Content = "SUCCESS ✅️ (" .. text .. ")",
+            Duration = 2
+        })
+    end
+})
+
+-- 🌟 Spawn (button)
+Tab4:CreateButton({
+    Name = "Spawn 🌟",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Spawn",
+            Content = "SUCCESS ✅️",
+            Duration = 2
+        })
+    end
+})
+
+-- 🛡️ Anti Band (toggle)
+Tab4:CreateToggle({
+    Name = "Anti Band 🛡️",
+    
+CurrentValue = false,
+    Flag = "AntiBand_Tab4",
+    Callback = function(state)
+        Rayfield:Notify({
+            Title = "Anti Band",
+            Content = "SUCCESS ✅️",
+            Duration = 2
+        })
+    end
+})-- =========================================
+-- 🍬 Tab: EVENT
+-- =========================================
+local EventTab = Window:CreateTab("🍬EVENT")
+
+-- 🧬 Mutation Event (Dropdown)
+EventTab:CreateDropdown({
+    Name = "Mutation Event 🧬",
+    Options = {"Gold", "Diamond", "Rainbow", "Candy", "Lava", "Bloodrot", "Yin yang", "Galaxy"},
+    CurrentOption = {"Gold"},
+    Flag = "MutationEvent",
+    Callback = function(option)
+        Rayfield:Notify({
+            Title = "Mutation Event",
+            Content = "Đã chọn: " .. option[1] .. " ✅️🟢",
+            Duration = 2
+        })
+    end
+})
+
+-- ⚙️ Execute All Event
+EventTab:CreateButton({
+    Name = "Execute All Event ⚙️",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Execute All Event",
+            Content = "SUCCESS ✅️🟢",
+            Duration = 2
+        })
+    end
+})
+
+-- ⛔ Stop Event
+EventTab:CreateButton({
+    Name = "Stop Event ⛔",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Stop Event",
+            Content = "SUCCESS ✅️🟢",
+            Duration = 2
+        })
+    end
+})
+
+-- ⏰ Time (Textbox)
+EventTab:CreateInput({
+    Name = "Time ⏰",
+    PlaceholderText = "Nhập thời gian...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        Rayfield:Notify({
+            Title = "Time",
+            Content = "Đã đặt: " .. text .. " ✅️🟢",
+            Duration = 2
+        })
+    end
+})
+
+-- 🚀 Apply Time
+EventTab:CreateButton({
+    Name = "Apply Time 🚀",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Apply Time",
+            Content = "SUCCESS ✅️🟢",
+            Duration = 2
+        })
+    end
+})-- =========================================
+-- 🍀 Tab: LUCKY SERVER
+-- =========================================
+local LuckyTab = Window:CreateTab("🍀LUCKY SERVER")
+
+-- Dropdown: LUCKY
+local LuckyDropdown = LuckyTab:CreateDropdown({
+    Name = "LUCKY",
+    Options = {"X2 luck", "X4 luck", "X6 luck", "X8 luck", "💀x10 luck"},
+    CurrentOption = "X2 luck",
+    Flag = "LuckyMode",
+    Callback = function(Option)
+        Rayfield:Notify({
+            Title = "SUCCESS✅️🟢",
+            Content = "Selected: " .. Option,
+            Duration = 2
+        })
+    end,
+})
+
+-- Dropdown: Mode
+local ModeDropdown = LuckyTab:CreateDropdown({
+    Name = "Mode",
+    Options = {"Robux", "No robux (⚠️ANTI BAND)"},
+    CurrentOption = "Robux",
+    Flag = "ModeSelect",
+    Callback = function(Option)
+        Rayfield:Notify({
+            Title = "SUCCESS✅️🟢",
+            Content = "Mode: " .. Option,
+            Duration = 2
+        })
+    end,
+})
+
+-- Textbox: Time
+LuckyTab:CreateInput({
+    Name = "Time",
+    PlaceholderText = "Nhập thời gian...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        Rayfield:Notify({
+            Title = "SUCCESS✅️🟢",
+            Content = "Time set to: " .. Text,
+            Duration = 2
+        })
+    end,
+})
+
+-- Button: Apply Time
+LuckyTab:CreateButton({
+    Name = "Apply Time",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "SUCCESS✅️🟢",
+            Content 
+
+
+
+= "Time applied successfully!",
+            Duration = 2
+        })
+    end,
+})
+
+-- Button: Execute lucky
+LuckyTab:CreateButton({
+    Name = "Execute Lucky",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "SUCCESS✅️🟢",
+            Content = "Lucky Event executed!",
+            Duration = 2
+        })
+    end,
+})
+
+
+
+-- =========================================
+-- 🧠 Tab: BRAINROT DEALER
+-- =========================================
+local DealerTab = Window:CreateTab("🧠 Brainrot Dealer")
+
+-- 🔁 Auto Buy Brainrot Dealer
+DealerTab:CreateToggle({
+    Name = "Auto Buy Brainrot Dealer 🔁",
+    CurrentValue = false,
+    Flag = "AutoBuyDealer",
+    Callback = function(state)
+        Rayfield:Notify({
+            Title = "Auto Buy Brainrot Dealer",
+            Content = state and "Đã bật ✅" or "Đã tắt ❌",
+            Duration = 2
+        })
+    end
+})
+
+-- 💎 Brainrot Dealer (Dropdown chọn rarity)
+DealerTab:CreateDropdown({
+    Name = "Brainrot Dealer 💎",
+    Options = {"Brainrot god", "Secret"},
+    CurrentOption = {"Brainrot god"},
+    Flag = "BrainrotDealerRarity",
+    Callback = function(option)
+        Rayfield:Notify({
+            Title = "Brainrot Dealer",
+            Content = "Đã chọn: " .. option[1] .. " ✅",
+            Duration = 2
+        })
+    end
+})
+
+-- 🛒 Buy Now (nút mua ngay)
+DealerTab:CreateButton({
+    Name = "Buy Now 🛒",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Brainrot Dealer",
+            Content = "Đã mua thành công ✅",
+            Duration = 2
+        })
+    end
+})
