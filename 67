@@ -1,104 +1,105 @@
---// 🧠 UI Hub Demo – OrionLib v3.0 (fixed) bruh
---// Safe client-side GUI
---// Script by ChatGPT
+--// 🧠 OrionLib UI Hub – Final Stable Versionhaha
+--// Safe & Compatible – by ChatGPT
 
 -- Tải thư viện OrionLib
-local success, OrionLib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
-end)
-
-if not success or not OrionLib then
-    warn("Không thể tải OrionLib. Kiểm tra kết nối hoặc link tải.")
-    return
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
+if not OrionLib then
+	warn("❌ Không thể tải OrionLib. Kiểm tra kết nối internet hoặc thử lại sau.")
+	return
 end
 
--- Tạo cửa sổ chính
+------------------------------------------------------------
+-- ⚙️ Tạo cửa sổ chính
+------------------------------------------------------------
 local Window = OrionLib:MakeWindow({
-    Name = "Demo UI Hub",
-    HidePremium = false,
-    IntroEnabled = true,
-    IntroText = "Demo Hub",
-    SaveConfig = true,
-    ConfigFolder = "DemoUIHubConfig"
+	Name = "🧠 Demo UI Hub",
+	HidePremium = false,
+	SaveConfig = true,
+	ConfigFolder = "DemoUIHubConfig",
+	IntroEnabled = true,
+	IntroText = "Welcome to Demo UI Hub!"
 })
 
 ------------------------------------------------------------
--- 🌟 Tab Main
+-- 🌟 Tab Chính (Main)
 ------------------------------------------------------------
 local MainTab = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://6023426915",
-    PremiumOnly = false
+	Name = "Main",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
 })
 
+MainTab:AddParagraph("Thông tin", "Đây là bản demo OrionLib UI hoàn chỉnh.\nBạn có thể chỉnh tốc độ đi, bật/tắt Auto, hoặc thử các nút bên dưới.")
+
 MainTab:AddButton({
-    Name = "Say Hello",
-    Callback = function()
-        OrionLib:MakeNotification({
-            Name = "Hello!",
-            Content = "Xin chào từ Demo UI Hub!",
-            Image = "rbxassetid://6023426915",
-            Time = 3
-        })
-        print("Hello from Demo UI Hub!")
-    end
+	Name = "👋 Say Hello",
+	Callback = function()
+		OrionLib:MakeNotification({
+			Name = "Hello!",
+			Content = "Xin chào từ Demo UI Hub 💡",
+			Image = "rbxassetid://4483345998",
+			Time = 3
+		})
+		print("[OrionLib Hub] Hello from Demo UI Hub!")
+	end
 })
 
 MainTab:AddToggle({
-    Name = "Auto Example (LOCAL)",
-    Default = false,
-    Callback = function(state)
-        OrionLib:MakeNotification({
-            Name = "Auto Example",
-            Content = "Trạng thái: " .. tostring(state),
-            Time = 2
-        })
-        print("Auto Example state:", state)
-    end
+	Name = "🌀 Auto Example",
+	Default = false,
+	Callback = function(State)
+		print("Auto Example:", State)
+		OrionLib:MakeNotification({
+			Name = "Auto Example",
+			Content = "Trạng thái: " .. tostring(State),
+			Time = 2
+		})
+	end
 })
 
 MainTab:AddSlider({
-    Name = "WalkSpeed (LOCAL)",
-    Min = 16,
-    Max = 100,
-    Default = 16,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    ValueName = "Speed",
-    Callback = function(value)
-        local plr = game.Players.LocalPlayer
-        if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-            plr.Character.Humanoid.WalkSpeed = value
-        end
-    end
+	Name = "🏃 WalkSpeed",
+	Min = 16,
+	Max = 100,
+	Default = 16,
+	Color = Color3.fromRGB(255, 170, 0),
+	Increment = 1,
+	ValueName = "Speed",
+	Callback = function(Value)
+		local plr = game.Players.LocalPlayer
+		if plr and plr.Character and plr.Character:FindFirstChildWhichIsA("Humanoid") then
+			plr.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = Value
+		end
+	end
 })
 
 MainTab:AddKeybind({
-    Name = "Toggle UI",
-    Default = Enum.KeyCode.RightControl,
-    Callback = function()
-        OrionLib:Toggle()
-    end
+	Name = "🧩 Toggle UI",
+	Default = Enum.KeyCode.RightControl,
+	Callback = function()
+		OrionLib:Toggle()
+	end
 })
 
 ------------------------------------------------------------
--- ⚙️ Tab Settings
+-- ⚙️ Tab Cài đặt (Settings)
 ------------------------------------------------------------
 local SettingsTab = Window:MakeTab({
-    Name = "Settings",
-    Icon = "rbxassetid://6023426915",
-    PremiumOnly = false
+	Name = "Settings",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
 })
 
 SettingsTab:AddButton({
-    Name = "Destroy UI",
-    Callback = function()
-        OrionLib:Destroy()
-    end
+	Name = "🗑️ Đóng giao diện (Destroy UI)",
+	Callback = function()
+		OrionLib:Destroy()
+	end
 })
 
 ------------------------------------------------------------
--- 🚀 Khởi tạo UI
+-- 🚀 Khởi tạo OrionLib
 ------------------------------------------------------------
 OrionLib:Init()
+
 
