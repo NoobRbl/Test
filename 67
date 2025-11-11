@@ -1,89 +1,68 @@
---// UNIVERSAL UI TESTER - Venyx + Kavo
---// Made by ChatGPT (GPT-5) cr7
+--// UI Hub Demo – OrionLib version
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
+local Window = OrionLib:MakeWindow({
+    Name = "Demo UI Hub",
+    HidePremium = true,
+    IntroEnabled = true,
+    IntroText = "Demo Hub",
+    SaveConfig = true,
+    ConfigFolder = "DemoUIHubConfig"
+})
 
--- Xóa UI cũ nếu có
-for _,v in pairs(game.CoreGui:GetChildren()) do
-    if v.Name:match("Venyx") or v.Name:match("Kavo") or v.Name == "UI Selector" then
-        v:Destroy()
+-- Tab “Main”
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://6023426915", -- ví dụ icon
+    PremiumOnly = false
+})
+
+MainTab:AddButton({
+    Name = "Say Hello",
+    Callback = function()
+        print("Hello from Demo UI Hub!")
     end
-end
+})
 
---// GUI Chọn Giao Diện
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UI Selector"
-ScreenGui.Parent = game.CoreGui
+MainTab:AddToggle({
+    Name = "Auto Example (LOCAL)",
+    Default = false,
+    Callback = function(state)
+        print("Auto Example state:", state)
+    end
+})
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 160)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -80)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
-Frame.Active = true
-Frame.Draggable = true
-Frame.BackgroundTransparency = 0.1
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+MainTab:AddSlider({
+    Name = "WalkSpeed (LOCAL)",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Callback = function(value)
+        local plr = game.Players.LocalPlayer
+        if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+            plr.Character.Humanoid.WalkSpeed = value
+        end
+    end
+})
 
---// 🌈 Multi-UI Demo Hub
---// Includes: OrionLib, Kavo UI, Roact, Fusion
---// Safe demo – by ChatGPT
+MainTab:AddKeybind({
+    Name = "Toggle UI",
+    Default = Enum.KeyCode.RightControl,
+    Callback = function()
+        OrionLib:Toggle()
+    end
+})
 
--- Chờ PlayerGui sẵn sàng
-local plr = game.Players.LocalPlayer
-local guiParent = plr:WaitForChild("PlayerGui")
+-- Tab “Settings”
+local SettingsTab = Window:MakeTab({
+    Name = "Settings",
+    Icon = "rbxassetid://6023426915",
+    PremiumOnly = false
+})
 
-------------------------------------------------------
--- 🌟 Menu chọn UI
-------------------------------------------------------
-local menu = Instance.new("ScreenGui")
-menu.Name = "UISelectMenu"
-menu.ResetOnSpawn = false
-menu.Parent = guiParent
+SettingsTab:AddButton({
+    Name = "Destroy UI",
+    Callback = function()
+        OrionLib:Destroy()
+    end
+})
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 250)
-frame.Position = UDim2.new(0.5, -150, 0.5, -125)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-frame.BorderSizePixel = 0
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.Parent = menu
-
-local uicorner = Instance.new("UICorner", frame)
-uicorner.CornerRadius = UDim.new(0, 15)
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "Select GUI Library"
-title.TextScaled = true
-title.Parent = frame
-
-local libs = {"OrionLib", "KavoUI", "Roact", "Fusion"}
-for i, name in ipairs(libs) do
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.8, 0, 0, 35)
-	btn.Position = UDim2.new(0.1, 0, 0, 50 + (i - 1) * 45)
-	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-	btn.Text = name
-	btn.Font = Enum.Font.GothamBold
-	btn.TextColor3 = Color3.new(1, 1, 1)
-	btn.TextScaled = true
-	btn.Parent = frame
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0, 10)
-
-	btn.MouseButton1Click:Connect(function()
-		menu:Destroy()
-		if name == "OrionLib" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/orionlib_demo.lua"))()
-		elseif name == "KavoUI" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/kavoui_demo.lua"))()
-		elseif name == "Roact" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/roact_demo.lua"))()
-		elseif name == "Fusion" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/fusion_demo.lua"))()
-		end
-	end)
-end
