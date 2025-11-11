@@ -1,5 +1,4 @@
--- 🧩 Load Rayfield Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
 
 -- 🪟 Cửa sổ chính
 local Window = Rayfield:CreateWindow({
