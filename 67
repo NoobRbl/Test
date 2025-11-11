@@ -1,24 +1,45 @@
---// UI Hub Demo – OrionLib version3.0
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
+--// 🧠 UI Hub Demo – OrionLib v3.0 (fixed)
+--// Safe client-side GUI
+--// Script by ChatGPT
+
+-- Tải thư viện OrionLib
+local success, OrionLib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+end)
+
+if not success or not OrionLib then
+    warn("Không thể tải OrionLib. Kiểm tra kết nối hoặc link tải.")
+    return
+end
+
+-- Tạo cửa sổ chính
 local Window = OrionLib:MakeWindow({
     Name = "Demo UI Hub",
-    HidePremium = true,
+    HidePremium = false,
     IntroEnabled = true,
     IntroText = "Demo Hub",
     SaveConfig = true,
     ConfigFolder = "DemoUIHubConfig"
 })
 
--- Tab “Main”
+------------------------------------------------------------
+-- 🌟 Tab Main
+------------------------------------------------------------
 local MainTab = Window:MakeTab({
     Name = "Main",
-    Icon = "rbxassetid://6023426915", -- ví dụ icon
+    Icon = "rbxassetid://6023426915",
     PremiumOnly = false
 })
 
 MainTab:AddButton({
     Name = "Say Hello",
     Callback = function()
+        OrionLib:MakeNotification({
+            Name = "Hello!",
+            Content = "Xin chào từ Demo UI Hub!",
+            Image = "rbxassetid://6023426915",
+            Time = 3
+        })
         print("Hello from Demo UI Hub!")
     end
 })
@@ -27,6 +48,11 @@ MainTab:AddToggle({
     Name = "Auto Example (LOCAL)",
     Default = false,
     Callback = function(state)
+        OrionLib:MakeNotification({
+            Name = "Auto Example",
+            Content = "Trạng thái: " .. tostring(state),
+            Time = 2
+        })
         print("Auto Example state:", state)
     end
 })
@@ -36,6 +62,9 @@ MainTab:AddSlider({
     Min = 16,
     Max = 100,
     Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "Speed",
     Callback = function(value)
         local plr = game.Players.LocalPlayer
         if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
@@ -52,7 +81,9 @@ MainTab:AddKeybind({
     end
 })
 
--- Tab “Settings”
+------------------------------------------------------------
+-- ⚙️ Tab Settings
+------------------------------------------------------------
 local SettingsTab = Window:MakeTab({
     Name = "Settings",
     Icon = "rbxassetid://6023426915",
@@ -65,4 +96,9 @@ SettingsTab:AddButton({
         OrionLib:Destroy()
     end
 })
+
+------------------------------------------------------------
+-- 🚀 Khởi tạo UI
+------------------------------------------------------------
+OrionLib:Init()
 
