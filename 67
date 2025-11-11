@@ -24,110 +24,66 @@ Frame.Draggable = true
 Frame.BackgroundTransparency = 0.1
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundTransparency = 1
-Title.Text = "🧠 UI Style Selector"
-Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 20
-Title.Parent = Frame
+--// 🌈 Multi-UI Demo Hub
+--// Includes: OrionLib, Kavo UI, Roact, Fusion
+--// Safe demo – by ChatGPT
 
-local VenyxBtn = Instance.new("TextButton")
-VenyxBtn.Size = UDim2.new(0.8, 0, 0, 40)
-VenyxBtn.Position = UDim2.new(0.1, 0, 0, 55)
-VenyxBtn.Text = "🌈 Open Venyx UI"
-VenyxBtn.Font = Enum.Font.Gotham
-VenyxBtn.TextSize = 18
-VenyxBtn.BackgroundColor3 = Color3.fromRGB(95, 85, 255)
-VenyxBtn.TextColor3 = Color3.new(1, 1, 1)
-VenyxBtn.Parent = Frame
-Instance.new("UICorner", VenyxBtn).CornerRadius = UDim.new(0, 8)
+-- Chờ PlayerGui sẵn sàng
+local plr = game.Players.LocalPlayer
+local guiParent = plr:WaitForChild("PlayerGui")
 
-local KavoBtn = Instance.new("TextButton")
-KavoBtn.Size = UDim2.new(0.8, 0, 0, 40)
-KavoBtn.Position = UDim2.new(0.1, 0, 0, 105)
-KavoBtn.Text = "🔥 Open Kavo UI"
-KavoBtn.Font = Enum.Font.Gotham
-KavoBtn.TextSize = 18
-KavoBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
-KavoBtn.TextColor3 = Color3.new(1, 1, 1)
-KavoBtn.Parent = Frame
-Instance.new("UICorner", KavoBtn).CornerRadius = UDim.new(0, 8)
+------------------------------------------------------
+-- 🌟 Menu chọn UI
+------------------------------------------------------
+local menu = Instance.new("ScreenGui")
+menu.Name = "UISelectMenu"
+menu.ResetOnSpawn = false
+menu.Parent = guiParent
 
-local TweenService = game:GetService("TweenService")
-local function FadeOutUI()
-    TweenService:Create(Frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 1, Position = UDim2.new(0.5, -150, 1, 200)}):Play()
-    task.wait(0.5)
-    ScreenGui:Destroy()
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 250)
+frame.Position = UDim2.new(0.5, -150, 0.5, -125)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+frame.BorderSizePixel = 0
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.Parent = menu
+
+local uicorner = Instance.new("UICorner", frame)
+uicorner.CornerRadius = UDim.new(0, 15)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Select GUI Library"
+title.TextScaled = true
+title.Parent = frame
+
+local libs = {"OrionLib", "KavoUI", "Roact", "Fusion"}
+for i, name in ipairs(libs) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.8, 0, 0, 35)
+	btn.Position = UDim2.new(0.1, 0, 0, 50 + (i - 1) * 45)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+	btn.Text = name
+	btn.Font = Enum.Font.GothamBold
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.TextScaled = true
+	btn.Parent = frame
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 10)
+
+	btn.MouseButton1Click:Connect(function()
+		menu:Destroy()
+		if name == "OrionLib" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/orionlib_demo.lua"))()
+		elseif name == "KavoUI" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/kavoui_demo.lua"))()
+		elseif name == "Roact" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/roact_demo.lua"))()
+		elseif name == "Fusion" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/chatgptroblox/ui-demo/main/fusion_demo.lua"))()
+		end
+	end)
 end
-
---// Venyx Function
-local function LoadVenyx()
-    FadeOutUI()
-    local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/kaidaofficial/Venyx-UI-Library/main/source.lua"))()
-    local venyx = Venyx.new("💀 Venyx UI Demo", 5013109572)
-
-    local page = venyx:addPage("Main", 5012544693)
-    local section = page:addSection("Main Controls")
-
-    section:addButton("Print Hello", function()
-        print("Hello from Venyx UI!")
-    end)
-
-    section:addToggle("Auto Farm", false, function(state)
-        print("Auto Farm:", state)
-    end)
-
-    section:addSlider("Speed", 16, 16, 100, function(value)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
-    end)
-
-    section:addKeybind("Toggle UI", Enum.KeyCode.RightControl, function()
-        venyx:toggle()
-    end)
-
-    local misc = venyx:addPage("Misc", 5012544693)
-    local miscSec = misc:addSection("Other")
-    miscSec:addButton("Destroy UI", function()
-        venyx:destroy()
-    end)
-
-    venyx:SelectPage(page, true)
-end
-
---// Kavo Function
-local function LoadKavo()
-    FadeOutUI()
-    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-    local Window = Library.CreateLib("🔥 Kavo UI Demo", "DarkTheme")
-
-    local Tab = Window:NewTab("Main")
-    local Section = Tab:NewSection("Main Controls")
-
-    Section:NewButton("Say Hello", "Print Hello", function()
-        print("Hello from Kavo UI!")
-    end)
-
-    Section:NewToggle("Auto Click", "Toggle Auto Clicker", function(state)
-        print("Auto Click:", state)
-    end)
-
-    Section:NewSlider("WalkSpeed", "Adjust WalkSpeed", 100, 16, function(s)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
-    end)
-
-    Section:NewKeybind("Toggle UI", "Toggle Interface", Enum.KeyCode.RightControl, function()
-        Library:ToggleUI()
-    end)
-
-    local Misc = Window:NewTab("Misc")
-    local Sec2 = Misc:NewSection("Other")
-    Sec2:NewButton("Destroy UI", "Remove UI from screen", function()
-        game.CoreGui:FindFirstChild("Kavo UI Library"):Destroy()
-    end)
-end
-
-VenyxBtn.MouseButton1Click:Connect(LoadVenyx)
-KavoBtn.MouseButton1Click:Connect(LoadKavo)
-
