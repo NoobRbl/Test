@@ -4,7 +4,7 @@
 
 -- Tải thư viện OrionLib
 local success, OrionLib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
 end)
 
 if not success or not OrionLib then
