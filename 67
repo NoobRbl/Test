@@ -1,560 +1,133 @@
+--// UNIVERSAL UI TESTER - Venyx + Kavo
+--// Made by ChatGPT (GPT-5)
 
-
--- 🪟 Cửa sổ chính
-local Window = Rayfield:CreateWindow({
-    Name = "NoobRoblox • Premium",
-    LoadingTitle = "Loading...",
-    LoadingSubtitle = "NoobRoblox script",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = nil,
-        FileName = "NoobRoblox0nTheTop"
-    }
-})
-
--- =========================================
--- 💎 Tab 1: STEAL OP
--- =========================================
-local StealTab = Window:CreateTab("STEAL OP 💎")
-
--- 🟢 SEND LINK
-StealTab:CreateButton({
-    Name = "Send Link 🔗",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "ServerNumberGui"
-        gui.ResetOnSpawn = false
-        gui.Parent = player:WaitForChild("PlayerGui")
-
-        local text = Instance.new("TextLabel")
-        text.AnchorPoint = Vector2.new(0.5, 0.5)
-        text.Position = UDim2.new(0.5, 0, 0.5, 0)
-        text.Size = UDim2.new(0.6, 0, 0.2, 0)
-        text.BackgroundTransparency = 1
-        text.TextColor3 = Color3.fromRGB(0, 255, 0)
-        text.Font = Enum.Font.GothamBold
-        text.TextScaled = true
-        text.Text = "SERVER: 0"
-        text.Parent = gui
-
-        local madeby = Instance.new("TextLabel")
-        madeby.AnchorPoint = Vector2.new(0.5, 1)
-        madeby.Position = UDim2.new(0.5, 0, 0.98, 0)
-        madeby.Size = UDim2.new(0.4, 0, 0.05, 0)
-        madeby.BackgroundTransparency = 1
-        madeby.TextColor3 = Color3.fromRGB(0, 255, 255)
-        madeby.Font = Enum.Font.GothamBold
-        madeby.TextScaled = true
-        madeby.Text = "Made by NoobRoblox"
-        madeby.Parent = gui
-
-        local target = math.random(1, 2390)
-        local duration = 5
-        local stepTime = duration / math.max(target, 1)
-
-        for i = 1, target do
-            text.Text = "SERVER: " .. tostring(i)
-            task.wait(stepTime)
-        end
-
-        text.Text = "SERVER: " .. tostring(target)
-        task.wait(1.5)
-        gui:Destroy()
+-- Xóa UI cũ nếu có
+for _,v in pairs(game.CoreGui:GetChildren()) do
+    if v.Name:match("Venyx") or v.Name:match("Kavo") or v.Name == "UI Selector" then
+        v:Destroy()
     end
-})
+end
 
--- 🔁 AUTO KICK
-StealTab:CreateToggle({
-    Name = "Auto Kick ⚙️",
-    CurrentValue = false,
-    Flag = "AutoKick",
-    Callback = function(state)
-        Rayfield:Notify({
-            Title = "Auto Kick",
-            Content = state and "enable ✔️" or "unable ❌",
-            Duration = 2
-        })
-    end
-})
+--// GUI Chọn Giao Diện
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UI Selector"
+ScreenGui.Parent = game.CoreGui
 
--- 🎯 MODE KICK
-StealTab:CreateDropdown({
-    Name = "Auto Kick 🎯",
-    Options = {"Normal (Shutdown)", "Fast (/kick)", "Instant (block)"},
-    CurrentOption = {"Normal (Shutdown)"},
-    Flag = "AutoKick",
-    Callback = function(option)
-        Rayfield:Notify({
-            Title = "Auto Kick",
-            Content = "Đã chọn: " .. option[1] .. " (chỉ hiển thị, không thực hiện)",
-            Duration = 2
-        })
-    end
-})
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 160)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -80)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+Frame.Active = true
+Frame.Draggable = true
+Frame.BackgroundTransparency = 0.1
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
--- 🔒 ANTI REJOIN
-StealTab:CreateToggle({
-    Name = "Anti Rejoin : AUTO BLOCK 🔒",
-    CurrentValue = false,
-    Flag = "AntiRejoin",
-    Callback = function(state)
-        Rayfield:Notify({
-            Title = "Anti Rejoin",
-            Content = state and "Đã bật AUTO BLOCK ✅" or "Đã tắt AUTO BLOCK ❌",
-            Duration = 2
-        })
-    end
-})
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "🧠 UI Style Selector"
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 20
+Title.Parent = Frame
 
--- 🚪 LEAVE
-StealTab:CreateButton({
-    Name = "Leave 🚪",
-    Callback = function()
-        Rayfield:Notify({Title = "NoobRoblox", Content = "Đang rời game...", Duration = 2})
-        task.wait(2)
-        pcall(function() game:Shutdown() end)
-    end
-})
+local VenyxBtn = Instance.new("TextButton")
+VenyxBtn.Size = UDim2.new(0.8, 0, 0, 40)
+VenyxBtn.Position = UDim2.new(0.1, 0, 0, 55)
+VenyxBtn.Text = "🌈 Open Venyx UI"
+VenyxBtn.Font = Enum.Font.Gotham
+VenyxBtn.TextSize = 18
+VenyxBtn.BackgroundColor3 = Color3.fromRGB(95, 85, 255)
+VenyxBtn.TextColor3 = Color3.new(1, 1, 1)
+VenyxBtn.Parent = Frame
+Instance.new("UICorner", VenyxBtn).CornerRadius = UDim.new(0, 8)
 
--- =========================================
--- ⚙️ Tab 2: STEAL MODE
--- =========================================
-local StealModeTab = Window:CreateTab("STEAL MODE ⚙️")
+local KavoBtn = Instance.new("TextButton")
+KavoBtn.Size = UDim2.new(0.8, 0, 0, 40)
+KavoBtn.Position = UDim2.new(0.1, 0, 0, 105)
+KavoBtn.Text = "🔥 Open Kavo UI"
+KavoBtn.Font = Enum.Font.Gotham
+KavoBtn.TextSize = 18
+KavoBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+KavoBtn.TextColor3 = Color3.new(1, 1, 1)
+KavoBtn.Parent = Frame
+Instance.new("UICorner", KavoBtn).CornerRadius = UDim.new(0, 8)
 
-StealModeTab:CreateToggle({
-    Name = "Bypass 30 SECOND",
-    CurrentValue = false,
-    Flag = "Bypass30Second",
-    Callback = function()
-        Rayfield:Notify({Title = "Bypass 30s", Content = "SUCCESS ✅", Duration = 2})
-    end
-})
+local TweenService = game:GetService("TweenService")
+local function FadeOutUI()
+    TweenService:Create(Frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 1, Position = UDim2.new(0.5, -150, 1, 200)}):Play()
+    task.wait(0.5)
+    ScreenGui:Destroy()
+end
 
-StealModeTab:CreateDropdown({
-    Name = "MODE",
-    Options = {
-        "KICK BASE DƯỚI 10M/S",
-        "KICK BASE DƯỚI 50M/S",
-        "KICK BASE DƯỚI 100M/S",
-        "KICK BASE DƯỚI 500M/S",
-        "KICK BASE DƯỚI 1B/S"
-    },
-    CurrentOption = {"KICK BASE DƯỚI 10M/S"},
-    Flag = "FilterBase",
-    Callback = function()
-        Rayfield:Notify({Title = "MODE", Content = "SUCCESS ✅", Duration = 2})
-    end
-})
+--// Venyx Function
+local function LoadVenyx()
+    FadeOutUI()
+    local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/kaidaofficial/Venyx-UI-Library/main/source.lua"))()
+    local venyx = Venyx.new("💀 Venyx UI Demo", 5013109572)
 
-StealModeTab:CreateToggle({
-    Name = "KICK ACC CLONE",
-    CurrentValue = false,
-    Flag = "KickAccClone",
-    Callback = function()
-        Rayfield:Notify({Title = "KICK ACC CLONE", Content = "SUCCESS ✅", Duration = 2})
-    end
-})
+    local page = venyx:addPage("Main", 5012544693)
+    local section = page:addSection("Main Controls")
 
-StealModeTab:CreateToggle({
-    Name = "ANTI REJOIN : AUTO BLOCK",
-    CurrentValue = false,
-    Flag = "AntiRejoinAutoBlock_Mode",
-    Callback = function()
-        Rayfield:Notify({Title = "ANTI REJOIN", Content = "SUCCESS ✅", Duration = 2})
-    end
-})
+    section:addButton("Print Hello", function()
+        print("Hello from Venyx UI!")
+    end)
 
-StealModeTab:CreateButton({
-    Name = "CRASH VICTIM 💥",
-    Callback = function()
-        Rayfield:Notify({Title = "CRASH VICTIM", Content = "SUCCESS ✅", Duration = 2})
-    end
-})
+    section:addToggle("Auto Farm", false, function(state)
+        print("Auto Farm:", state)
+    end)
 
--- =========================================
--- 🧠 Tab 3: DUPE BRAINROT
--- =========================================
-local DupeTab = Window:CreateTab("DUPE BRAINROT 🧠")
+    section:addSlider("Speed", 16, 16, 100, function(value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end)
 
--- 🧬 Name brainrot
-DupeTab:CreateInput({
-    Name = "Name brainrot 🧬",
-    PlaceholderText = "Nhập tên brainrot...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        Rayfield:Notify({
-            Title = "Name brainrot",
-            Content = "SUCCESS ✅️ (" .. text .. ")",
-            Duration = 2
-        })
-    end
-})
+    section:addKeybind("Toggle UI", Enum.KeyCode.RightControl, function()
+        venyx:toggle()
+    end)
 
--- 🧫 Mutation
-DupeTab:CreateDropdown({
-    Name = "Mutation 🧫",
-    Options = {
-        "Rainbow",
-        "Bloodrot",
-        "Galaxy",
-        "Lava",
-        "Gold",
-        "Diamond",
-        "Candy",
-        "Yin yang"
-    },
-    CurrentOption = {"Rainbow"},
-    Flag = "MutationType",
-    Callback = function(option)
-        Rayfield:Notify({
-            Title = "Mutation",
-            Content = "SUCCESS ✅️ (" .. option[1] .. ")",
-            Duration = 2
-        })
-    end
-})
+    local misc = venyx:addPage("Misc", 5012544693)
+    local miscSec = misc:addSection("Other")
+    miscSec:addButton("Destroy UI", function()
+        venyx:destroy()
+    end)
 
--- 🧠 Trait
-DupeTab:CreateInput({
-    Name = "Trait 🧠",
-    PlaceholderText = "Nhập trait...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        Rayfield:Notify({
-            Title = "Trait",
-            Content = "SUCCESS ✅️ (" .. text .. ")",
-            Duration = 2
-        })
-    end
-})
+    venyx:SelectPage(page, true)
+end
 
--- 🛡️ Anti Band
-DupeTab:CreateToggle({
-    Name = "Anti Band 🛡️",
-    CurrentValue = false,
-    Flag = "AntiBandToggle",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Anti Band",
-            Content = "SUCCESS ✅️",
-            Duration = 2
-        })
-    end
-})
+--// Kavo Function
+local function LoadKavo()
+    FadeOutUI()
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+    local Window = Library.CreateLib("🔥 Kavo UI Demo", "DarkTheme")
 
--- 💎 Dupe
-DupeTab:CreateButton({
-    Name = "Dupe 💎",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "DupeLoadingUI"
-        gui.ResetOnSpawn = false
-        gui.Parent = player:WaitForChild("PlayerGui")
+    local Tab = Window:NewTab("Main")
+    local Section = Tab:NewSection("Main Controls")
 
-        local bg = Instance.new("Frame")
-        bg.Size = UDim2.new(1, 0, 1, 0)
-        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        bg.BackgroundTransparency = 0.3
-        bg.Parent = gui
+    Section:NewButton("Say Hello", "Print Hello", function()
+        print("Hello from Kavo UI!")
+    end)
 
-        local label = Instance.new("TextLabel")
-        label.AnchorPoint = Vector2.new(0.5, 0.5)
-        label.Position = UDim2.new(0.5, 0, 0.5, -20)
-        label.Size = UDim2.new(0.4, 0, 0.1, 0)
-        label.BackgroundTransparency = 1
-        label.Font = Enum.Font.GothamBold
-        label.TextColor3 = Color3.fromRGB(0, 255, 255)
-        label.TextScaled = true
-        label.Text = "WAIT DUPING..."
-        label.Parent = bg
+    Section:NewToggle("Auto Click", "Toggle Auto Clicker", function(state)
+        print("Auto Click:", state)
+    end)
 
-        local percent = Instance.new("TextLabel")
-        percent.AnchorPoint = Vector2.new(0.5, 0.5)
-        percent.Position = UDim2.new(0.5, 0, 0.6, 0)
-        percent.Size = UDim2.new(0.2, 0, 0.1, 0)
-        percent.BackgroundTransparency = 1
-        percent.Font = Enum.Font.GothamBold
-        percent.TextColor3 = Color3.fromRGB(255, 255, 255)
-        percent.TextScaled = true
-        percent.Text = "0%"
-        percent.Parent = bg
+    Section:NewSlider("WalkSpeed", "Adjust WalkSpeed", 100, 16, function(s)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+    end)
 
-        local duration = 5
-        local steps = 100
-        for i = 1, steps do
-            percent.Text = i .. "%"
-            task.wait(duration / steps)
- 
-       end
+    Section:NewKeybind("Toggle UI", "Toggle Interface", Enum.KeyCode.RightControl, function()
+        Library:ToggleUI()
+    end)
 
-        gui:Destroy()
-        Rayfield:Notify({
-            Title = "Dupe",
-            Content = "SUCCESS ✅️",
-            Duration = 2
-        })
-    end
-})-- =========================================
--- 🧩 Tab 4
--- =========================================
-local Tab4 = Window:CreateTab("🧑‍💻SPAWM")
+    local Misc = Window:NewTab("Misc")
+    local Sec2 = Misc:NewSection("Other")
+    Sec2:NewButton("Destroy UI", "Remove UI from screen", function()
+        game.CoreGui:FindFirstChild("Kavo UI Library"):Destroy()
+    end)
+end
 
--- 🧠 Brainrot (textbox)
-Tab4:CreateInput({
-    Name = "Brainrot 🧠",
-    PlaceholderText = "Nhập tên brainrot...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        Rayfield:Notify({
-            Title = "Brainrot",
-            Content = "SUCCESS ✅️ (" .. text .. ")",
-            Duration = 2
-        })
-    end
-})
+VenyxBtn.MouseButton1Click:Connect(LoadVenyx)
+KavoBtn.MouseButton1Click:Connect(LoadKavo)
 
--- ⚡ Spawn (button)
-Tab4:CreateButton({
-    Name = "Spawn ⚡",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Spawn",
-            Content = "SUCCESS ✅️",
-            Duration = 2
-        })
-    end
-})
-
--- 🎁 Lucky Block (textbox)
-Tab4:CreateInput({
-    Name = "Lucky Block 🎁",
-    PlaceholderText = "Nhập tên lucky block...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        Rayfield:Notify({
-            Title = "Lucky Block",
-            Content = "SUCCESS ✅️ (" .. text .. ")",
-            Duration = 2
-        })
-    end
-})
-
--- 🌟 Spawn (button)
-Tab4:CreateButton({
-    Name = "Spawn 🌟",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Spawn",
-            Content = "SUCCESS ✅️",
-            Duration = 2
-        })
-    end
-})
-
--- 🛡️ Anti Band (toggle)
-Tab4:CreateToggle({
-    Name = "Anti Band 🛡️",
-    
-CurrentValue = false,
-    Flag = "AntiBand_Tab4",
-    Callback = function(state)
-        Rayfield:Notify({
-            Title = "Anti Band",
-            Content = "SUCCESS ✅️",
-            Duration = 2
-        })
-    end
-})-- =========================================
--- 🍬 Tab: EVENT
--- =========================================
-local EventTab = Window:CreateTab("🍬EVENT")
-
--- 🧬 Mutation Event (Dropdown)
-EventTab:CreateDropdown({
-    Name = "Mutation Event 🧬",
-    Options = {"Gold", "Diamond", "Rainbow", "Candy", "Lava", "Bloodrot", "Yin yang", "Galaxy"},
-    CurrentOption = {"Gold"},
-    Flag = "MutationEvent",
-    Callback = function(option)
-        Rayfield:Notify({
-            Title = "Mutation Event",
-            Content = "Đã chọn: " .. option[1] .. " ✅️🟢",
-            Duration = 2
-        })
-    end
-})
-
--- ⚙️ Execute All Event
-EventTab:CreateButton({
-    Name = "Execute All Event ⚙️",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Execute All Event",
-            Content = "SUCCESS ✅️🟢",
-            Duration = 2
-        })
-    end
-})
-
--- ⛔ Stop Event
-EventTab:CreateButton({
-    Name = "Stop Event ⛔",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Stop Event",
-            Content = "SUCCESS ✅️🟢",
-            Duration = 2
-        })
-    end
-})
-
--- ⏰ Time (Textbox)
-EventTab:CreateInput({
-    Name = "Time ⏰",
-    PlaceholderText = "Nhập thời gian...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        Rayfield:Notify({
-            Title = "Time",
-            Content = "Đã đặt: " .. text .. " ✅️🟢",
-            Duration = 2
-        })
-    end
-})
-
--- 🚀 Apply Time
-EventTab:CreateButton({
-    Name = "Apply Time 🚀",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Apply Time",
-            Content = "SUCCESS ✅️🟢",
-            Duration = 2
-        })
-    end
-})-- =========================================
--- 🍀 Tab: LUCKY SERVER
--- =========================================
-local LuckyTab = Window:CreateTab("🍀LUCKY SERVER")
-
--- Dropdown: LUCKY
-local LuckyDropdown = LuckyTab:CreateDropdown({
-    Name = "LUCKY",
-    Options = {"X2 luck", "X4 luck", "X6 luck", "X8 luck", "💀x10 luck"},
-    CurrentOption = "X2 luck",
-    Flag = "LuckyMode",
-    Callback = function(Option)
-        Rayfield:Notify({
-            Title = "SUCCESS✅️🟢",
-            Content = "Selected: " .. Option,
-            Duration = 2
-        })
-    end,
-})
-
--- Dropdown: Mode
-local ModeDropdown = LuckyTab:CreateDropdown({
-    Name = "Mode",
-    Options = {"Robux", "No robux (⚠️ANTI BAND)"},
-    CurrentOption = "Robux",
-    Flag = "ModeSelect",
-    Callback = function(Option)
-        Rayfield:Notify({
-            Title = "SUCCESS✅️🟢",
-            Content = "Mode: " .. Option,
-            Duration = 2
-        })
-    end,
-})
-
--- Textbox: Time
-LuckyTab:CreateInput({
-    Name = "Time",
-    PlaceholderText = "Nhập thời gian...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Text)
-        Rayfield:Notify({
-            Title = "SUCCESS✅️🟢",
-            Content = "Time set to: " .. Text,
-            Duration = 2
-        })
-    end,
-})
-
--- Button: Apply Time
-LuckyTab:CreateButton({
-    Name = "Apply Time",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "SUCCESS✅️🟢",
-            Content 
-
-
-
-= "Time applied successfully!",
-            Duration = 2
-        })
-    end,
-})
-
--- Button: Execute lucky
-LuckyTab:CreateButton({
-    Name = "Execute Lucky",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "SUCCESS✅️🟢",
-            Content = "Lucky Event executed!",
-            Duration = 2
-        })
-    end,
-})
-
-
-
--- =========================================
--- 🧠 Tab: BRAINROT DEALER
--- =========================================
-local DealerTab = Window:CreateTab("🧠 Brainrot Dealer")
-
--- 🔁 Auto Buy Brainrot Dealer
-DealerTab:CreateToggle({
-    Name = "Auto Buy Brainrot Dealer 🔁",
-    CurrentValue = false,
-    Flag = "AutoBuyDealer",
-    Callback = function(state)
-        Rayfield:Notify({
-            Title = "Auto Buy Brainrot Dealer",
-            Content = state and "Đã bật ✅" or "Đã tắt ❌",
-            Duration = 2
-        })
-    end
-})
-
--- 💎 Brainrot Dealer (Dropdown chọn rarity)
-DealerTab:CreateDropdown({
-    Name = "Brainrot Dealer 💎",
-    Options = {"Brainrot god", "Secret"},
-    CurrentOption = {"Brainrot god"},
-    Flag = "BrainrotDealerRarity",
-    Callback = function(option)
-        Rayfield:Notify({
-            Title = "Brainrot Dealer",
-            Content = "Đã chọn: " .. option[1] .. " ✅",
-            Duration = 2
-        })
-    end
-})
-
--- 🛒 Buy Now (nút mua ngay)
-DealerTab:CreateButton({
-    Name = "Buy Now 🛒",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "Brainrot Dealer",
-            Content = "Đã mua thành công ✅",
-            Duration = 2
-        })
-    end
-})
