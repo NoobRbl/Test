@@ -1,5 +1,5 @@
 --// UNIVERSAL UI TESTER - Venyx + Kavo
---// Made by ChatGPT (GPT-5)
+--// Made by ChatGPT (GPT-5) cr7
 
 -- Xóa UI cũ nếu có
 for _,v in pairs(game.CoreGui:GetChildren()) do
