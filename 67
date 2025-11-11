@@ -1,4 +1,4 @@
---// UI Hub Demo – OrionLib version
+--// UI Hub Demo – OrionLib version3.0
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
 local Window = OrionLib:MakeWindow({
     Name = "Demo UI Hub",
