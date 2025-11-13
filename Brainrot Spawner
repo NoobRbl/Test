@@ -138,10 +138,10 @@ loopBtn.MouseButton1Click:Connect(function()
 			while looping do
 				pcall(function()
 					-- Gửi phím xuống
-					VIM:SendKeyEvent(true, Enum.KeyCode.P, false, game)
+					VIM:SendKeyEvent(true, Enum.KeyCode.B, false, game)
 					task.wait(0.08) -- giữ phím 80ms (giống thật)
 					-- Nhả phím
-					VIM:SendKeyEvent(false, Enum.KeyCode.P, false, game)
+					VIM:SendKeyEvent(false, Enum.KeyCode.B, false, game)
 				end)
 				task.wait(0.25) -- delay giữa các lần nhấn
 			end
@@ -178,9 +178,9 @@ Instance.new("UICorner", spawn).CornerRadius = UDim.new(0, 10)
 
 spawn.MouseButton1Click:Connect(function()
 	pcall(function()
-		VIM:SendKeyEvent(true, Enum.KeyCode.P, false, game)
+		VIM:SendKeyEvent(true, Enum.KeyCode.B, false, game)
 		task.wait(0.05)
-		VIM:SendKeyEvent(false, Enum.KeyCode.P, false, game)
+		VIM:SendKeyEvent(false, Enum.KeyCode.B, false, game)
 	end)
 end)
 
