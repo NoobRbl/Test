@@ -1,105 +1,243 @@
---// 🧠 OrionLib UI Hub – Final Stable Versionhaha
---// Safe & Compatible – by ChatGPT
+--// PANEL HUB GUI (Custom Version v2.6 - Free Move Toggle Edition)
+--// Tác giả: GPT-5
 
--- Tải thư viện OrionLib
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/OrionLibrary/Orion/main/source.lua"))()
-if not OrionLib then
-	warn("❌ Không thể tải OrionLib. Kiểm tra kết nối internet hoặc thử lại sau.")
-	return
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- Xóa GUI cũ nếu có
+if PlayerGui:FindFirstChild("BrainrotHub") then
+	PlayerGui.BrainrotHub:Destroy()
 end
 
-------------------------------------------------------------
--- ⚙️ Tạo cửa sổ chính
-------------------------------------------------------------
-local Window = OrionLib:MakeWindow({
-	Name = "🧠 Demo UI Hub",
-	HidePremium = false,
-	SaveConfig = true,
-	ConfigFolder = "DemoUIHubConfig",
-	IntroEnabled = true,
-	IntroText = "Welcome to Demo UI Hub!"
-})
+-- GUI chính
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "BrainrotHub"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-------------------------------------------------------------
--- 🌟 Tab Chính (Main)
-------------------------------------------------------------
-local MainTab = Window:MakeTab({
-	Name = "Main",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
+-- Nút bật/tắt panel
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
+toggleBtn.Text = "⚡"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 22
+toggleBtn.Active = true
+toggleBtn.Draggable = true
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
 
-MainTab:AddParagraph("Thông tin", "Đây là bản demo OrionLib UI hoàn chỉnh.\nBạn có thể chỉnh tốc độ đi, bật/tắt Auto, hoặc thử các nút bên dưới.")
+local isOpen = false
+toggleBtn.MouseButton1Click:Connect(function()
+    if isOpen then
+        hidePanel()
+    else
+        showPanel()
+    end
+    isOpen = not isOpen
+end)
 
-MainTab:AddButton({
-	Name = "👋 Say Hello",
-	Callback = function()
-		OrionLib:MakeNotification({
-			Name = "Hello!",
-			Content = "Xin chào từ Demo UI Hub 💡",
-			Image = "rbxassetid://4483345998",
-			Time = 3
-		})
-		print("[OrionLib Hub] Hello from Demo UI Hub!")
+-- Hiệu ứng hover
+toggleBtn.MouseEnter:Connect(function()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 120)}):Play()
+end)
+toggleBtn.MouseLeave:Connect(function()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+end)
+
+-- Kéo tự do
+local dragging = false
+local dragStart, startPos
+
+toggleBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = toggleBtn.Position
 	end
-})
+end)
 
-MainTab:AddToggle({
-	Name = "🌀 Auto Example",
-	Default = false,
-	Callback = function(State)
-		print("Auto Example:", State)
-		OrionLib:MakeNotification({
-			Name = "Auto Example",
-			Content = "Trạng thái: " .. tostring(State),
-			Time = 2
-		})
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		TweenService:Create(toggleBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		}):Play()
 	end
-})
+end)
 
-MainTab:AddSlider({
-	Name = "🏃 WalkSpeed",
-	Min = 16,
-	Max = 100,
-	Default = 16,
-	Color = Color3.fromRGB(255, 170, 0),
-	Increment = 1,
-	ValueName = "Speed",
-	Callback = function(Value)
-		local plr = game.Players.LocalPlayer
-		if plr and plr.Character and plr.Character:FindFirstChildWhichIsA("Humanoid") then
-			plr.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = Value
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+--// FRAME CHÍNH
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0, 420, 0, 360)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -180)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Visible = false
+mainFrame.ClipsDescendants = true -- tránh rớt nút ra ngoài
+
+local corner = Instance.new("UICorner", mainFrame)
+corner.CornerRadius = UDim.new(0, 15)
+
+-- Hiệu ứng hiện/ẩn
+local function showPanel()
+	mainFrame.Visible = true
+	mainFrame.BackgroundTransparency = 1
+	mainFrame.Size = UDim2.new(0, 10, 0, 10)
+	TweenService:Create(mainFrame, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 420, 0, 360),
+		BackgroundTransparency = 0
+	}):Play()
+end
+
+local function hidePanel()
+	TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Size = UDim2.new(0, 10, 0, 10),
+		BackgroundTransparency = 1
+	}):Play()
+	task.wait(0.4)
+	mainFrame.Visible = false
+end
+
+local opened = false
+toggleBtn.MouseButton1Click:Connect(function()
+	if opened then
+		hidePanel()
+	else
+		showPanel()
+	end
+	opened = not opened
+end)
+
+--// TIÊU ĐỀ
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1, -40, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "🧠 Brainrot Panel Hub"
+title.TextColor3 = Color3.fromRGB(200, 200, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+--// NÚT CLOSE
+local closeBtn = Instance.new("TextButton", mainFrame)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 8)
+closeBtn.Text = "❌"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 20
+closeBtn.BackgroundTransparency = 1
+closeBtn.TextColor3 = Color3.fromRGB(180, 100, 100)
+
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(255, 80, 80)}):Play()
+end)
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(180, 100, 100)}):Play()
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	hidePanel()
+end)
+
+-- Thanh chia
+local divider = Instance.new("Frame", mainFrame)
+divider.Size = UDim2.new(1, -20, 0, 1)
+divider.Position = UDim2.new(0, 10, 0, 42)
+divider.BackgroundColor3 = Color3.fromRGB(90, 60, 180)
+
+--// KHUNG NÚT
+local buttonsFrame = Instance.new("ScrollingFrame", mainFrame)
+buttonsFrame.Size = UDim2.new(1, 0, 1, -60)
+buttonsFrame.Position = UDim2.new(0, 0, 0, 50)
+buttonsFrame.BackgroundTransparency = 1
+buttonsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+buttonsFrame.ScrollBarThickness = 4
+buttonsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local listLayout = Instance.new("UIListLayout", buttonsFrame)
+listLayout.Padding = UDim.new(0, 10)
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+--// HÀM TẠO NÚT
+local function createButton(name, color, callback)
+	local btn = Instance.new("TextButton", buttonsFrame)
+	btn.Size = UDim2.new(0, 350, 0, 40)
+	btn.Text = name
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 18
+	btn.BackgroundColor3 = color
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.AutoButtonColor = false
+
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 10)
+
+	-- Hover
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {
+			BackgroundColor3 = color:Lerp(Color3.fromRGB(255,255,255), 0.2)
+		}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {
+			BackgroundColor3 = color
+		}):Play()
+	end)
+
+	-- Hiệu ứng xử lý %
+	btn.MouseButton1Click:Connect(function()
+		btn.Text = "Processing..."
+		local progress = 0
+		while progress < 100 do
+			progress += math.random(5, 10)
+			if progress > 100 then progress = 100 end
+			btn.Text = name .. " - " .. progress .. "%"
+			task.wait(math.random(0.08, 0.18))
 		end
-	end
-})
+		btn.Text = "✅ Done!"
+		task.wait(0.8)
+		btn.Text = name
+		if callback then
+			pcall(callback)
+		end
+	end)
+end
 
-MainTab:AddKeybind({
-	Name = "🧩 Toggle UI",
-	Default = Enum.KeyCode.RightControl,
-	Callback = function()
-		OrionLib:Toggle()
-	end
-})
+-- Nút chính
+createButton("Brainrot Dealer", Color3.fromRGB(80, 60, 200))
+createButton("Duplicate", Color3.fromRGB(60, 140, 200))
+createButton("Spawn Brainrot", Color3.fromRGB(130, 90, 240))
+createButton("Execute All Event", Color3.fromRGB(200, 90, 90))
+createButton("3 Roads", Color3.fromRGB(100, 190, 120))
+createButton("Buff Lucky x10", Color3.fromRGB(230, 180, 60))
 
-------------------------------------------------------------
--- ⚙️ Tab Cài đặt (Settings)
-------------------------------------------------------------
-local SettingsTab = Window:MakeTab({
-	Name = "Settings",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
-
-SettingsTab:AddButton({
-	Name = "🗑️ Đóng giao diện (Destroy UI)",
-	Callback = function()
-		OrionLib:Destroy()
-	end
-})
-
-------------------------------------------------------------
--- 🚀 Khởi tạo OrionLib
-------------------------------------------------------------
-OrionLib:Init()
-
-
+-- Footer
+local footer = Instance.new("TextLabel", mainFrame)
+footer.Size = UDim2.new(1, 0, 0, 25)
+footer.Position = UDim2.new(0, 0, 1, -25)
+footer.BackgroundTransparency = 1
+footer.Text = "Made by NoobRoblox | v3.0"
+footer.Font = Enum.Font.Gotham
+footer.TextSize = 14
+footer.TextColor3 = Color3.fromRGB(120, 120, 180)
+footer.TextTransparency = 0.1
+footer.TextXAlignment = Enum.TextXAlignment.Center
