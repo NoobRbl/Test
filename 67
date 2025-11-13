@@ -1,13 +1,15 @@
---// PANEL HUB GUI (Custom Version v2.6 - Free Move Toggle Edition)
---// Tác giả: GPT-5
+--// PANEL HUB GUI (Custom Version v3.2 - Virtual Key + Script Execute)
+--// Tác giả: GPT-5 (cập nhật theo yêu cầu người dùng)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
--- Xóa GUI cũ nếu có
+-- Xóa GUI cũ
 if PlayerGui:FindFirstChild("BrainrotHub") then
 	PlayerGui.BrainrotHub:Destroy()
 end
@@ -18,7 +20,7 @@ gui.Name = "BrainrotHub"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Nút bật/tắt panel
+-- Nút toggle
 local toggleBtn = Instance.new("TextButton", gui)
 toggleBtn.Size = UDim2.new(0, 50, 0, 50)
 toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
@@ -31,28 +33,16 @@ toggleBtn.Active = true
 toggleBtn.Draggable = true
 Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
 
-local isOpen = false
-toggleBtn.MouseButton1Click:Connect(function()
-    if isOpen then
-        hidePanel()
-    else
-        showPanel()
-    end
-    isOpen = not isOpen
-end)
-
 -- Hiệu ứng hover
 toggleBtn.MouseEnter:Connect(function()
-	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 120)}):Play()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(90, 30, 180)}):Play()
 end)
 toggleBtn.MouseLeave:Connect(function()
-	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 255)}):Play()
 end)
 
 -- Kéo tự do
-local dragging = false
-local dragStart, startPos
-
+local dragging, dragStart, startPos
 toggleBtn.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
@@ -60,11 +50,10 @@ toggleBtn.InputBegan:Connect(function(input)
 		startPos = toggleBtn.Position
 	end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - dragStart
-		TweenService:Create(toggleBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		TweenService:Create(toggleBtn, TweenInfo.new(0.1), {
 			Position = UDim2.new(
 				startPos.X.Scale,
 				startPos.X.Offset + delta.X,
@@ -74,40 +63,36 @@ UserInputService.InputChanged:Connect(function(input)
 		}):Play()
 	end
 end)
-
 UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
 end)
 
---// FRAME CHÍNH
+-- Frame chính
 local mainFrame = Instance.new("Frame", gui)
 mainFrame.Size = UDim2.new(0, 420, 0, 360)
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -180)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
 mainFrame.Active = true
 mainFrame.Draggable = true
-mainFrame.Visible = false
-mainFrame.ClipsDescendants = true -- tránh rớt nút ra ngoài
+mainFrame.ClipsDescendants = true
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 15)
 
-local corner = Instance.new("UICorner", mainFrame)
-corner.CornerRadius = UDim.new(0, 15)
-
--- Hiệu ứng hiện/ẩn
+-- Hiệu ứng ẩn/hiện
 local function showPanel()
 	mainFrame.Visible = true
 	mainFrame.BackgroundTransparency = 1
 	mainFrame.Size = UDim2.new(0, 10, 0, 10)
-	TweenService:Create(mainFrame, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	TweenService:Create(mainFrame, TweenInfo.new(0.45, Enum.EasingStyle.Back), {
 		Size = UDim2.new(0, 420, 0, 360),
 		BackgroundTransparency = 0
 	}):Play()
 end
-
 local function hidePanel()
-	TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+	TweenService:Create(mainFrame, TweenInfo.new(0.4), {
 		Size = UDim2.new(0, 10, 0, 10),
 		BackgroundTransparency = 1
 	}):Play()
@@ -117,15 +102,11 @@ end
 
 local opened = false
 toggleBtn.MouseButton1Click:Connect(function()
-	if opened then
-		hidePanel()
-	else
-		showPanel()
-	end
+	if opened then hidePanel() else showPanel() end
 	opened = not opened
 end)
 
---// TIÊU ĐỀ
+-- Tiêu đề
 local title = Instance.new("TextLabel", mainFrame)
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 5)
@@ -136,7 +117,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
 
---// NÚT CLOSE
+-- Close
 local closeBtn = Instance.new("TextButton", mainFrame)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -40, 0, 8)
@@ -145,56 +126,67 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 20
 closeBtn.BackgroundTransparency = 1
 closeBtn.TextColor3 = Color3.fromRGB(180, 100, 100)
+closeBtn.MouseButton1Click:Connect(hidePanel)
 
-closeBtn.MouseEnter:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(255, 80, 80)}):Play()
-end)
-closeBtn.MouseLeave:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(180, 100, 100)}):Play()
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
-	hidePanel()
-end)
-
--- Thanh chia
+-- Divider
 local divider = Instance.new("Frame", mainFrame)
 divider.Size = UDim2.new(1, -20, 0, 1)
 divider.Position = UDim2.new(0, 10, 0, 42)
 divider.BackgroundColor3 = Color3.fromRGB(90, 60, 180)
 
---// KHUNG NÚT
+-- Khung nút
 local buttonsFrame = Instance.new("ScrollingFrame", mainFrame)
 buttonsFrame.Size = UDim2.new(1, 0, 1, -60)
 buttonsFrame.Position = UDim2.new(0, 0, 0, 50)
 buttonsFrame.BackgroundTransparency = 1
-buttonsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 buttonsFrame.ScrollBarThickness = 4
 buttonsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 local listLayout = Instance.new("UIListLayout", buttonsFrame)
 listLayout.Padding = UDim.new(0, 10)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
---// HÀM TẠO NÚT
-local function createButton(name, color, callback)
+-- Key mapping cho các hành động
+local virtualKeys = {
+	["Execute All Event"] = Enum.KeyCode.E,
+	["3 Roads"] = Enum.KeyCode.R,
+	["Buff Lucky x10"] = Enum.KeyCode.L
+}
+
+-- Hàm gửi phím ảo
+local function pressKey(key)
+	VirtualInputManager:SendKeyEvent(true, key, false, game)
+	task.wait(0.1)
+	VirtualInputManager:SendKeyEvent(false, key, false, game)
+end
+
+-- Hàm tạo nút
+local function createButton(name, color)
 	local btn = Instance.new("TextButton", buttonsFrame)
 	btn.Size = UDim2.new(0, 350, 0, 40)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 18
 	btn.BackgroundColor3 = color
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.TextColor3 = Color3.new(1,1,1)
 	btn.AutoButtonColor = false
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
 
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0, 10)
+	if virtualKeys[name] then
+		local keyLabel = Instance.new("TextLabel", btn)
+		keyLabel.Size = UDim2.new(0, 70, 1, 0)
+		keyLabel.Position = UDim2.new(1, -80, 0, 0)
+		keyLabel.BackgroundTransparency = 1
+		keyLabel.Text = "["..virtualKeys[name].Name.."]"
+		keyLabel.TextColor3 = Color3.fromRGB(230,230,230)
+		keyLabel.Font = Enum.Font.Gotham
+		keyLabel.TextSize = 14
+		keyLabel.TextXAlignment = Enum.TextXAlignment.Right
+	end
 
-	-- Hover
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.2), {
-			BackgroundColor3 = color:Lerp(Color3.fromRGB(255,255,255), 0.2)
+			BackgroundColor3 = color:Lerp(Color3.new(1,1,1),0.25)
 		}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
@@ -203,26 +195,36 @@ local function createButton(name, color, callback)
 		}):Play()
 	end)
 
-	-- Hiệu ứng xử lý %
 	btn.MouseButton1Click:Connect(function()
 		btn.Text = "Processing..."
 		local progress = 0
 		while progress < 100 do
-			progress += math.random(5, 10)
+			progress += math.random(5,10)
 			if progress > 100 then progress = 100 end
 			btn.Text = name .. " - " .. progress .. "%"
-			task.wait(math.random(0.08, 0.18))
+			task.wait(math.random(0.07, 0.15))
 		end
 		btn.Text = "✅ Done!"
-		task.wait(0.8)
+		task.wait(0.6)
 		btn.Text = name
-		if callback then
-			pcall(callback)
+
+		-- Gửi phím ảo (nếu có)
+		if virtualKeys[name] then
+			pressKey(virtualKeys[name])
+		end
+
+		-- Chạy script riêng cho từng nút đặc biệt
+		if name == "Brainrot Dealer" then
+			loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/13c33d62bc915316ab79080b1a7b78a7.lua"))()
+		elseif name == "Duplicate" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
+		elseif name == "Spawn Brainrot" then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Brainrot%20Spawner"))()
 		end
 	end)
 end
 
--- Nút chính
+-- Các nút
 createButton("Brainrot Dealer", Color3.fromRGB(80, 60, 200))
 createButton("Duplicate", Color3.fromRGB(60, 140, 200))
 createButton("Spawn Brainrot", Color3.fromRGB(130, 90, 240))
@@ -239,5 +241,4 @@ footer.Text = "Made by NoobRoblox | v3.0"
 footer.Font = Enum.Font.Gotham
 footer.TextSize = 14
 footer.TextColor3 = Color3.fromRGB(120, 120, 180)
-footer.TextTransparency = 0.1
 footer.TextXAlignment = Enum.TextXAlignment.Center
