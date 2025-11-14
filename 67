@@ -2,12 +2,11 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
--- VirtualInputManager may be restricted in some environments; keep as-is if your exploit supports it
+-- VirtualInputManager (nếu exploit hỗ trợ)
 local success, VirtualInputManager = pcall(function()
 	return game:GetService("VirtualInputManager")
 end)
 if not success then
-	-- VirtualInputManager unavailable; Virtual key presses will be skipped gracefully
 	VirtualInputManager = nil
 end
 
@@ -69,7 +68,6 @@ UserInputService.InputChanged:Connect(function(input)
 			startPos.Y.Scale,
 			startPos.Y.Offset + delta.Y
 		)
-		-- Smooth move
 		TweenService:Create(toggleBtn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Position = newPos
 		}):Play()
@@ -81,36 +79,80 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
--- Frame chính
+-- Frame chính (Frosted Glass + Neon)
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 420, 0, 360)
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -180)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+mainFrame.BackgroundTransparency = 0.35
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = gui
+
+-- Bo góc
 local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 15)
+mainCorner.CornerRadius = UDim.new(0, 18)
 mainCorner.Parent = mainFrame
 
--- Hiệu ứng ẩn/hiện
+-- UIGradient Frosted Glass
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,230))
+})
+gradient.Rotation = 45
+gradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.15),
+	NumberSequenceKeypoint.new(1, 0.35)
+}
+gradient.Parent = mainFrame
+
+-- Neon Glow
+local glow = Instance.new("UIStroke")
+glow.Thickness = 2.8
+glow.Color = Color3.fromRGB(140, 60, 255)
+glow.Transparency = 0.15
+glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+glow.Parent = mainFrame
+
+-- Blur nhẹ phía sau
+local blur = Instance.new("BlurEffect")
+blur.Size = 4
+blur.Parent = workspace.CurrentCamera
+
+-- Animation mở/đóng panel
 local function showPanel()
 	mainFrame.Visible = true
 	mainFrame.BackgroundTransparency = 1
-	mainFrame.Size = UDim2.new(0, 10, 0, 10)
-	TweenService:Create(mainFrame, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	mainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+	mainFrame.Size = UDim2.new(0, 390, 0, 330)
+	glow.Transparency = 1
+
+	TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0, 420, 0, 360),
-		BackgroundTransparency = 0
+		Position = UDim2.new(0.5, -210, 0.5, -180),
+		BackgroundTransparency = 0.35
+	}):Play()
+
+	TweenService:Create(glow, TweenInfo.new(0.45), {
+		Transparency = 0.15
 	}):Play()
 end
+
 local function hidePanel()
-	local tween = TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Size = UDim2.new(0, 10, 0, 10),
+	local tween = TweenService:Create(mainFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+		Size = UDim2.new(0, 360, 0, 300),
+		Position = UDim2.new(0.5, -180, 0.5, -160),
 		BackgroundTransparency = 1
 	})
+
+	TweenService:Create(glow, TweenInfo.new(0.25), {
+		Transparency = 1
+	}):Play()
+
 	tween:Play()
 	tween.Completed:Wait()
 	mainFrame.Visible = false
@@ -131,7 +173,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = "🧠 Brainrot Panel Hub"
+title.Text = "🧠 Steal A Brainrot Hub"
 title.TextColor3 = Color3.fromRGB(200, 200, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 22
@@ -157,7 +199,7 @@ divider.Position = UDim2.new(0, 10, 0, 42)
 divider.BackgroundColor3 = Color3.fromRGB(90, 60, 180)
 divider.Parent = mainFrame
 
--- Scrolling buttons frame
+-- Scrolling frame
 local buttonsFrame = Instance.new("ScrollingFrame")
 buttonsFrame.Size = UDim2.new(1, 0, 1, -60)
 buttonsFrame.Position = UDim2.new(0, 0, 0, 50)
@@ -171,18 +213,15 @@ listLayout.Padding = UDim.new(0, 10)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 listLayout.Parent = buttonsFrame
 
--- Key mapping cho các hành động
+-- Key mapping (đã bỏ Buff Lucky)
 local virtualKeys = {
 	["Execute All Event"] = Enum.KeyCode.E,
-	["3 Roads"] = Enum.KeyCode.R.
+	["3 Roads"] = Enum.KeyCode.R
 }
 
--- Hàm gửi phím ảo (nếu VirtualInputManager tồn tại)
+-- Hàm gửi phím ảo
 local function pressKey(key)
-	if not VirtualInputManager then
-		return
-	end
-	-- VirtualInputManager API differs by environment; this pattern works in many exploit runtimes
+	if not VirtualInputManager then return end
 	pcall(function()
 		VirtualInputManager:SendKeyEvent(true, key, false, game)
 		task.wait(0.25)
@@ -190,7 +229,7 @@ local function pressKey(key)
 	end)
 end
 
--- Hàm tạo nút
+-- Tạo nút
 local function createButton(name, color)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 350, 0, 40)
@@ -201,6 +240,7 @@ local function createButton(name, color)
 	btn.TextColor3 = Color3.new(1,1,1)
 	btn.AutoButtonColor = false
 	btn.Parent = buttonsFrame
+
 	local btnCorner = Instance.new("UICorner")
 	btnCorner.CornerRadius = UDim.new(0,10)
 	btnCorner.Parent = btn
@@ -234,6 +274,7 @@ local function createButton(name, color)
 		local originalText = btn.Text
 		btn.Text = "Processing..."
 		local progress = 0
+
 		while progress < 100 do
 			progress = progress + math.random(5,10)
 			if progress > 100 then progress = 100 end
@@ -245,32 +286,28 @@ local function createButton(name, color)
 		task.wait(0.6)
 		btn.Text = originalText
 
-		-- Gửi phím ảo (nếu có)
+		-- Gửi phím ảo nếu có
 		if virtualKeys[name] then
 			pressKey(virtualKeys[name])
 		end
 
-		-- Chạy script riêng cho từng nút đặc biệt
+		-- Chạy scripts
 		if name == "Brainrot Dealer" then
 			pcall(function()
 				loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/13c33d62bc915316ab79080b1a7b78a7.lua"))()
 			end)
-
 		elseif name == "Duplicate" then
 			pcall(function()
 				loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
 			end)
-
 		elseif name == "Spawn Brainrot" then
 			pcall(function()
 				loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Brainrot%20Spawner"))()
 			end)
-
 		elseif name == "Buff Lucky x10" then
 			pcall(function()
 				loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
 			end)
-
 		end
 	end)
 end
