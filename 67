@@ -2,31 +2,27 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
--- VirtualInputManager (nếu exploit hỗ trợ)
 local success, VirtualInputManager = pcall(function()
-	return game:GetService("VirtualInputManager")
+    return game:GetService("VirtualInputManager")
 end)
 if not success then
-	VirtualInputManager = nil
+    VirtualInputManager = nil
 end
 
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
--- Xóa GUI cũ
 local old = PlayerGui:FindFirstChild("BrainrotHub")
 if old then
-	old:Destroy()
+    old:Destroy()
 end
 
--- GUI chính
 local gui = Instance.new("ScreenGui")
 gui.Name = "BrainrotHub"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = PlayerGui
 
--- Nút toggle
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(0, 50, 0, 50)
 toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
@@ -42,44 +38,41 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(1, 0)
 toggleCorner.Parent = toggleBtn
 
--- Hiệu ứng hover
 toggleBtn.MouseEnter:Connect(function()
-	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(90, 30, 180)}):Play()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(90, 30, 180)}):Play()
 end)
 toggleBtn.MouseLeave:Connect(function()
-	TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 255)}):Play()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 255)}):Play()
 end)
 
--- Kéo tự do (drag)
 local dragging, dragStart, startPos
 toggleBtn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = toggleBtn.Position
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+    end
 end)
 UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		local newPos = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-		TweenService:Create(toggleBtn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Position = newPos
-		}):Play()
-	end
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        TweenService:Create(toggleBtn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = newPos
+        }):Play()
+    end
 end)
 UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
 end)
 
--- Frame chính (Frosted Glass + Neon)
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 420, 0, 360)
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -180)
@@ -92,25 +85,22 @@ mainFrame.Draggable = true
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = gui
 
--- Bo góc
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 18)
 mainCorner.Parent = mainFrame
 
--- UIGradient Frosted Glass
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,230))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,230))
 })
 gradient.Rotation = 45
 gradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0, 0.15),
-	NumberSequenceKeypoint.new(1, 0.35)
+    NumberSequenceKeypoint.new(0, 0.15),
+    NumberSequenceKeypoint.new(1, 0.35)
 }
 gradient.Parent = mainFrame
 
--- Neon Glow
 local glow = Instance.new("UIStroke")
 glow.Thickness = 2.8
 glow.Color = Color3.fromRGB(140, 60, 255)
@@ -118,57 +108,54 @@ glow.Transparency = 0.15
 glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 glow.Parent = mainFrame
 
--- Blur nhẹ phía sau
 local blur = Instance.new("BlurEffect")
 blur.Size = 4
 blur.Parent = workspace.CurrentCamera
 
--- Animation mở/đóng panel
 local function showPanel()
-	mainFrame.Visible = true
-	mainFrame.BackgroundTransparency = 1
-	mainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
-	mainFrame.Size = UDim2.new(0, 390, 0, 330)
-	glow.Transparency = 1
+    mainFrame.Visible = true
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+    mainFrame.Size = UDim2.new(0, 390, 0, 330)
+    glow.Transparency = 1
 
-	TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 420, 0, 360),
-		Position = UDim2.new(0.5, -210, 0.5, -180),
-		BackgroundTransparency = 0.35
-	}):Play()
+    TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 420, 0, 360),
+        Position = UDim2.new(0.5, -210, 0.5, -180),
+        BackgroundTransparency = 0.35
+    }):Play()
 
-	TweenService:Create(glow, TweenInfo.new(0.45), {
-		Transparency = 0.15
-	}):Play()
+    TweenService:Create(glow, TweenInfo.new(0.45), {
+        Transparency = 0.15
+    }):Play()
 end
 
 local function hidePanel()
-	local tween = TweenService:Create(mainFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-		Size = UDim2.new(0, 360, 0, 300),
-		Position = UDim2.new(0.5, -180, 0.5, -160),
-		BackgroundTransparency = 1
-	})
+    local tween = TweenService:Create(mainFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 360, 0, 300),
+        Position = UDim2.new(0.5, -180, 0.5, -160),
+        BackgroundTransparency = 1
+    })
 
-	TweenService:Create(glow, TweenInfo.new(0.25), {
-		Transparency = 1
-	}):Play()
+    TweenService:Create(glow, TweenInfo.new(0.25), {
+        Transparency = 1
+    }):Play()
 
-	tween:Play()
-	tween.Completed:Wait()
-	mainFrame.Visible = false
+    tween:Play()
+    tween.Completed:Wait()
+    mainFrame.Visible = false
 end
 
 local opened = false
 toggleBtn.MouseButton1Click:Connect(function()
-	if opened then
-		hidePanel()
-	else
-		showPanel()
-	end
-	opened = not opened
+    if opened then
+        hidePanel()
+    else
+        showPanel()
+    end
+    opened = not opened
 end)
 
--- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 5)
@@ -180,7 +167,6 @@ title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = mainFrame
 
--- Close button
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -40, 0, 8)
@@ -192,14 +178,12 @@ closeBtn.TextColor3 = Color3.fromRGB(180, 100, 100)
 closeBtn.Parent = mainFrame
 closeBtn.MouseButton1Click:Connect(hidePanel)
 
--- Divider
 local divider = Instance.new("Frame")
 divider.Size = UDim2.new(1, -20, 0, 1)
 divider.Position = UDim2.new(0, 10, 0, 42)
 divider.BackgroundColor3 = Color3.fromRGB(90, 60, 180)
 divider.Parent = mainFrame
 
--- Scrolling frame
 local buttonsFrame = Instance.new("ScrollingFrame")
 buttonsFrame.Size = UDim2.new(1, 0, 1, -60)
 buttonsFrame.Position = UDim2.new(0, 0, 0, 50)
@@ -213,114 +197,107 @@ listLayout.Padding = UDim.new(0, 10)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 listLayout.Parent = buttonsFrame
 
--- Key mapping (đã bỏ Buff Lucky)
 local virtualKeys = {
-	["Execute All Event"] = Enum.KeyCode.E,
-	["3 Roads"] = Enum.KeyCode.R
+    ["Execute All Event"] = Enum.KeyCode.E,
+    ["3 Roads"] = Enum.KeyCode.R
 }
 
--- Hàm gửi phím ảo
 local function pressKey(key)
-	if not VirtualInputManager then return end
-	pcall(function()
-		VirtualInputManager:SendKeyEvent(true, key, false, game)
-		task.wait(0.25)
-		VirtualInputManager:SendKeyEvent(false, key, false, game)
-	end)
+    if not VirtualInputManager then return end
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, key, false, game)
+        task.wait(0.25)
+        VirtualInputManager:SendKeyEvent(false, key, false, game)
+    end)
 end
 
--- Tạo nút
 local function createButton(name, color)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 350, 0, 40)
-	btn.Text = name
-	btn.Font = Enum.Font.GothamMedium
-	btn.TextSize = 18
-	btn.BackgroundColor3 = color
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.AutoButtonColor = false
-	btn.Parent = buttonsFrame
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 350, 0, 40)
+    btn.Text = name
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 18
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.AutoButtonColor = false
+    btn.Parent = buttonsFrame
 
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0,10)
-	btnCorner.Parent = btn
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0,10)
+    btnCorner.Parent = btn
 
-	if virtualKeys[name] then
-		local keyLabel = Instance.new("TextLabel")
-		keyLabel.Size = UDim2.new(0, 70, 1, 0)
-		keyLabel.Position = UDim2.new(1, -80, 0, 0)
-		keyLabel.BackgroundTransparency = 1
-		keyLabel.Text = "["..virtualKeys[name].Name.."]"
-		keyLabel.TextColor3 = Color3.fromRGB(230,230,230)
-		keyLabel.Font = Enum.Font.Gotham
-		keyLabel.TextSize = 14
-		keyLabel.TextXAlignment = Enum.TextXAlignment.Right
-		keyLabel.Parent = btn
-	end
+    if virtualKeys[name] then
+        local keyLabel = Instance.new("TextLabel")
+        keyLabel.Size = UDim2.new(0, 70, 1, 0)
+        keyLabel.Position = UDim2.new(1, -80, 0, 0)
+        keyLabel.BackgroundTransparency = 1
+        keyLabel.Text = "["..virtualKeys[name].Name.."]"
+        keyLabel.TextColor3 = Color3.fromRGB(230,230,230)
+        keyLabel.Font = Enum.Font.Gotham
+        keyLabel.TextSize = 14
+        keyLabel.TextXAlignment = Enum.TextXAlignment.Right
+        keyLabel.Parent = btn
+    end
 
-	btn.MouseEnter:Connect(function()
-		local target = color:Lerp(Color3.new(1,1,1),0.25)
-		TweenService:Create(btn, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = target
-		}):Play()
-	end)
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = color
-		}):Play()
-	end)
+    btn.MouseEnter:Connect(function()
+        local target = color:Lerp(Color3.new(1,1,1),0.25)
+        TweenService:Create(btn, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = target
+        }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = color
+        }):Play()
+    end)
 
-	btn.MouseButton1Click:Connect(function()
-		local originalText = btn.Text
-		btn.Text = "Processing..."
-		local progress = 0
+    btn.MouseButton1Click:Connect(function()
+        local originalText = btn.Text
+        btn.Text = "Processing..."
+        local progress = 0
 
-		while progress < 100 do
-			progress = progress + math.random(5,10)
-			if progress > 100 then progress = 100 end
-			btn.Text = name .. " - " .. progress .. "%"
-			task.wait(math.random(0.07, 0.15))
-		end
+        while progress < 100 do
+            progress = progress + math.random(5,10)
+            if progress > 100 then progress = 100 end
+            btn.Text = name .. " - " .. progress .. "%"
+            task.wait(math.random(0.07, 0.15))
+        end
 
-		btn.Text = "✅ Done!"
-		task.wait(0.6)
-		btn.Text = originalText
+        btn.Text = "✅ Done!"
+        task.wait(0.6)
+        btn.Text = originalText
 
-		-- Gửi phím ảo nếu có
-		if virtualKeys[name] then
-			pressKey(virtualKeys[name])
-		end
+        if virtualKeys[name] then
+            pressKey(virtualKeys[name])
+        end
 
-		-- Chạy scripts
-		if name == "Brainrot Dealer" then
-			pcall(function()
-				loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/13c33d62bc915316ab79080b1a7b78a7.lua"))()
-			end)
-		elseif name == "Duplicate" then
-			pcall(function()
-				loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
-			end)
-		elseif name == "Spawn Brainrot" then
-			pcall(function()
-				loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Brainrot%20Spawner"))()
-			end)
-		elseif name == "Buff Lucky x10" then
-			pcall(function()
-				loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
-			end)
-		end
-	end)
+        if name == "Auto Fish" then
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Event-sab"))()
+            end)
+        elseif name == "Duplicate" then
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
+            end)
+        elseif name == "Spawn Brainrot" then
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Brainrot%20Spawner"))()
+            end)
+        elseif name == "Buff Lucky x10" then
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
+            end)
+        end
+    end)
 end
 
--- Các nút
-createButton("Brainrot Dealer", Color3.fromRGB(80, 60, 200))
+createButton("Auto Fish", Color3.fromRGB(80, 60, 200))
 createButton("Duplicate", Color3.fromRGB(60, 140, 200))
 createButton("Spawn Brainrot", Color3.fromRGB(130, 90, 240))
 createButton("Execute All Event", Color3.fromRGB(200, 90, 90))
 createButton("3 Roads", Color3.fromRGB(100, 190, 120))
 createButton("Buff Lucky x10", Color3.fromRGB(230, 180, 60))
 
--- Footer
 local footer = Instance.new("TextLabel")
 footer.Size = UDim2.new(1, 0, 0, 25)
 footer.Position = UDim2.new(0, 0, 1, -25)
@@ -331,3 +308,4 @@ footer.TextSize = 14
 footer.TextColor3 = Color3.fromRGB(120, 120, 180)
 footer.TextXAlignment = Enum.TextXAlignment.Center
 footer.Parent = mainFrame
+
