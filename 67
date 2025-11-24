@@ -302,17 +302,15 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 
 ----------------------------------------------------------
--- 📌 UI MENU GỐC
 ----------------------------------------------------------
-local ui = script.Parent  
-local buttonsFrame = ui:WaitForChild("ButtonsFrame") -- KHÔNG CÒN LỖI NỮA
+-- ⭐ FLYING CARPET BUTTON (GỬI PHÍM J) ⭐
+----------------------------------------------------------
 
-----------------------------------------------------------
--- ⭐ FLYING CARPET BUTTON ⭐
-----------------------------------------------------------
 local function FlyingCarpetAction()
-    task.wait(0.3)
-    print("Flying Carpet Activated!")
+    -- gửi phím J giống trên PC
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.J, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.J, false, game)
 end
 
 local flyingBtn = Instance.new("TextButton")
@@ -343,32 +341,6 @@ end)
 
 flyingBtn.MouseButton1Click:Connect(function()
     FlyingCarpetAction()
-end)
-
-----------------------------------------------------------
--- ⭐ BUTTON GỬI PHÍM J HOẠT ĐỘNG NHƯ PC ⭐
-----------------------------------------------------------
-
--- Nút J (bạn cần đặt nó trong UI)
-local buttonJ = ui:WaitForChild("ButtonJ")
-
-local debounce = false
-local keyDelay = 0.3
-
-buttonJ.MouseButton1Click:Connect(function()
-    if debounce then return end
-    debounce = true
-
-    task.wait(keyDelay)
-
-    -- gửi phím J (PRESS)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.J, false, game)
-    task.wait(0.05)
-    -- gửi phím J (RELEASE)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.J, false, game)
-
-    task.wait(0.1)
-    debounce = false
 end)
 
 local footer = Instance.new("TextLabel")
