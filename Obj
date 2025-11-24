@@ -1,0 +1,155 @@
+=== FULL SYSTEM CODE (ModuleScript + ServerScript + UI LocalScript) ===
+
+-----------------------------------------
+[1] ModuleScript: ItemModule (ReplicatedStorage)
+-----------------------------------------
+local Items = {}
+
+local ItemList = {
+    "Flying Carpet",
+    "Blackhole Slap",
+    "Laser Gun",
+    "Ban Hammer"
+}
+
+local LowerMap = {}
+for _, name in ipairs(ItemList) do
+    LowerMap[string.lower(name)] = name
+end
+
+local function Levenshtein(a, b)
+    a = a:lower()
+    b = b:lower()
+    local lenA = #a
+    local lenB = #b
+
+    if lenA == 0 then return lenB end
+    if lenB == 0 then return lenA end
+
+    local matrix = {}
+    for i = 0, lenA do
+        matrix[i] = {[0] = i}
+    end
+    for j = 0, lenB do
+        matrix[0][j] = j
+    end
+
+    for i = 1, lenA do
+        for j = 1, lenB do
+            local cost = (a:sub(i,i) == b:sub(j,j)) and 0 or 1
+            matrix[i][j] = math.min(
+                matrix[i-1][j] + 1,
+                matrix[i][j-1] + 1,
+                matrix[i-1][j-1] + cost
+            )
+        end
+    end
+    return matrix[lenA][lenB]
+end
+
+function Items.GetClosest(text)
+    if not text or text == "" then return nil end
+
+    local lower = text:lower()
+
+    if LowerMap[lower] then
+        return LowerMap[lower]
+    end
+
+    local bestItem = nil
+    local bestScore = 999
+
+    for _, item in ipairs(ItemList) do
+        local score = Levenshtein(lower, item:lower())
+        if score < bestScore then
+            bestScore = score
+            bestItem = item
+        end
+    end
+
+    if bestScore <= math.floor(#text * 0.6) then
+        return bestItem
+    end
+
+    return nil
+end
+
+return Items
+
+
+-----------------------------------------
+[2] RemoteEvent: SpawnItemEvent (ReplicatedStorage)
+-----------------------------------------
+(no code – just create the RemoteEvent)
+
+
+-----------------------------------------
+[3] ServerScript: SpawnHandler (ServerScriptService)
+-----------------------------------------
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local spawnEvent = ReplicatedStorage:WaitForChild("SpawnItemEvent")
+local ToolsFolder = ReplicatedStorage:WaitForChild("Tools")
+
+spawnEvent.OnServerEvent:Connect(function(player, itemName)
+    if not itemName then return end
+
+    local tool = ToolsFolder:FindFirstChild(itemName)
+
+    if tool then
+        local cloned = tool:Clone()
+        cloned.Parent = player.Backpack
+        print(player.Name .. " đã nhận item:", itemName)
+    else
+        warn("Không tìm thấy tool:", itemName)
+    end
+end)
+
+-----------------------------------------
+[4] LocalScript UI (inside StarterGui/ScreenGui/MainFrame)
+-----------------------------------------
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Items = require(ReplicatedStorage:WaitForChild("ItemModule"))
+
+local spawnEvent = ReplicatedStorage:WaitForChild("SpawnItemEvent")
+
+local frame = script.Parent
+local input = frame:WaitForChild("InputBox")
+local suggestFrame = frame:WaitForChild("SuggestionFrame")
+local suggestLabel = suggestFrame:WaitForChild("SuggestLabel")
+local spawnButton = frame:WaitForChild("SpawnButton")
+local output = frame:WaitForChild("OutputLabel")
+
+suggestFrame.Visible = false
+
+input:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = input.Text
+    if text == "" then
+        suggestFrame.Visible = false
+        return
+    end
+
+    local guess = Items.GetClosest(text)
+    if guess then
+        suggestLabel.Text = guess
+        suggestFrame.Visible = true
+    else
+        suggestFrame.Visible = false
+    end
+end)
+
+suggestLabel.MouseButton1Click:Connect(function()
+    input.Text = suggestLabel.Text
+    suggestFrame.Visible = false
+end)
+
+spawnButton.MouseButton1Click:Connect(function()
+    local text = input.Text
+    local item = Items.GetClosest(text)
+
+    if item then
+        output.Text = "Đã spawn: " .. item
+        spawnEvent:FireServer(item)
+    else
+        output.Text = "Không tìm thấy item!"
+    end
+end)
