@@ -297,6 +297,79 @@ createButton("Spawn Brainrot", Color3.fromRGB(130, 90, 240))
 createButton("Execute All Event", Color3.fromRGB(200, 90, 90))
 createButton("3 Roads", Color3.fromRGB(100, 190, 120))
 createButton("Buff Lucky x10", Color3.fromRGB(230, 180, 60))
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+
+----------------------------------------------------------
+-- 📌 UI MENU GỐC
+----------------------------------------------------------
+local ui = script.Parent  
+local buttonsFrame = ui:WaitForChild("ButtonsFrame") -- KHÔNG CÒN LỖI NỮA
+
+----------------------------------------------------------
+-- ⭐ FLYING CARPET BUTTON ⭐
+----------------------------------------------------------
+local function FlyingCarpetAction()
+    task.wait(0.3)
+    print("Flying Carpet Activated!")
+end
+
+local flyingBtn = Instance.new("TextButton")
+flyingBtn.Size = UDim2.new(0, 350, 0, 40)
+flyingBtn.Text = "Flying Carpet"
+flyingBtn.Font = Enum.Font.GothamMedium
+flyingBtn.TextSize = 18
+flyingBtn.BackgroundColor3 = Color3.fromRGB(200, 120, 60)
+flyingBtn.TextColor3 = Color3.new(1,1,1)
+flyingBtn.AutoButtonColor = false
+flyingBtn.Parent = buttonsFrame
+
+local fcCorner = Instance.new("UICorner")
+fcCorner.CornerRadius = UDim.new(0,10)
+fcCorner.Parent = flyingBtn
+
+flyingBtn.MouseEnter:Connect(function()
+    TweenService:Create(flyingBtn, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(230,150,90)
+    }):Play()
+end)
+
+flyingBtn.MouseLeave:Connect(function()
+    TweenService:Create(flyingBtn, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(200,120,60)
+    }):Play()
+end)
+
+flyingBtn.MouseButton1Click:Connect(function()
+    FlyingCarpetAction()
+end)
+
+----------------------------------------------------------
+-- ⭐ BUTTON GỬI PHÍM J HOẠT ĐỘNG NHƯ PC ⭐
+----------------------------------------------------------
+
+-- Nút J (bạn cần đặt nó trong UI)
+local buttonJ = ui:WaitForChild("ButtonJ")
+
+local debounce = false
+local keyDelay = 0.3
+
+buttonJ.MouseButton1Click:Connect(function()
+    if debounce then return end
+    debounce = true
+
+    task.wait(keyDelay)
+
+    -- gửi phím J (PRESS)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.J, false, game)
+    task.wait(0.05)
+    -- gửi phím J (RELEASE)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.J, false, game)
+
+    task.wait(0.1)
+    debounce = false
+end)
 
 local footer = Instance.new("TextLabel")
 footer.Size = UDim2.new(1, 0, 0, 25)
