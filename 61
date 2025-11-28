@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
@@ -9,93 +10,104 @@ local PlayerGui = player:WaitForChild("PlayerGui")
 local old = PlayerGui:FindFirstChild("CrashXMatrix")
 if old then old:Destroy() end
 
---== SCREEN GUI ==--
+--=====================================================================
+--== SCREEN GUI (DZ STYLE) ==--
+--=====================================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "CrashXMatrix"
 gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
+gui.DisplayOrder = 999999
 
---== FLOAT BUTTON ==--
-local toggleBtn = Instance.new("ImageButton")
-toggleBtn.Size = UDim2.new(0,55,0,55)
-toggleBtn.Position = UDim2.new(0.06,0,0.78,0)
-toggleBtn.BackgroundTransparency = 1
-toggleBtn.Image = "rbxassetid://125920679907673"
+--=====================================================================
+--== FLOAT TOGGLE BUTTON (DZ STYLE) ==--
+--=====================================================================
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0,65,0,65)
+toggleBtn.Position = UDim2.new(0,20,0.75,0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(18,18,18)
+toggleBtn.BackgroundTransparency = 0.15
+toggleBtn.Text = "CX"
+toggleBtn.Font = Enum.Font.Arcade
+toggleBtn.TextSize = 22
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.AutoButtonColor = false
 toggleBtn.Parent = gui
+toggleBtn.Draggable = true
 
-local toggleCorner = Instance.new("UICorner", toggleBtn)
-toggleCorner.CornerRadius = UDim.new(.5, 0)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1,0)
 
-toggleBtn.MouseEnter:Connect(function()
-    TweenService:Create(toggleBtn, TweenInfo.new(.15), {ImageTransparency = .2}):Play()
-end)
-toggleBtn.MouseLeave:Connect(function()
-    TweenService:Create(toggleBtn, TweenInfo.new(.15), {ImageTransparency = 0}):Play()
-end)
+local stroke = Instance.new("UIStroke", toggleBtn)
+stroke.Thickness = 3
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- Dragging
-local dragging, dragStart, startPos
-toggleBtn.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = i.Position
-        startPos = toggleBtn.Position
-    end
+-- Hiệu ứng đổi màu cầu vồng
+RunService.Heartbeat:Connect(function()
+	local hue = (tick()*0.55) % 1
+	stroke.Color = Color3.fromHSV(hue,1,1)
 end)
 
-UserInputService.InputChanged:Connect(function(i)
-    if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = i.Position - dragStart
-        toggleBtn.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
+-- Chống kéo ra ngoài màn
+RunService.RenderStepped:Connect(function()
+	local cam = workspace.CurrentCamera
+	local v = cam.ViewportSize
+	local pos = toggleBtn.AbsolutePosition
+	local size = toggleBtn.AbsoluteSize
+	toggleBtn.Position = UDim2.new(
+		0, math.clamp(pos.X, 8, v.X - size.X - 8),
+		0, math.clamp(pos.Y, 8, v.Y - size.Y - 8)
+	)
 end)
 
-UserInputService.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-end)
-
---== MAIN PANEL ==--
+--=====================================================================
+--== MAIN PANEL (DZ DARK STYLE) ==--
+--=====================================================================
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,430,0,260)
-mainFrame.Position = UDim2.new(0.5,-215,0.5,-130)
-mainFrame.BackgroundColor3 = Color3.fromRGB(18, 20, 28)
-mainFrame.BackgroundTransparency = 0.25
+mainFrame.Size = UDim2.new(0, 420, 0, 260)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -130)
+mainFrame.BackgroundColor3 = Color3.fromRGB(14,14,14)
+mainFrame.BackgroundTransparency = 0.1
 mainFrame.Visible = false
 mainFrame.Parent = gui
 
-local mainCorner = Instance.new("UICorner", mainFrame)
-mainCorner.CornerRadius = UDim.new(0.05, 0)
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,12)
 
-local glow = Instance.new("UIStroke", mainFrame)
-glow.Thickness = 1.5
-glow.Color = Color3.fromRGB(0,255,170)
-glow.Transparency = 0.35
+local mainStroke = Instance.new("UIStroke", mainFrame)
+mainStroke.Thickness = 2
+mainStroke.Transparency = 0.3
 
-local gradient = Instance.new("UIGradient", mainFrame)
-gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(25,25,35)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(35,35,50))
-})
-gradient.Rotation = 90
-
-toggleBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
+RunService.Heartbeat:Connect(function()
+	local hue = (tick()*0.55) % 1
+	mainStroke.Color = Color3.fromHSV(hue,1,1)
 end)
 
+local gradient = Instance.new("UIGradient", mainFrame)
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20,20,26)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(38,38,52)),
+}
+gradient.Rotation = 90
+
+-- Toggle panel
+toggleBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+--=====================================================================
 --== TITLE ==--
+--=====================================================================
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,45)
+title.Size = UDim2.new(1,0,0,40)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.Arcade
-title.TextSize = 26
-title.TextColor3 = Color3.fromRGB(0,255,170)
-title.Text = "CRASHXMATRIX CONTROL"
+title.TextSize = 24
+title.TextColor3 = Color3.new(1,1,1)
+title.Text = "💠 CRASHXMATRIX CONTROL"
 title.Parent = mainFrame
 
+--=====================================================================
 --== FOOTER ==--
+--=====================================================================
 local footer = Instance.new("TextLabel")
 footer.Size = UDim2.new(1,0,0,25)
 footer.Position = UDim2.new(0,0,1,-25)
@@ -106,81 +118,99 @@ footer.TextColor3 = Color3.fromRGB(170,255,190)
 footer.Text = "Status: OK"
 footer.Parent = mainFrame
 
+--=====================================================================
 --== HOLDER ==--
+--=====================================================================
 local holder = Instance.new("Frame")
 holder.Size = UDim2.new(1,0,1,-70)
-holder.Position = UDim2.new(0,0,0,50)
+holder.Position = UDim2.new(0,0,0,45)
 holder.BackgroundTransparency = 1
 holder.Parent = mainFrame
 
---== BUTTON CREATOR ==--
+--=====================================================================
+--== BUTTON CREATOR (DZ STYLE) ==--
+--=====================================================================
 local function createButton(name, posY)
-    local btn = Instance.new("Frame")
-    btn.Size = UDim2.new(0,360,0,46)
-    btn.Position = UDim2.new(0.5,-180,0,posY)
-    btn.BackgroundColor3 = Color3.fromRGB(30,32,40)
-    btn.Parent = holder
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0,360,0,46)
+    frame.Position = UDim2.new(0.5,-180,0,posY)
+    frame.BackgroundColor3 = Color3.fromRGB(32,32,40)
+    frame.Parent = holder
 
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(.05, 0)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
 
-    local stroke = Instance.new("UIStroke", btn)
+    local stroke = Instance.new("UIStroke", frame)
     stroke.Thickness = 1
-    stroke.Color = Color3.fromRGB(0,255,170)
     stroke.Transparency = 0.4
 
-    local lbl = Instance.new("TextButton")
-    lbl.Size = UDim2.new(1,0,1,0)
-    lbl.Text = name
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.Arcade
-    lbl.TextSize = 22
-    lbl.TextColor3 = Color3.fromRGB(230,230,240)
-    lbl.Parent = btn
-
-    lbl.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(.15),
-            {BackgroundColor3 = Color3.fromRGB(40,45,55)}):Play()
-    end)
-    lbl.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(.15),
-            {BackgroundColor3 = Color3.fromRGB(30,32,40)}):Play()
+    RunService.Heartbeat:Connect(function()
+        local hue = (tick()*0.55)%1
+        stroke.Color = Color3.fromHSV(hue,1,1)
     end)
 
-    return lbl
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.BackgroundTransparency = 1
+    btn.Font = Enum.Font.Arcade
+    btn.TextSize = 22
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = name
+    btn.Parent = frame
+
+    -- Hover
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(frame, TweenInfo.new(.15), {
+            BackgroundColor3 = Color3.fromRGB(45,45,55)
+        }):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(frame, TweenInfo.new(.15), {
+            BackgroundColor3 = Color3.fromRGB(32,32,40)
+        }):Play()
+    end)
+
+    return btn
 end
 
 -- Buttons
 local crashBtn = createButton("Crash Player 👾", 10)
-local antiBtn = createButton("Anti Crash 🛡️", 70)
+local antiBtn  = createButton("Anti Crash 🛡️", 70)
 
---== GET CLOSEST ==--
+--=====================================================================
+--== GET CLOSEST PLAYER (GIỮ NGUYÊN) ==--
+--=====================================================================
 local function getClosestPlayer()
-    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return nil end
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
 
-    local closest, dist = nil, math.huge
-    for _,plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (plr.Character.HumanoidRootPart.Position - root.Position).Magnitude
-            if d < dist then closest = plr dist = d end
-        end
-    end
-    return closest
+	local closest, dist = nil, math.huge
+	for _,plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local d = (plr.Character.HumanoidRootPart.Position - root.Position).Magnitude
+			if d < dist then closest = plr dist = d end
+		end
+	end
+	return closest
 end
 
---== Crash Logic ==--
+--=====================================================================
+--== CRASH LOGIC (Y NGUYÊN) ==--
+--=====================================================================
 crashBtn.MouseButton1Click:Connect(function()
-    coroutine.wrap(function()
-        crashBtn.Text = "Crashing..."
-        task.wait(1.5)
-        local t = getClosestPlayer()
-        crashBtn.Text = "Crash Player: "..(t and t.Name or "None")
-        task.wait(2)
-        crashBtn.Text = "Crash Player 👾"
-    end)()
+	coroutine.wrap(function()
+		crashBtn.Text = "Crashing..."
+		task.wait(1.5)
+		local t = getClosestPlayer()
+		crashBtn.Text = "Crash Player: "..(t and t.Name or "None")
+		task.wait(2)
+		crashBtn.Text = "Crash Player 👾"
+	end)()
 end)
 
---== LOADING (Arcade Font) ==--
+--=====================================================================
+--== ANTI CRASH LOADING (GIỮ NGUYÊN 100%) ==--
+--=====================================================================
 local function playAntiCrashLoading()
     local loadingGui = Instance.new("ScreenGui")
     loadingGui.Parent = PlayerGui
@@ -219,12 +249,12 @@ local function playAntiCrashLoading()
 
     task.wait(2)
     TweenService:Create(bg, TweenInfo.new(.3), {BackgroundTransparency = 1}):Play()
-    task.wait(.3)
+    task.wait(.5)
     loadingGui:Destroy()
 end
 
 antiBtn.MouseButton1Click:Connect(function()
     footer.Text = "ANTI CRASH ACTIVE"
     playAntiCrashLoading()
-    footer.Text = "Status: OK"
+    footer.Text = "Status: ✅"
 end)
