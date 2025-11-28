@@ -1,185 +1,237 @@
---// SAB Admin Panel v3 (by ChatGPT)
--- Có animation mượt khi mở/đóng + nút toggle panel
-
--- Xóa GUI cũ nếu tồn tại
-if game.CoreGui:FindFirstChild("SABPanel") then
-	game.CoreGui.SABPanel:Destroy()
-end
-
--- Khai báo VirtualInputManager
-local VIM = game:GetService("VirtualInputManager")
-
--- Tạo GUI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "SABPanel"
-gui.ResetOnSpawn = false
-
--- Khung chính
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 400, 0, 370)
-main.Position = UDim2.new(0.5, -200, 0.5, -185)
-main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-main.BorderSizePixel = 2
-main.BorderColor3 = Color3.fromRGB(128, 0, 255)
-main.Active = true
-main.Draggable = true
-main.Visible = false
-
--- Bo góc
-local corner = Instance.new("UICorner", main)
-corner.CornerRadius = UDim.new(0, 20)
-
--- Hiệu ứng mở/đóng
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local function showPanel()
-	main.Visible = true
-	main.Size = UDim2.new(0, 0, 0, 0)
-	main.Position = UDim2.new(0.5, 0, 0.5, 0)
-	local tween = TweenService:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 400, 0, 370),
-		Position = UDim2.new(0.5, -200, 0.5, -185)
-	})
-	tween:Play()
-end
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
 
-local function hidePanel()
-	local tween = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Size = UDim2.new(0, 0, 0, 0),
-		Position = UDim2.new(0.5, 0, 0.5, 0)
-	})
-	tween:Play()
-	tween.Completed:Connect(function()
-		main.Visible = false
-	end)
-end
+-- Xóa GUI cũ
+local old = PlayerGui:FindFirstChild("CrashXMatrix")
+if old then old:Destroy() end
 
--- Nút bật/tắt panel
-local toggleBtn = Instance.new("TextButton", gui)
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
-toggleBtn.Text = "⚙️"
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 22
-toggleBtn.Active = true
-toggleBtn.Draggable = true
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+--== SCREEN GUI ==--
+local gui = Instance.new("ScreenGui")
+gui.Name = "CrashXMatrix"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
 
-local isOpen = false
+--== FLOAT BUTTON ==--
+local toggleBtn = Instance.new("ImageButton")
+toggleBtn.Size = UDim2.new(0,55,0,55)
+toggleBtn.Position = UDim2.new(0.06,0,0.78,0)
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Image = "rbxassetid://125920679907673"
+toggleBtn.Parent = gui
+
+local toggleCorner = Instance.new("UICorner", toggleBtn)
+toggleCorner.CornerRadius = UDim.new(.5, 0)
+
+toggleBtn.MouseEnter:Connect(function()
+    TweenService:Create(toggleBtn, TweenInfo.new(.15), {ImageTransparency = .2}):Play()
+end)
+toggleBtn.MouseLeave:Connect(function()
+    TweenService:Create(toggleBtn, TweenInfo.new(.15), {ImageTransparency = 0}):Play()
+end)
+
+-- Dragging
+local dragging, dragStart, startPos
+toggleBtn.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = i.Position
+        startPos = toggleBtn.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(i)
+    if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = i.Position - dragStart
+        toggleBtn.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+--== MAIN PANEL (Miranda UI) ==--
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0,430,0,260)
+mainFrame.Position = UDim2.new(0.5,-215,0.5,-130)
+mainFrame.BackgroundColor3 = Color3.fromRGB(18, 20, 28)
+mainFrame.BackgroundTransparency = 0.25
+mainFrame.Visible = false
+mainFrame.Parent = gui
+
+-- Bo 5%
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0.05, 0)
+
+-- Glow neon mảnh như Miranda
+local glow = Instance.new("UIStroke", mainFrame)
+glow.Thickness = 1.5
+glow.Color = Color3.fromRGB(0,255,170)
+glow.Transparency = 0.35
+
+-- Gradient nền kiểu kính tối Miranda
+local gradient = Instance.new("UIGradient", mainFrame)
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25,25,35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(35,35,50))
+})
+gradient.Rotation = 90
+
 toggleBtn.MouseButton1Click:Connect(function()
-	if isOpen then
-		hidePanel()
-	else
-		showPanel()
-	end
-	isOpen = not isOpen
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
--- Tiêu đề
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 35)
+--== TITLE ==--
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,45)
 title.BackgroundTransparency = 1
-title.Text = "🧠 Admin Command Script"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 24
+title.TextColor3 = Color3.fromRGB(0,255,170)
+title.Text = "CRASHXMATRIX CONTROL"
+title.Parent = mainFrame
 
--- Verified
-local verified = Instance.new("TextButton", main)
-verified.Size = UDim2.new(0.9, 0, 0, 35)
-verified.Position = UDim2.new(0.05, 0, 0.12, 0)
-verified.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
-verified.Text = "✔ Verified"
-verified.TextColor3 = Color3.new(1, 1, 1)
-verified.Font = Enum.Font.GothamBold
-verified.TextSize = 16
-Instance.new("UICorner", verified).CornerRadius = UDim.new(0, 10)
+--== FOOTER STATUS ==--
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1,0,0,25)
+footer.Position = UDim2.new(0,0,1,-25)
+footer.BackgroundTransparency = 1
+footer.Font = Enum.Font.GothamSemibold
+footer.TextSize = 16
+footer.TextColor3 = Color3.fromRGB(170,255,190)
+footer.Text = "Status: ✅"
+footer.Parent = mainFrame
 
--- Ô nhập
-local moneyBox = Instance.new("TextBox", main)
-moneyBox.Size = UDim2.new(0.42, 0, 0, 30)
-moneyBox.Position = UDim2.new(0.05, 0, 0.25, 0)
-moneyBox.PlaceholderText = "Enter money..."
-moneyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-moneyBox.TextColor3 = Color3.new(1, 1, 1)
-moneyBox.Font = Enum.Font.Gotham
-moneyBox.TextSize = 14
-Instance.new("UICorner", moneyBox).CornerRadius = UDim.new(0, 10)
+--== BUTTON HOLDER ==--
+local holder = Instance.new("Frame")
+holder.Size = UDim2.new(1,0,1,-70)
+holder.Position = UDim2.new(0,0,0,50)
+holder.BackgroundTransparency = 1
+holder.Parent = mainFrame
 
-local rebirthBox = Instance.new("TextBox", main)
-rebirthBox.Size = UDim2.new(0.42, 0, 0, 30)
-rebirthBox.Position = UDim2.new(0.53, 0, 0.25, 0)
-rebirthBox.PlaceholderText = "Enter rebirth..."
-rebirthBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-rebirthBox.TextColor3 = Color3.new(1, 1, 1)
-rebirthBox.Font = Enum.Font.Gotham
-rebirthBox.TextSize = 14
-Instance.new("UICorner", rebirthBox).CornerRadius = UDim.new(0, 10)
+--== BUTTON CREATOR (Miranda Style) ==--
+local function createButton(name, posY)
+    local btn = Instance.new("Frame")
+    btn.Size = UDim2.new(0,360,0,46)
+    btn.Position = UDim2.new(0.5,-180,0,posY)
+    btn.BackgroundColor3 = Color3.fromRGB(30,32,40)
+    btn.Parent = holder
 
--- Hàm tạo nút
-local function createButton(text, color, posX, posY)
-	local btn = Instance.new("TextButton", main)
-	btn.Size = UDim2.new(0.42, 0, 0, 35)
-	btn.Position = UDim2.new(posX, 0, posY, 0)
-	btn.BackgroundColor3 = color
-	btn.Text = text
-	btn.TextColor3 = Color3.new(1, 1, 1)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-	return btn
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(.05, 0)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(0,255,170)
+    stroke.Transparency = 0.4
+
+    local lbl = Instance.new("TextButton")
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.Text = name
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.TextSize = 20
+    lbl.TextColor3 = Color3.fromRGB(230,230,240)
+    lbl.Parent = btn
+
+    lbl.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(.15),
+            {BackgroundColor3 = Color3.fromRGB(40,45,55)}):Play()
+    end)
+    lbl.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(.15),
+            {BackgroundColor3 = Color3.fromRGB(30,32,40)}):Play()
+    end)
+
+    return lbl
 end
 
--- Nút chức năng
-local btnMoney = createButton("💰 Set Money", Color3.fromRGB(52, 199, 89), 0.05, 0.38)
-local btnRebirth = createButton("🔁 Set Rebirth", Color3.fromRGB(52, 152, 219), 0.53, 0.38)
-local btnMorph = createButton("🧠 Brainrots Morph", Color3.fromRGB(108, 92, 231), 0.05, 0.52)
-local btnDup = createButton("🌀 Duplicated", Color3.fromRGB(155, 89, 182), 0.53, 0.52)
-local btnSpawner = createButton("🧬 Brainrots Spawner", Color3.fromRGB(93, 173, 226), 0.05, 0.66)
-local btnLucky = createButton("🍀 Buff lucky", Color3.fromRGB(46, 204, 113), 0.53, 0.66)
-local btnExec = createButton("⚡ Execute All Event", Color3.fromRGB(241, 196, 15), 0.05, 0.80)
+-- Buttons
+local crashBtn = createButton("Crash Player 👾", 10)
+local antiBtn = createButton("Anti Crash 🛡️", 70)
 
--- Hành động
-btnMoney.MouseButton1Click:Connect(function()
-	print("Set Money:", moneyBox.Text)
+--== GET CLOSEST PLAYER ==--
+local function getClosestPlayer()
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+
+    local closest, dist = nil, math.huge
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (plr.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            if d < dist then
+                dist = d
+                closest = plr
+            end
+        end
+    end
+    return closest
+end
+
+--== CRASH LOGIC ==--
+crashBtn.MouseButton1Click:Connect(function()
+    coroutine.wrap(function()
+        crashBtn.Text = "Crashing..."
+        task.wait(1.5)
+        local t = getClosestPlayer()
+        crashBtn.Text = "Crash Player: "..(t and t.Name or "None")
+        task.wait(2)
+        crashBtn.Text = "Crash Player 👾"
+    end)()
 end)
 
-btnRebirth.MouseButton1Click:Connect(function()
-	print("Set Rebirth:", rebirthBox.Text)
-end)
+--== MIRANDA LOADING SCREEN FOR ANTI-CRASH ==--
+local function playAntiCrashLoading()
+    local loadingGui = Instance.new("ScreenGui")
+    loadingGui.Parent = PlayerGui
+    loadingGui.IgnoreGuiInset = true
 
-btnMorph.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true, Enum.KeyCode.K, false, game)
-	VIM:SendKeyEvent(false, Enum.KeyCode.K, false, game)
-end)
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1,0,1,0)
+    bg.BackgroundColor3 = Color3.new(0,0,0)
+    bg.Parent = loadingGui
 
-btnDup.MouseButton1Click:Connect(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/tunadan212/Kkkk/refs/heads/main/K"))()
-	end)
-end)
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1,0,0,80)
+    title.Position = UDim2.new(0,0,0.35,0)
+    title.BackgroundTransparency = 1
+    title.Text = "Anti Crash 🛡️"
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 42
+    title.TextColor3 = Color3.fromRGB(0,255,170)
+    title.Parent = bg
 
-btnSpawner.MouseButton1Click:Connect(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Brainrot%20Spawner"))()
-	end)
-end)
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(.35,0,0,12)
+    bar.Position = UDim2.new(.325,0,.53,0)
+    bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    bar.Parent = bg
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
 
-btnLucky.MouseButton1Click:Connect(function()
-	pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRoblox/Test/refs/heads/main/Lucky"))()
-	end)
-end)
-btnExec.MouseButton1Click:Connect(function()
-	VIM:SendKeyEvent(true, Enum.KeyCode.Y, false, game)
-	VIM:SendKeyEvent(false, Enum.KeyCode.Y, false, game)
-end)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0,0,1,0)
+    fill.BackgroundColor3 = Color3.fromRGB(0,255,170)
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
 
--- Verified click
-verified.MouseButton1Click:Connect(function()
-	verified.Text = "✔ Verified ✓"
-	verified.BackgroundColor3 = Color3.fromRGB(56, 142, 60)
-end)
+    TweenService:Create(fill, TweenInfo.new(2, Enum.EasingStyle.Linear),
+        {Size = UDim2.new(1,0,1,0)}):Play()
 
+    task.wait(2)
+    TweenService:Create(bg, TweenInfo.new(.3), {BackgroundTransparency = 1}):Play()
+    task.wait(.3)
+    loadingGui:Destroy()
+end
+
+antiBtn.MouseButton1Click:Connect(function()
+    footer.Text = "Anti Crash 🛡️ Active"
+    playAntiCrashLoading()
+    footer.Text = "Status: ✅"
+end)
