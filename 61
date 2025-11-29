@@ -20,74 +20,66 @@ gui.Parent = PlayerGui
 gui.DisplayOrder = 999999
 
 --=====================================================================
---== TOGGLE BUTTON (NHỎ + CHỮ NHẬT ĐỨNG) ==--
+--== FLOAT TOGGLE BUTTON (GIỮ NGUYÊN) ==--
 --=====================================================================
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 50, 0, 80)   -- nhỏ và đứng
-toggleBtn.Position = UDim2.new(0, 20, 0.6, 0)
+toggleBtn.Size = UDim2.new(0,65,0,65)
+toggleBtn.Position = UDim2.new(0,20,0.75,0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(18,18,18)
 toggleBtn.BackgroundTransparency = 0.15
-toggleBtn.Text = "CM"
+toggleBtn.Text = "CX"
 toggleBtn.Font = Enum.Font.Arcade
-toggleBtn.TextSize = 20
+toggleBtn.TextSize = 22
 toggleBtn.TextColor3 = Color3.new(1,1,1)
 toggleBtn.AutoButtonColor = false
 toggleBtn.Parent = gui
 toggleBtn.Draggable = true
 
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1,0)
 
 local stroke = Instance.new("UIStroke", toggleBtn)
-stroke.Thickness = 2
+stroke.Thickness = 3
 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- Rainbow stroke
 RunService.Heartbeat:Connect(function()
-	local hue = (tick()*0.45)%1
+	local hue = (tick()*0.55) % 1
 	stroke.Color = Color3.fromHSV(hue,1,1)
 end)
 
--- Chống kéo ra ngoài màn hình
 RunService.RenderStepped:Connect(function()
 	local cam = workspace.CurrentCamera
-	if not cam then return end
 	local v = cam.ViewportSize
 	local pos = toggleBtn.AbsolutePosition
 	local size = toggleBtn.AbsoluteSize
 	toggleBtn.Position = UDim2.new(
-		0, math.clamp(pos.X, 6, v.X - size.X - 6),
-		0, math.clamp(pos.Y, 6, v.Y - size.Y - 6)
+		0, math.clamp(pos.X, 8, v.X - size.X - 8),
+		0, math.clamp(pos.Y, 8, v.Y - size.Y - 8)
 	)
 end)
 
 --=====================================================================
---== MAIN PANEL (HÌNH CHỮ NHẬT ĐỨNG + NHỎ LẠI) ==--
+--== MAIN PANEL – ĐEN MỜ + VIỀN XANH LÁ NEON ==--
 --=====================================================================
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 360)   -- đứng và nhỏ hơn
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -180)
-mainFrame.BackgroundColor3 = Color3.fromRGB(14,14,14)
-mainFrame.BackgroundTransparency = 0.1
+mainFrame.Size = UDim2.new(0, 260, 0, 230)
+mainFrame.Position = UDim2.new(0.5, -130, 0.5, -115)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+mainFrame.BackgroundTransparency = 0.35
 mainFrame.Visible = false
 mainFrame.Parent = gui
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,12)
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,18)
 
-local glow = Instance.new("UIStroke", mainFrame)
-glow.Thickness = 2
-glow.Transparency = 0.3
+local mainStroke = Instance.new("UIStroke", mainFrame)
+mainStroke.Thickness = 2.8
+mainStroke.Transparency = 0.15
+mainStroke.Color = Color3.fromRGB(0,255,100)
 
-RunService.Heartbeat:Connect(function()
-	local hue = (tick()*0.45)%1
-	glow.Color = Color3.fromHSV(hue,1,1)
-end)
-
--- Gradient
 local gradient = Instance.new("UIGradient", mainFrame)
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(20,20,26)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(38,38,52)),
-})
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(18,18,18)),
+}
 gradient.Rotation = 90
 
 toggleBtn.MouseButton1Click:Connect(function()
@@ -99,11 +91,12 @@ end)
 --=====================================================================
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,0,0,40)
+title.Position = UDim2.new(0,0,0,5)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.Arcade
 title.TextSize = 22
 title.TextColor3 = Color3.new(1,1,1)
-title.Text = "💠 CrashXMatrix"
+title.Text = "💠 CRASHXMATRIX CONTROL"
 title.Parent = mainFrame
 
 --=====================================================================
@@ -114,71 +107,68 @@ footer.Size = UDim2.new(1,0,0,25)
 footer.Position = UDim2.new(0,0,1,-25)
 footer.BackgroundTransparency = 1
 footer.Font = Enum.Font.Arcade
-footer.TextSize = 16
-footer.TextColor3 = Color3.fromRGB(170,255,190)
-footer.Text = "Status: ✅"
+footer.TextSize = 18
+footer.TextColor3 = Color3.fromRGB(0,255,120)
+footer.Text = "Status: OK"
 footer.Parent = mainFrame
 
 --=====================================================================
 --== HOLDER ==--
 --=====================================================================
 local holder = Instance.new("Frame")
-holder.Size = UDim2.new(1,0,1,-70)
+holder.Size = UDim2.new(1,0,1,-85)
 holder.Position = UDim2.new(0,0,0,45)
 holder.BackgroundTransparency = 1
 holder.Parent = mainFrame
 
 --=====================================================================
---== BUTTON CREATOR (NHỎ LẠI) ==--
+--== BUTTON CREATOR – VIỀN XANH LÁ + ĐEN MỜ ==--
 --=====================================================================
 local function createButton(name, posY)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0,250,0,42)
-	frame.Position = UDim2.new(0.5,-125,0,posY)
-	frame.BackgroundColor3 = Color3.fromRGB(32,32,40)
-	frame.Parent = holder
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0,210,0,46)
+    frame.Position = UDim2.new(0.5,-105,0,posY)
+    frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    frame.BackgroundTransparency = 0.25
+    frame.Parent = holder
 
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,14)
 
-	local s = Instance.new("UIStroke", frame)
-	s.Thickness = 1
-	s.Transparency = 0.4
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Thickness = 2
+    stroke.Transparency = 0.15
+    stroke.Color = Color3.fromRGB(0,255,100)
 
-	RunService.Heartbeat:Connect(function()
-		local hue = (tick()*0.45)%1
-		s.Color = Color3.fromHSV(hue,1,1)
-	end)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.BackgroundTransparency = 1
+    btn.Font = Enum.Font.Arcade
+    btn.TextSize = 22
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = name
+    btn.Parent = frame
 
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1,0,1,0)
-	btn.BackgroundTransparency = 1
-	btn.Font = Enum.Font.Arcade
-	btn.TextSize = 20
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Text = name
-	btn.Parent = frame
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(frame, TweenInfo.new(.15), {
+            BackgroundColor3 = Color3.fromRGB(10,20,10)
+        }):Play()
+    end)
 
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(.15), {
-			BackgroundColor3 = Color3.fromRGB(45,45,55)
-		}):Play()
-	end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(frame, TweenInfo.new(.15), {
+            BackgroundColor3 = Color3.fromRGB(0,0,0)
+        }):Play()
+    end)
 
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(frame, TweenInfo.new(.15), {
-			BackgroundColor3 = Color3.fromRGB(32,32,40)
-		}):Play()
-	end)
-
-	return btn
+    return btn
 end
 
 -- Buttons
-local crashBtn = createButton("Crash Player 👾", 10)
-local antiBtn = createButton("Anti Crash 🛡️", 65)
+local crashBtn = createButton("Crash Player 👾", 5)
+local antiBtn  = createButton("Anti Crash 🛡️", 60)
 
 --=====================================================================
---== GET CLOSEST PLAYER (GIỮ NGUYÊN) ==--
+--== GET CLOSEST PLAYER ==--
 --=====================================================================
 local function getClosestPlayer()
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -195,7 +185,7 @@ local function getClosestPlayer()
 end
 
 --=====================================================================
---== CRASH LOGIC (GIỮ NGUYÊN) ==--
+--== CRASH LOGIC ==--
 --=====================================================================
 crashBtn.MouseButton1Click:Connect(function()
 	coroutine.wrap(function()
@@ -209,52 +199,60 @@ crashBtn.MouseButton1Click:Connect(function()
 end)
 
 --=====================================================================
---== ANTI CRASH LOADING (GIỮ NGUYÊN 100%) ==--
+--== ANTI CRASH LOADING ==--
 --=====================================================================
 local function playAntiCrashLoading()
-	local loadingGui = Instance.new("ScreenGui")
-	loadingGui.Parent = PlayerGui
-	loadingGui.IgnoreGuiInset = true
+    local loadingGui = Instance.new("ScreenGui")
+    loadingGui.Parent = PlayerGui
+    loadingGui.IgnoreGuiInset = true
 
-	local bg = Instance.new("Frame")
-	bg.Size = UDim2.new(1,0,1,0)
-	bg.BackgroundColor3 = Color3.new(0,0,0)
-	bg.Parent = loadingGui
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1,0,1,0)
+    bg.BackgroundColor3 = Color3.new(0,0,0)
+    bg.Parent = loadingGui
 
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1,0,0,80)
-	title.Position = UDim2.new(0,0,0.35,0)
-	title.BackgroundTransparency = 1
-	title.Text = "ANTI CRASH 🛡️"
-	title.Font = Enum.Font.Arcade
-	title.TextSize = 46
-	title.TextColor3 = Color3.fromRGB(0,255,170)
-	title.Parent = bg
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1,0,0,80)
+    title.Position = UDim2.new(0,0,0.35,0)
+    title.BackgroundTransparency = 1
+    title.Text = "ANTI CRASH 🛡️"
+    title.Font = Enum.Font.Arcade
+    title.TextSize = 46
+    title.TextColor3 = Color3.fromRGB(0,255,170)
+    title.Parent = bg
 
-	local bar = Instance.new("Frame")
-	bar.Size = UDim2.new(.35,0,0,12)
-	bar.Position = UDim2.new(.325,0,.53,0)
-	bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	bar.Parent = bg
-	Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(.35,0,0,12)
+    bar.Position = UDim2.new(.325,0,.53,0)
+    bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    bar.Parent = bg
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
 
-	local fill = Instance.new("Frame")
-	fill.Size = UDim2.new(0,0,1,0)
-	fill.BackgroundColor3 = Color3.fromRGB(0,255,170)
-	fill.Parent = bar
-	Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0,0,1,0)
+    fill.BackgroundColor3 = Color3.fromRGB(0,255,170)
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
 
-	TweenService:Create(fill,TweenInfo.new(2,Enum.EasingStyle.Linear),{
-		Size = UDim2.new(1,0,1,0)
-	}):Play()
+    --=== NOTE THÊM VÀO ===--
+    local note = Instance.new("TextLabel")
+    note.Size = UDim2.new(1,0,0,20)
+    note.Position = UDim2.new(0,0,.57,20)
+    note.BackgroundTransparency = 1
+    note.Font = Enum.Font.Arcade
+    note.TextSize = 18
+    note.TextColor3 = Color3.fromRGB(0,255,170)
+    note.TextTransparency = 0.25
+    note.Text = "WORK IN PRIVATE SERVER"
+    note.Parent = bg
 
-	task.wait(2)
-	TweenService:Create(bg,TweenInfo.new(.3),{
-		BackgroundTransparency = 1
-	}):Play()
+    TweenService:Create(fill, TweenInfo.new(2, Enum.EasingStyle.Linear),
+        {Size = UDim2.new(1,0,1,0)}):Play()
 
-	task.wait(.5)
-	loadingGui:Destroy()
+    task.wait(2)
+    TweenService:Create(bg, TweenInfo.new(.3), {BackgroundTransparency = 1}):Play()
+    task.wait(.5)
+    loadingGui:Destroy()
 end
 
 antiBtn.MouseButton1Click:Connect(function()
