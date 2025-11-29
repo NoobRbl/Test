@@ -11,13 +11,17 @@ local old = PlayerGui:FindFirstChild("CrashXMatriz")
 if old then old:Destroy() end
 
 ----------------------------------------------------------------
---== DRAG FUNCTION – cho toggle & panel kéo tự do
+--== DRAG FUNCTION ĐƠN GIẢN VỚI GIỚI HẠN CHO TOGGLE ==--
 ----------------------------------------------------------------
-local function makeDraggable(frame, dragHandle)
-    local dragging = false
-    local dragStart, startPos
+local BUTTON_MIN_MARGIN = 5 -- khoảng cách tối thiểu từ mép màn hình
 
+local function makeDraggable(frame, dragHandle, isToggle)
     dragHandle = dragHandle or frame
+    frame.Active = true
+
+    local dragging = false
+    local dragStart
+    local startPos
 
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -27,21 +31,32 @@ local function makeDraggable(frame, dragHandle)
         end
     end)
 
+    dragHandle.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(
+            local newPos = UDim2.new(
                 startPos.X.Scale,
                 startPos.X.Offset + delta.X,
                 startPos.Y.Scale,
                 startPos.Y.Offset + delta.Y
             )
-        end
-    end)
 
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
+            -- Nếu là toggle button, giới hạn trong màn hình
+            if isToggle then
+                local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920,1080)
+                local absSize = frame.AbsoluteSize
+                local newX = math.clamp(newPos.X.Offset, BUTTON_MIN_MARGIN, viewport.X - absSize.X - BUTTON_MIN_MARGIN)
+                local newY = math.clamp(newPos.Y.Offset, BUTTON_MIN_MARGIN, viewport.Y - absSize.Y - BUTTON_MIN_MARGIN)
+                newPos = UDim2.new(0, newX, 0, newY)
+            end
+
+            frame.Position = newPos
         end
     end)
 end
@@ -82,8 +97,8 @@ RunService.Heartbeat:Connect(function()
     stroke.Color = Color3.fromHSV(hue,1,1)
 end)
 
--- Kéo toggle
-makeDraggable(toggleBtn)
+-- Kéo toggle với giới hạn
+makeDraggable(toggleBtn, nil, true)
 
 ----------------------------------------------------------------
 --== MAIN PANEL ==--
@@ -129,8 +144,8 @@ title.Text = "💠 CRASHXMATRIZ CONTROL"
 title.TextWrapped = true
 title.Parent = mainFrame
 
--- Cho phép kéo panel
-makeDraggable(mainFrame, title)
+-- Cho phép kéo panel tự do (không giới hạn)
+makeDraggable(mainFrame, title, false)
 
 ----------------------------------------------------------------
 --== FOOTER ==--
@@ -200,7 +215,7 @@ local crashBtn = createButton("Crash Player 👾", 5)
 local antiBtn  = createButton("Anti Crash 🛡️", 60)
 
 ----------------------------------------------------------------
---== GET CLOSEST PLAYER – sửa lỗi thiếu THEN ==--
+--== GET CLOSEST PLAYER ==--
 ----------------------------------------------------------------
 local function getClosestPlayer()
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -269,7 +284,6 @@ local function playAntiCrashLoading()
     fill.Parent = bar
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
 
-    -- NOTE nhỏ
     local note = Instance.new("TextLabel")
     note.Size = UDim2.new(1,0,0,20)
     note.Position = UDim2.new(0,0,.57,20)
