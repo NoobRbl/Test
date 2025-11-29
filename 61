@@ -7,33 +7,68 @@ local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
 -- Xóa GUI cũ
-local old = PlayerGui:FindFirstChild("CrashXMatrix")
+local old = PlayerGui:FindFirstChild("CrashXMatriz")
 if old then old:Destroy() end
 
---=====================================================================
---== SCREEN GUI ==--
---=====================================================================
-local gui = Instance.new("ScreenGui")
-gui.Name = "CrashXMatrix"
-gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
-gui.DisplayOrder = 999999
+----------------------------------------------------------------
+--== DRAG FUNCTION – cho toggle & panel kéo tự do
+----------------------------------------------------------------
+local function makeDraggable(frame, dragHandle)
+    local dragging = false
+    local dragStart, startPos
 
---=====================================================================
---== FLOAT TOGGLE BUTTON (GIỮ NGUYÊN) ==--
---=====================================================================
+    dragHandle = dragHandle or frame
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+----------------------------------------------------------------
+--== SCREEN GUI ==--
+----------------------------------------------------------------
+local gui = Instance.new("ScreenGui")
+gui.Name = "CrashXMatriz"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999999
+gui.Parent = PlayerGui
+
+----------------------------------------------------------------
+--== FLOAT TOGGLE BUTTON ==--
+----------------------------------------------------------------
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(0,65,0,65)
 toggleBtn.Position = UDim2.new(0,20,0.75,0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(18,18,18)
 toggleBtn.BackgroundTransparency = 0.15
-toggleBtn.Text = "CX"
+toggleBtn.Text = "CM"
 toggleBtn.Font = Enum.Font.Arcade
 toggleBtn.TextSize = 22
 toggleBtn.TextColor3 = Color3.new(1,1,1)
 toggleBtn.AutoButtonColor = false
 toggleBtn.Parent = gui
-toggleBtn.Draggable = true
 
 Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1,0)
 
@@ -41,28 +76,21 @@ local stroke = Instance.new("UIStroke", toggleBtn)
 stroke.Thickness = 3
 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
+-- Rainbow stroke effect
 RunService.Heartbeat:Connect(function()
-	local hue = (tick()*0.55) % 1
-	stroke.Color = Color3.fromHSV(hue,1,1)
+    local hue = (tick()*0.55) % 1
+    stroke.Color = Color3.fromHSV(hue,1,1)
 end)
 
-RunService.RenderStepped:Connect(function()
-	local cam = workspace.CurrentCamera
-	local v = cam.ViewportSize
-	local pos = toggleBtn.AbsolutePosition
-	local size = toggleBtn.AbsoluteSize
-	toggleBtn.Position = UDim2.new(
-		0, math.clamp(pos.X, 8, v.X - size.X - 8),
-		0, math.clamp(pos.Y, 8, v.Y - size.Y - 8)
-	)
-end)
+-- Kéo toggle
+makeDraggable(toggleBtn)
 
---=====================================================================
---== MAIN PANEL – ĐEN MỜ + VIỀN XANH LÁ NEON ==--
---=====================================================================
+----------------------------------------------------------------
+--== MAIN PANEL ==--
+----------------------------------------------------------------
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 230)
-mainFrame.Position = UDim2.new(0.5, -130, 0.5, -115)
+mainFrame.Size = UDim2.new(0,260,0,230)
+mainFrame.Position = UDim2.new(0.5,-130,0.5,-115)
 mainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 mainFrame.BackgroundTransparency = 0.35
 mainFrame.Visible = false
@@ -77,32 +105,36 @@ mainStroke.Color = Color3.fromRGB(0,255,100)
 
 local gradient = Instance.new("UIGradient", mainFrame)
 gradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(18,18,18)),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0,0,0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18,18,18)),
 }
 gradient.Rotation = 90
 
+-- Toggle mở panel
 toggleBtn.MouseButton1Click:Connect(function()
-	mainFrame.Visible = not mainFrame.Visible
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
---=====================================================================
+----------------------------------------------------------------
 --== TITLE ==--
---=====================================================================
+----------------------------------------------------------------
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 0, 38)  -- thu width lại để vừa UI
-title.Position = UDim2.new(0, 10, 0, 5) -- cách mép trên 1 chút
+title.Size = UDim2.new(1,-20,0,38)
+title.Position = UDim2.new(0,10,0,5)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.Arcade
-title.TextSize = 18   -- giảm để vừa panel đứng
+title.TextSize = 18
 title.TextColor3 = Color3.new(1,1,1)
-title.Text = "💠 CRASHXMATRIX CONTROL"
-title.TextWrapped = true  -- TỰ CANH CHỮ KHỎI TRÀN
+title.Text = "💠 CRASHXMATRIZ CONTROL"
+title.TextWrapped = true
 title.Parent = mainFrame
 
---=====================================================================
+-- Cho phép kéo panel
+makeDraggable(mainFrame, title)
+
+----------------------------------------------------------------
 --== FOOTER ==--
---=====================================================================
+----------------------------------------------------------------
 local footer = Instance.new("TextLabel")
 footer.Size = UDim2.new(1,0,0,25)
 footer.Position = UDim2.new(0,0,1,-25)
@@ -110,21 +142,21 @@ footer.BackgroundTransparency = 1
 footer.Font = Enum.Font.Arcade
 footer.TextSize = 18
 footer.TextColor3 = Color3.fromRGB(0,255,120)
-footer.Text = "Status: OK"
+footer.Text = "Status: work✅"
 footer.Parent = mainFrame
 
---=====================================================================
+----------------------------------------------------------------
 --== HOLDER ==--
---=====================================================================
+----------------------------------------------------------------
 local holder = Instance.new("Frame")
 holder.Size = UDim2.new(1,0,1,-85)
 holder.Position = UDim2.new(0,0,0,45)
 holder.BackgroundTransparency = 1
 holder.Parent = mainFrame
 
---=====================================================================
---== BUTTON CREATOR – VIỀN XANH LÁ + ĐEN MỜ ==--
---=====================================================================
+----------------------------------------------------------------
+--== BUTTON CREATOR ==--
+----------------------------------------------------------------
 local function createButton(name, posY)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0,210,0,46)
@@ -164,44 +196,46 @@ local function createButton(name, posY)
     return btn
 end
 
--- Buttons
 local crashBtn = createButton("Crash Player 👾", 5)
 local antiBtn  = createButton("Anti Crash 🛡️", 60)
 
---=====================================================================
---== GET CLOSEST PLAYER ==--
---=====================================================================
+----------------------------------------------------------------
+--== GET CLOSEST PLAYER – sửa lỗi thiếu THEN ==--
+----------------------------------------------------------------
 local function getClosestPlayer()
-	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if not root then return nil end
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
 
-	local closest, dist = nil, math.huge
-	for _,plr in ipairs(Players:GetPlayers()) do
-		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-			local d = (plr.Character.HumanoidRootPart.Position - root.Position).Magnitude
-			if d < dist then closest = plr dist = d end
-		end
-	end
-	return closest
+    local closest, dist = nil, math.huge
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (plr.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            if d < dist then
+                closest = plr
+                dist = d
+            end
+        end
+    end
+    return closest
 end
 
---=====================================================================
---== CRASH LOGIC ==--
---=====================================================================
+----------------------------------------------------------------
+--== CRASH BUTTON ==--
+----------------------------------------------------------------
 crashBtn.MouseButton1Click:Connect(function()
-	coroutine.wrap(function()
-		crashBtn.Text = "Crashing..."
-		task.wait(1.5)
-		local t = getClosestPlayer()
-		crashBtn.Text = "Crash Player: "..(t and t.Name or "None")
-		task.wait(2)
-		crashBtn.Text = "Crash Player 👾"
-	end)()
+    coroutine.wrap(function()
+        crashBtn.Text = "Crashing..."
+        task.wait(1.5)
+        local t = getClosestPlayer()
+        crashBtn.Text = "Crash Player: " .. (t and t.Name or "None")
+        task.wait(2)
+        crashBtn.Text = "Crash Player 👾"
+    end)()
 end)
 
---=====================================================================
---== ANTI CRASH LOADING ==--
---=====================================================================
+----------------------------------------------------------------
+--== ANTI CRASH LOADING + NOTE ==--
+----------------------------------------------------------------
 local function playAntiCrashLoading()
     local loadingGui = Instance.new("ScreenGui")
     loadingGui.Parent = PlayerGui
@@ -235,7 +269,7 @@ local function playAntiCrashLoading()
     fill.Parent = bar
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
 
-    --=== NOTE THÊM VÀO ===--
+    -- NOTE nhỏ
     local note = Instance.new("TextLabel")
     note.Size = UDim2.new(1,0,0,20)
     note.Position = UDim2.new(0,0,.57,20)
@@ -247,8 +281,9 @@ local function playAntiCrashLoading()
     note.Text = "WORK IN PRIVATE SERVER"
     note.Parent = bg
 
-    TweenService:Create(fill, TweenInfo.new(2, Enum.EasingStyle.Linear),
-        {Size = UDim2.new(1,0,1,0)}):Play()
+    TweenService:Create(fill, TweenInfo.new(2, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(1,0,1,0)
+    }):Play()
 
     task.wait(2)
     TweenService:Create(bg, TweenInfo.new(.3), {BackgroundTransparency = 1}):Play()
@@ -259,5 +294,5 @@ end
 antiBtn.MouseButton1Click:Connect(function()
     footer.Text = "ANTI CRASH ACTIVE"
     playAntiCrashLoading()
-    footer.Text = "Status: ✅"
+    footer.Text = "Status: work✅"
 end)
