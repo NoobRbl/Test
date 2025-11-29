@@ -90,13 +90,14 @@ end)
 --== TITLE ==--
 --=====================================================================
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,40)
-title.Position = UDim2.new(0,0,0,5)
+title.Size = UDim2.new(1, -20, 0, 38)  -- thu width lại để vừa UI
+title.Position = UDim2.new(0, 10, 0, 5) -- cách mép trên 1 chút
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.Arcade
-title.TextSize = 22
+title.TextSize = 18   -- giảm để vừa panel đứng
 title.TextColor3 = Color3.new(1,1,1)
 title.Text = "💠 CRASHXMATRIX CONTROL"
+title.TextWrapped = true  -- TỰ CANH CHỮ KHỎI TRÀN
 title.Parent = mainFrame
 
 --=====================================================================
