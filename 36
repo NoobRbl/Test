@@ -853,55 +853,49 @@ end
 ------------------- MONEY -------------------
 
 do
-
     local frame = moneyTab
 
+    -- TextBox nhập số tiền, mặc định 67
     local moneyBox = Instance.new("TextBox", frame)
-
-    moneyBox.Size=UDim2.new(1,0,0,28)
-
-    moneyBox.PlaceholderText="Money Amount"
-
-    moneyBox.TextColor3=Color3.fromRGB(220,225,240)
-
-    moneyBox.BackgroundColor3=Color3.fromRGB(28,30,38)
-
+    moneyBox.Size = UDim2.new(1,0,0,28)
+    moneyBox.PlaceholderText = "Money Amount"
+    moneyBox.Text = "67" -- giá trị mặc định
+    moneyBox.TextColor3 = Color3.fromRGB(220,225,240)
+    moneyBox.BackgroundColor3 = Color3.fromRGB(28,30,38)
     r(moneyBox,6)
+    moneyBox.Font = Enum.Font.Arcade
+    moneyBox.TextSize = 10
+    moneyBox.Position = UDim2.fromOffset(0,0)
+    moneyBox.ClearTextOnFocus = false
 
-    moneyBox.Font=Enum.Font.Arcade
-
-    moneyBox.TextSize=10
-
-    moneyBox.Position=UDim2.fromOffset(0,0)
-
-    moneyBox.ClearTextOnFocus=false
-
+    -- Button SET MONEY
     local setBtn = Instance.new("TextButton", frame)
-
-    setBtn.Size=UDim2.new(1,0,0,28)
-
-    setBtn.Text="SET MONEY"
-
-    setBtn.BackgroundColor3=Color3.fromRGB(60,140,75)
-
-    setBtn.TextColor3=Color3.new(1,1,1)
-
+    setBtn.Size = UDim2.new(1,0,0,28)
+    setBtn.Text = "SET MONEY"
+    setBtn.BackgroundColor3 = Color3.fromRGB(60,140,75)
+    setBtn.TextColor3 = Color3.new(1,1,1)
     r(setBtn,6)
-
-    setBtn.Position=UDim2.fromOffset(0,36)
+    setBtn.Position = UDim2.fromOffset(0,36)
 
     setBtn.MouseButton1Click:Connect(function()
-
-        local val=parseNumber(moneyBox.Text)
-
+        local val = parseNumber(moneyBox.Text)
         if not val then return er("⚠️ Invalid Amount") end
 
-        local ok_, res = sendInvokeExact("setmoney",{val})
-
-        if ok_ then ok("✅ Set Money: "..val) else er("❌ "..tostring(res)) end
-
+        -- Gọi GiveMoney từ server
+        local args = {
+            [1] = val
+        }
+        local success, result = pcall(function()
+            return game:GetService("ReplicatedStorage")
+                .Packages.Net:FindFirstChild("RF/AdminService/GiveMoney")
+                :InvokeServer(unpack(args))
+        end)
+        if success then
+            ok("💰 GiveMoney Success ✅: "..val)
+        else
+            er("❌ GiveMoney Failed: "..tostring(result))
+        end
     end)
-
 end
 
 ------------------- REBIRTH -------------------
@@ -909,10 +903,11 @@ end
 do
     local frame = rebirthTab
 
-    -- TextBox nhập số Rebirth
+    -- TextBox nhập số Rebirth, mặc định 17
     local rebirthBox = Instance.new("TextBox", frame)
     rebirthBox.Size = UDim2.new(1,0,0,28)
     rebirthBox.PlaceholderText = "Rebirth Amount"
+    rebirthBox.Text = "17" -- giá trị mặc định
     rebirthBox.TextColor3 = Color3.fromRGB(220,225,240)
     rebirthBox.BackgroundColor3 = Color3.fromRGB(28,30,38)
     r(rebirthBox,6)
@@ -936,7 +931,7 @@ do
 
         -- Gọi GiveRebirth từ server
         local args = {
-            [1] = val -- khai báo số Rebirth tại đây
+            [1] = val
         }
         local success, result = pcall(function()
             return game:GetService("ReplicatedStorage")
@@ -944,9 +939,9 @@ do
                 :InvokeServer(unpack(args))
         end)
         if success then
-            ok("✨ SetRebirth success: "..val)
+            ok("✨ GiveRebirth Success ✅: "..val)
         else
-            er("❌ SetRebirth Failed: "..tostring(result))
+            er("❌ GiveRebirth Failed: "..tostring(result))
         end
     end)
 end
