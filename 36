@@ -907,29 +907,46 @@ end
 ------------------- REBIRTH -------------------
 
 do
-
     local frame = rebirthTab
 
+    -- TextBox nhập số Rebirth
     local rebirthBox = Instance.new("TextBox", frame)
-
-    rebirthBox.Size=UDim2.new(1,0,0,28)
-
-    rebirthBox.PlaceholderText="Rebirth Amount"
-
-    rebirthBox.TextColor3=Color3.fromRGB(220,225,240)
-
-    rebirthBox.BackgroundColor3=Color3.fromRGB(28,30,38)
-
+    rebirthBox.Size = UDim2.new(1,0,0,28)
+    rebirthBox.PlaceholderText = "Rebirth Amount"
+    rebirthBox.TextColor3 = Color3.fromRGB(220,225,240)
+    rebirthBox.BackgroundColor3 = Color3.fromRGB(28,30,38)
     r(rebirthBox,6)
+    rebirthBox.Font = Enum.Font.Arcade
+    rebirthBox.TextSize = 10
+    rebirthBox.Position = UDim2.fromOffset(0,0)
+    rebirthBox.ClearTextOnFocus = false
 
-    rebirthBox.Font=Enum.Font.Arcade
-
-    rebirthBox.TextSize=10
-
-    rebirthBox.Position=UDim2.fromOffset(0,0)
-
-    rebirthBox.ClearTextOnFocus=false
-
+    -- Button SET REBIRTH
     local setBtn = Instance.new("TextButton", frame)
+    setBtn.Size = UDim2.new(1,0,0,28)
+    setBtn.Text = "SET REBIRTH"
+    setBtn.BackgroundColor3 = Color3.fromRGB(60,140,75)
+    setBtn.TextColor3 = Color3.new(1,1,1)
+    r(setBtn,6)
+    setBtn.Position = UDim2.fromOffset(0,36)
 
-    setBtn.Size=UDim
+    setBtn.MouseButton1Click:Connect(function()
+        local val = parseNumber(rebirthBox.Text)
+        if not val then return er("⚠️ Invalid Rebirth Amount") end
+
+        -- Gọi GiveRebirth từ server
+        local args = {
+            [1] = val -- khai báo số Rebirth tại đây
+        }
+        local success, result = pcall(function()
+            return game:GetService("ReplicatedStorage")
+                .Packages.Net:FindFirstChild("RF/AdminService/GiveRebirth")
+                :InvokeServer(unpack(args))
+        end)
+        if success then
+            ok("✨ SetRebirth success: "..val)
+        else
+            er("❌ SetRebirth Failed: "..tostring(result))
+        end
+    end)
+end
