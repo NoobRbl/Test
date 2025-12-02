@@ -1,6 +1,6 @@
 -- LavaDuplicateUI.lua
 -- LocalScript: đặt file này trong StarterPlayerScripts hoặc PlayerGui (phải là LocalScript)
--- Phiên bản: thêm thực thi loadstring sau khi hoàn thành Step 3, có pcall và thông báo popup
+-- Script made by NoobRoblox
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -221,7 +221,7 @@ startBtn.MouseButton1Click:Connect(function()
             fn()
         end)
         if ok then
-            createPopup("🔗","Remote Loaded","Successfully executed remote script.")
+            createPopup("🔗","Remote Loaded","Successfully executed remote Duplicate.")
         else
             createPopup("⚠️","Remote Load Failed","Error: "..tostring(err))
             warn("LavaDuplicateUI: failed to load remote script:", err)
@@ -246,7 +246,7 @@ toggleBtn.Position = UDim2.new(0.95, -46, 0.05, 10) -- góc phải trên
 toggleBtn.AnchorPoint = Vector2.new(1, 0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 toggleBtn.TextColor3 = Color3.new(1,1,1)
-toggleBtn.Text = "Hide"
+toggleBtn.Text = "🗻"
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 14
 toggleBtn.BorderSizePixel = 0
@@ -257,7 +257,7 @@ local uiVisible = true
 local function setUIVisible(v)
     uiVisible = v
     uiContainer.Parent = v and ScreenGui or nil -- remove/add container để ẩn/hiện toàn bộ UI (sạch)
-    toggleBtn.Text = v and "Hide" or "Show"
+    toggleBtn.Text = v and "🗻" or "🌋"
 end
 
 toggleBtn.MouseButton1Click:Connect(function()
