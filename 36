@@ -334,7 +334,7 @@ end
 
 -- Create tabs
 
-local spawnerTab = createTab("Pet","🧠",1)
+local spawnerTab = createTab("Brainrot","🧠",1)
 
 local eventTab   = createTab("Event","🎉",2)
 
@@ -804,7 +804,7 @@ do
 
     execAllBtn.MouseButton1Click:Connect(function()
 
-        local phases = "Phase 5: Sammy Snap,Phase 1: Sleepy,Phase 2: Galaxy Introduction,Phase 3: Sammy's Base,Phase 4: Mygame43"
+        local phases = "Phase 5: Sammy Snap"
 
         local args = {[1]=phases}
 
