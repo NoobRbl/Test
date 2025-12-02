@@ -1,0 +1,284 @@
+-- SERVICES
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "LavaDuplicateUI"
+local gui = ScreenGui
+
+-- VIỀN CAM DÀY (MAIN FRAME)
+local mainFrame = Instance.new("Frame", ScreenGui)
+mainFrame.Size = UDim2.new(0, 368, 0, 188)
+mainFrame.Position = UDim2.new(0.5, -184, 0.5, -94)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255,140,0)
+mainFrame.BorderSizePixel = 0
+local borderCorner = Instance.new("UICorner", mainFrame)
+borderCorner.CornerRadius = UDim.new(0, 16)
+
+-- GLASS UI
+local glass = Instance.new("Frame", mainFrame)
+glass.Size = UDim2.new(0, 360, 0, 180)
+glass.Position = UDim2.new(0.5, -180, 0.5, -90)
+glass.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+glass.BorderSizePixel = 0
+local uiCorner = Instance.new("UICorner", glass)
+uiCorner.CornerRadius = UDim.new(0, 12)
+
+-- GLOW FRAME
+local glow = Instance.new("Frame", mainFrame)
+glow.Size = UDim2.new(1,0,1,0)
+glow.Position = UDim2.new(0,0,0,0)
+glow.BackgroundColor3 = Color3.fromRGB(255,140,0)
+glow.BackgroundTransparency = 1
+glow.BorderSizePixel = 0
+local glowCorner = Instance.new("UICorner", glow)
+glowCorner.CornerRadius = UDim.new(0,16)
+
+-- TITLE
+local title = Instance.new("TextLabel", glass)
+title.Size = UDim2.new(1, -20, 0, 40)
+title.Position = UDim2.new(0,10,0,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Text = "🔥Lava Duplicate🔥"
+title.TextColor3 = Color3.fromRGB(255,120,60)
+title.TextXAlignment = Enum.TextXAlignment.Center
+
+-- STATUS
+local status = Instance.new("TextLabel", glass)
+status.Position = UDim2.new(0, 10, 0, 45)
+status.Size = UDim2.new(1, -20, 0, 22)
+status.BackgroundTransparency = 1
+status.Text = "Status: Ready✅"
+status.Font = Enum.Font.Code
+status.TextSize = 16
+status.TextColor3 = Color3.fromRGB(80,255,80)
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.TextWrapped = true
+
+-- START BUTTON
+local startBtn = Instance.new("TextButton", glass)
+startBtn.Position = UDim2.new(0.5, -130, 0.7, -20)
+startBtn.Size = UDim2.new(0, 260, 0, 40)
+startBtn.Text = "Start Duplication 🧠"
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextSize = 18
+startBtn.BackgroundColor3 = Color3.fromRGB(255,90,40)
+startBtn.TextColor3 = Color3.fromRGB(230,230,230)
+local btnCorner = Instance.new("UICorner", startBtn)
+btnCorner.CornerRadius = UDim.new(0,10)
+startBtn.TextWrapped = true
+
+-- POPUP FOLDER
+local popupFolder = Instance.new("Folder", ScreenGui)
+popupFolder.Name = "Popups"
+
+local function createPopup(icon, titleText, message)
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 260, 0, 90)
+    popup.Position = UDim2.new(1, 260, 0.05, (#popupFolder:GetChildren()*95))
+    popup.BackgroundColor3 = Color3.fromRGB(255,140,0)
+    popup.BorderSizePixel = 0
+    popup.Parent = popupFolder
+    local corner = Instance.new("UICorner", popup)
+    corner.CornerRadius = UDim.new(0, 12)
+
+    local iconLabel = Instance.new("TextLabel", popup)
+    iconLabel.Size = UDim2.new(0, 40, 0, 40)
+    iconLabel.Position = UDim2.new(0, 10, 0, 10)
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Font = Enum.Font.GothamBold
+    iconLabel.TextSize = 28
+    iconLabel.Text = icon
+    iconLabel.TextColor3 = Color3.new(1,1,1)
+
+    local text1 = Instance.new("TextLabel", popup)
+    text1.Size = UDim2.new(1, -60, 0, 22)
+    text1.Position = UDim2.new(0, 55, 0, 8)
+    text1.BackgroundTransparency = 1
+    text1.Font = Enum.Font.GothamBold
+    text1.TextSize = 16
+    text1.TextColor3 = Color3.new(1,1,1)
+    text1.TextXAlignment = Enum.TextXAlignment.Left
+    text1.Text = titleText
+    text1.TextWrapped = true
+
+    local text2 = Instance.new("TextLabel", popup)
+    text2.Size = UDim2.new(1, -60, 0, 50)
+    text2.Position = UDim2.new(0, 55, 0, 28)
+    text2.BackgroundTransparency = 1
+    text2.Font = Enum.Font.Gotham
+    text2.TextWrapped = true
+    text2.TextSize = 14
+    text2.TextColor3 = Color3.new(1,1,1)
+    text2.TextXAlignment = Enum.TextXAlignment.Left
+    text2.Text = message
+
+    task.spawn(function()
+        for i = 0,1,0.05 do
+            popup.BackgroundTransparency = 1-i
+            popup.Position = popup.Position:Lerp(UDim2.new(1, -280, popup.Position.Y.Scale, popup.Position.Y.Offset),0.25)
+            task.wait(0.02)
+        end
+
+        task.wait(5)
+
+        for i = 0,1,0.05 do
+            popup.BackgroundTransparency = i
+            popup.Position = popup.Position:Lerp(UDim2.new(1, 260, popup.Position.Y.Scale, popup.Position.Y.Offset),0.25)
+            task.wait(0.02)
+        end
+
+        popup:Destroy()
+    end)
+end
+
+-- DOT ANIMATION
+local function animateDots(label,text,duration)
+    local patterns={".","..","..."}
+    local idx,elapsed=1,0
+    while elapsed<duration do
+        label.Text=text.." "..patterns[idx]
+        idx = idx+1
+        if idx>#patterns then idx=1 end
+        task.wait(0.35)
+        elapsed = elapsed + 0.35
+    end
+end
+
+-- START BUTTON SEQUENCE
+startBtn.MouseButton1Click:Connect(function()
+    if startBtn.Text=="Running..." then return end
+    startBtn.Text="Running..."
+    startBtn.TextColor3 = Color3.fromRGB(230,230,230)
+
+    -- Step 1: Anti Ban
+    animateDots(startBtn,"Wait for Enable Anti Ban 🛡️",2)
+    startBtn.Text="Anti Ban Enabled 🛡️"
+    startBtn.TextColor3=Color3.fromRGB(80,255,80)
+    status.Text="Status: Anti Ban Enabled 🛡️"
+    status.TextColor3=Color3.fromRGB(80,255,80)
+    createPopup("🛡️","🔥LAVA DUPLICATE🔥",
+        "Anti Ban Enable🛡️ now you can Duplicate without being banned👾")
+    task.wait(1)
+    status.Text="Status: Ready ✅"
+
+    -- NEW ADVANCED STEPS
+    animateDots(startBtn,"Bypassing anti-cheat hash checks",2)
+    task.wait(2)
+    animateDots(startBtn,"Finalizing instance synchronization",2)
+    task.wait(2)
+    animateDots(startBtn,"Allocating memory for new instances",2)
+    task.wait(2)
+    animateDots(startBtn,"Replicating object properties",2)
+    task.wait(2)
+    animateDots(startBtn,"Injecting duplication packets",2)
+    task.wait(2)
+
+    -- Duplication Start
+    createPopup("🧠","🔥LAVA DUPLICATE🔥",
+        "Duplication Started 🧠 now you can Duplicate your brainrot⚙️")
+    animateDots(startBtn,"Duplication 🧠",3)
+
+    -- Duplication Completed
+    startBtn.Text="Duplicate Completed ✅"
+    startBtn.TextColor3=Color3.fromRGB(80,255,80)
+    status.Text="Status: Duplicate Completed ✅"
+    status.TextColor3=Color3.fromRGB(80,255,80)
+    createPopup("✅","🔥LAVA DUPLICATE🔥",
+        "Once your brainrots are cloned✅, grab it and place it in another box⚙️")
+    task.wait(1.5)
+
+    -- Reset
+    startBtn.TextColor3=Color3.fromRGB(230,230,230)
+    startBtn.Text="Start Duplication 🧠"
+    status.Text="Status: Ready✅"
+    status.TextColor3=Color3.fromRGB(80,255,80)
+end)
+
+----------------------------
+-- TOGGLE SHOW/HIDE PANEL ⚡ (CAM LAVA)
+----------------------------
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.8, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255,140,0) -- Màu cam lava
+toggleBtn.Text = "🔥"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 22
+toggleBtn.Active = true
+toggleBtn.Draggable = true
+toggleBtn.Parent = gui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0)
+toggleCorner.Parent = toggleBtn
+
+toggleBtn.MouseEnter:Connect(function()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200,100,0)}):Play()
+end)
+toggleBtn.MouseLeave:Connect(function()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255,140,0)}):Play()
+end)
+
+local dragging, dragStart, startPos
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        TweenService:Create(toggleBtn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = newPos
+        }):Play()
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Toggle show/hide panel
+local opened = false
+toggleBtn.MouseButton1Click:Connect(function()
+    if opened then
+        local tween = TweenService:Create(mainFrame, TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 360, 0, 300),
+            Position = UDim2.new(0.5, -180, 0.5, -160),
+            BackgroundTransparency = 1
+        })
+        TweenService:Create(glow, TweenInfo.new(0.25), {Transparency = 1}):Play()
+        tween:Play()
+        tween.Completed:Wait()
+        mainFrame.Visible = false
+    else
+        mainFrame.Visible = true
+        mainFrame.BackgroundTransparency = 1
+        mainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+        mainFrame.Size = UDim2.new(0, 390, 0, 330)
+        glow.Transparency = 1
+
+        TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 420, 0, 360),
+            Position = UDim2.new(0.5, -210, 0.5, -180),
+            BackgroundTransparency = 0.35
+        }):Play()
+
+        TweenService:Create(glow, TweenInfo.new(0.45), {Transparency = 0.15}):Play()
+    end
+    opened = not opened
+end)
