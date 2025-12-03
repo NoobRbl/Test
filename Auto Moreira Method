@@ -1,0 +1,288 @@
+-- Full fixed script: Auto Moreira Method (UI + Manual Clear Log)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- remove old
+local OLD_NAME = "AutoMoreiraPanel_Fixed"
+local old = playerGui:FindFirstChild(OLD_NAME)
+if old then old:Destroy() end
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = OLD_NAME
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+-- Main frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 330, 0, 450)
+frame.Position = UDim2.new(0.5, -165, 0.5, -225)
+frame.BackgroundColor3 = Color3.fromRGB(32,32,36)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+-- Title bar
+local titleBar = Instance.new("Frame", frame)
+titleBar.Size = UDim2.new(1,0,0,34)
+titleBar.BackgroundColor3 = Color3.fromRGB(45,45,52)
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0,10)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Text = "Auto Moreira Method (Fixed)"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0,12,0,0)
+title.Size = UDim2.new(1,-50,1,0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Text = "✕"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Size = UDim2.new(0,32,1,0)
+closeBtn.Position = UDim2.new(1,-36,0,0)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+-- Log area
+local logOuter = Instance.new("Frame", frame)
+logOuter.Size = UDim2.new(1, -20, 0, 280)
+logOuter.Position = UDim2.new(0,10,0,50)
+logOuter.BackgroundColor3 = Color3.fromRGB(25,25,28)
+Instance.new("UICorner", logOuter).CornerRadius = UDim.new(0,6)
+
+local logScroll = Instance.new("ScrollingFrame", logOuter)
+logScroll.Size = UDim2.new(1, -10, 1, -10)
+logScroll.Position = UDim2.new(0,5,0,5)
+logScroll.BackgroundTransparency = 1
+logScroll.ScrollBarThickness = 6
+logScroll.CanvasSize = UDim2.new(0,0,0,0)
+
+local logsContainer = Instance.new("Frame", logScroll)
+logsContainer.Size = UDim2.new(1,0,0,0)
+logsContainer.BackgroundTransparency = 1
+
+local uiList = Instance.new("UIListLayout", logsContainer)
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+uiList.Padding = UDim.new(0,4)
+
+uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	local h = uiList.AbsoluteContentSize.Y
+	logsContainer.Size = UDim2.new(1,0,0,h)
+	logScroll.CanvasSize = UDim2.new(0,0,0,h)
+	logScroll.CanvasPosition = Vector2.new(0, math.max(0, h - logScroll.AbsoluteSize.Y))
+end)
+
+-----------------------------------------------------
+--  CLEAR LOG BUTTON (Thủ công)
+-----------------------------------------------------
+local clearBtn = Instance.new("TextButton", frame)
+clearBtn.Size = UDim2.new(0, 120, 0, 32)
+clearBtn.Position = UDim2.new(0, 10, 1, -90)
+clearBtn.Text = "Clear Logs"
+clearBtn.BackgroundColor3 = Color3.fromRGB(200,70,70)
+clearBtn.TextColor3 = Color3.fromRGB(255,255,255)
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 14
+clearBtn.Visible = false
+Instance.new("UICorner", clearBtn).CornerRadius = UDim.new(0,6)
+
+clearBtn.MouseButton1Click:Connect(function()
+	for _, child in ipairs(logsContainer:GetChildren()) do
+		if child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+	logsContainer.Size = UDim2.new(1,0,0,0)
+	logScroll.CanvasSize = UDim2.new(0,0,0,0)
+	clearBtn.Visible = false
+end)
+
+-----------------------------------------------------
+-- Progress bar
+-----------------------------------------------------
+local progressBack = Instance.new("Frame", frame)
+progressBack.Size = UDim2.new(0, 280, 0, 10)
+progressBack.Position = UDim2.new(0.5, -140, 1, -60)
+progressBack.BackgroundColor3 = Color3.fromRGB(60,60,70)
+progressBack.BackgroundTransparency = 1
+Instance.new("UICorner", progressBack).CornerRadius = UDim.new(0,6)
+
+local progressFill = Instance.new("Frame", progressBack)
+progressFill.Size = UDim2.new(0,0,1,0)
+progressFill.BackgroundColor3 = Color3.fromRGB(93,118,255)
+progressFill.BackgroundTransparency = 1
+Instance.new("UICorner", progressFill).CornerRadius = UDim.new(0,6)
+
+-----------------------------------------------------
+-- Start button
+-----------------------------------------------------
+local startBtn = Instance.new("TextButton", frame)
+startBtn.Text = "Start Moreira"
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextSize = 16
+startBtn.TextColor3 = Color3.fromRGB(255,255,255)
+startBtn.BackgroundColor3 = Color3.fromRGB(93,118,255)
+startBtn.Size = UDim2.new(0,280,0,40)
+startBtn.Position = UDim2.new(0.5,-140,1,-50)
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0,8)
+
+-----------------------------------------------------
+-- Push Log
+-----------------------------------------------------
+local function pushLogLine(text)
+	local lbl = Instance.new("TextLabel")
+	lbl.BackgroundTransparency = 1
+	lbl.Size = UDim2.new(1, -10, 0, 18)
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextSize = 14
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Text = text
+	lbl.Parent = logsContainer
+
+	-- log color
+	if string.find(text, "Successfully sent") then
+		lbl.TextColor3 = Color3.fromRGB(108,255,108)
+	elseif string.find(text, "Failed to sent") then
+		lbl.TextColor3 = Color3.fromRGB(255,108,108)
+	elseif string.find(text, "Please wait a moment") then
+		lbl.TextColor3 = Color3.fromRGB(140,180,255)
+	elseif string.find(text, "Waiting") then
+		lbl.TextColor3 = Color3.fromRGB(78,168,255)
+	elseif string.find(text, "Finished") then
+		lbl.TextColor3 = Color3.fromRGB(170,255,170)
+	else
+		lbl.TextColor3 = Color3.fromRGB(255,255,255)
+	end
+
+	-- hiện nút clear
+	clearBtn.Visible = true
+end
+
+-----------------------------------------------------
+-- Odd/Even RNG
+-----------------------------------------------------
+local function randomOddEven(minVal, maxVal)
+	local num = math.random(minVal, maxVal)
+	local chooseOdd = math.random(1,100) <= 70
+	if chooseOdd then if num % 2 == 0 then num += 1 end
+	else if num % 2 ~= 0 then num += 1 end end
+	return num
+end
+
+local function pickResults()
+	local success
+	if math.random(1,100) <= 70 then
+		success = randomOddEven(700, 1000)
+	else
+		success = randomOddEven(500, 550)
+	end
+	local fail = (success < 600) and randomOddEven(15,25) or randomOddEven(30,50)
+	return success, fail
+end
+
+-----------------------------------------------------
+-- Main process
+-----------------------------------------------------
+local running = false
+local waitingForPlayers = false
+
+Players.PlayerAdded:Connect(function(plr)
+	if waitingForPlayers then
+		pushLogLine("The player has joined the server")
+	end
+end)
+
+local function startProcess()
+	if running then return end
+	running = true
+
+	-- fade out button
+	local hideTween = TweenService:Create(startBtn, TweenInfo.new(0.25), {
+		BackgroundTransparency = 1,
+		TextTransparency = 1
+	})
+	hideTween:Play()
+	hideTween.Completed:Wait()
+	startBtn.Visible = false
+
+	-- show progress
+	progressBack.Visible = true
+	TweenService:Create(progressBack, TweenInfo.new(0.25), {BackgroundTransparency = 0}):Play()
+	TweenService:Create(progressFill, TweenInfo.new(0.25), {BackgroundTransparency = 0}):Play()
+
+	pushLogLine("Waiting for Moreira Method⚙️")
+
+	local infoCount = math.random(10,35)
+	local successCount, failCount = pickResults()
+	local totalLogs = infoCount + successCount + failCount
+
+	local duration = 15
+	local delayPerLog = duration / totalLogs
+	local index = 0
+
+	-- info spam
+	for i = 1, infoCount do
+		index += 1
+		pushLogLine("Please wait a moment for it to be sent to the server")
+		TweenService:Create(progressFill, TweenInfo.new(0.15), {Size = UDim2.new(index/totalLogs,0,1,0)}):Play()
+		task.wait(delayPerLog)
+	end
+
+	-- randomize success/fail
+	local arr = {}
+	for i = 1, successCount do table.insert(arr, "S") end
+	for i = 1, failCount do table.insert(arr, "F") end
+
+	for i = #arr, 2, -1 do
+		local j = math.random(1, i)
+		arr[i], arr[j] = arr[j], arr[i]
+	end
+
+	-- push success/fail
+	for _, v in ipairs(arr) do
+		index += 1
+		if v == "S" then
+			pushLogLine("Successfully sent to a server")
+		else
+			pushLogLine("Failed to sent to a server")
+		end
+		TweenService:Create(progressFill, TweenInfo.new(0.12), {Size = UDim2.new(index/totalLogs,0,1,0)}):Play()
+		task.wait(delayPerLog)
+	end
+
+	pushLogLine(("Finished. Success(%d)  Fail(%d)"):format(successCount, failCount))
+
+	task.wait(2)
+	pushLogLine("Waiting for players to join")
+	waitingForPlayers = true
+
+	-- fade out progress bar
+	task.wait(1)
+	TweenService:Create(progressBack, TweenInfo.new(0.35), {BackgroundTransparency = 1}):Play()
+	local tween2 = TweenService:Create(progressFill, TweenInfo.new(0.35), {BackgroundTransparency = 1})
+	tween2:Play()
+	tween2.Completed:Wait()
+	progressBack.Visible = false
+	progressFill.Size = UDim2.new(0,0,1,0)
+
+	-- restore button
+	startBtn.Visible = true
+	TweenService:Create(startBtn, TweenInfo.new(0.25), {
+		BackgroundTransparency = 0,
+		TextTransparency = 0
+	}):Play()
+
+	running = false
+end
+
+startBtn.MouseButton1Click:Connect(startProcess)
