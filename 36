@@ -344,6 +344,8 @@ local rebirthTab = createTab("Rebirth","🔄",4)
 
 local luckyTab   = createTab("Lucky","🍀",5)
 
+local otherTab = createTab("Other⚙️", "⚙️", 6)
+
 ------------------- PET SPAWNER -------------------
 
 do
@@ -944,4 +946,37 @@ do
             er("❌ GiveRebirth Failed: "..tostring(result))
         end
     end)
+end
+
+------------------- OTHER TAB -------------------
+
+do
+    local frame = otherTab
+
+    -- Nút Duplicate 🧠
+    local dupBtn = Instance.new("TextButton", frame)
+    dupBtn.Size = UDim2.new(1,0,0,28)
+    dupBtn.Text = "Duplicate 🧠"
+    dupBtn.BackgroundColor3 = Color3.fromRGB(88,101,242)
+    dupBtn.TextColor3 = Color3.new(1,1,1)
+    dupBtn.Font = Enum.Font.Arcade
+    dupBtn.TextSize = 12
+    r(dupBtn, 6)
+    dupBtn.Position = UDim2.fromOffset(0,0)
+
+    dupBtn.MouseButton1Click:Connect(function()
+        ok("Attempting Duplicate 🧠 ...")
+        -- bạn có thể thêm chức năng duplicate tại đây nếu muốn
+    end)
+
+    -- NOTE dưới nút Duplicate
+    local note = Instance.new("TextLabel", frame)
+    note.Size = UDim2.new(1,0,0,22)
+    note.Text = "You must have brainrot 50m+ to Duplicate🧠"
+    note.BackgroundTransparency = 1
+    note.TextColor3 = Color3.fromRGB(200,200,200)
+    note.Font = Enum.Font.Code
+    note.TextSize = 10
+    note.TextWrapped = true
+    note.Position = UDim2.fromOffset(0,32)
 end
