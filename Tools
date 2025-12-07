@@ -356,7 +356,7 @@ local function createUI()
     icon.Size = UDim2.new(0, 26, 0, 26)
     icon.Position = UDim2.new(0, 6, 0, 3)
     icon.Font = Enum.Font.GothamBold
-    icon.Text = "🧠"
+    icon.Text = "⚔️"
     icon.TextSize = 20
     icon.TextColor3 = Color3.fromRGB(255, 255, 255)
     icon.ZIndex = 12
@@ -367,7 +367,7 @@ local function createUI()
     title.Size = UDim2.new(0.6, 0, 1, 0)
     title.Position = UDim2.new(0, 34, 0, 0)
     title.Font = Enum.Font.GothamBold
-    title.Text = "PvP STEAL A BRAINROT"
+    title.Text = "Miranda Tools"
     title.TextSize = 14
     title.TextColor3 = Color3.fromRGB(235, 235, 255)
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -379,7 +379,7 @@ local function createUI()
     status.Size = UDim2.new(0, 80, 0, 18)
     status.Position = UDim2.new(1, -90, 0.5, -9)
     status.Font = Enum.Font.Gotham
-    status.Text = "PvP • LIVE"
+    status.Text = "PvP"
     status.TextSize = 11
     status.TextColor3 = Color3.fromRGB(190, 200, 255)
     status.TextXAlignment = Enum.TextXAlignment.Right
@@ -546,25 +546,25 @@ local function createUI()
     ----------------------------------------------------------------
     local instantBtn, _instantTitle, _instantSub = makeHubButton(
         "⚡ Instant Steal",
-        "TP tới Delivery rồi về vị trí cũ",
+        "Bring brainrot to base super fast",
         Color3.fromRGB(90, 130, 230)
     )
 
     local forwardBtn, _forwardTitle, _forwardSub = makeHubButton(
-        "➡ Forward Blink",
-        "Nhảy nhanh về phía trước để outplay",
+        "➡ Teleport Forward",
+        "Nhảy nhanh về phía trước move forward a certain distance outplay",
         Color3.fromRGB(80, 190, 150)
     )
 
     local noclipBtn, noclipTitle, _noclipSub = makeHubButton(
         "☁ Noclip [OFF]",
-        "Đi xuyên tường, tránh kẹt khi PvP",
+        "Go through the wall",
         Color3.fromRGB(125, 105, 190)
     )
 
     local fastBtn, fastTitle, _fastSub = makeHubButton(
         "🚀 Fast Steal [OFF]",
-        "Giảm HoldDuration của ProximityPrompt",
+        "Pick up brainrot super fast",
         Color3.fromRGB(150, 135, 160)
     )
 
