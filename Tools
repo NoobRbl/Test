@@ -1,0 +1,776 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local isTeleporting = false
+local noclipEnabled = false
+local noclipConn = nil
+
+local fastStealOn = false
+local fastStealLoop = nil
+local fastStealConn = nil
+
+-- Lấy nhân vật hiện tại (chờ nếu chưa spawn)
+local function getCharacter()
+    local char = LocalPlayer.Character
+    if not char or not char.Parent then
+        char = LocalPlayer.CharacterAdded:Wait()
+    end
+    return char
+end
+
+-- Tìm plot của mình (label có DisplayName + "Base")
+local function getMyPlot()
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+
+    for _, plot in ipairs(plots:GetChildren()) do
+        local label = plot:FindFirstChild("PlotSign")
+            and plot.PlotSign:FindFirstChild("SurfaceGui")
+            and plot.PlotSign.SurfaceGui:FindFirstChild("Frame")
+            and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
+
+        if label then
+            local textValue = label.ContentText or label.Text or ""
+            if textValue:find(LocalPlayer.DisplayName) and textValue:find("Base") then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+-- Lấy DeliveryHitbox trên plot của mình
+local function getDeliveryHitbox()
+    local myPlot = getMyPlot()
+    if not myPlot then return nil end
+
+    local delivery = myPlot:FindFirstChild("DeliveryHitbox") or myPlot:FindFirstChild("DeliveryHitbox", true)
+    if delivery and delivery:IsA("BasePart") then
+        return delivery
+    end
+    return nil
+end
+
+-- NOCLIP
+local function setNoclip(on)
+    noclipEnabled = on
+
+    if on then
+        if noclipConn then
+            noclipConn:Disconnect()
+        end
+
+        noclipConn = RunService.Stepped:Connect(function()
+            local character = LocalPlayer.Character
+            if not character then return end
+
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        if noclipConn then
+            noclipConn:Disconnect()
+            noclipConn = nil
+        end
+
+        local character = LocalPlayer.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+-- Teleport ngắn, đóng băng camera rồi trả lại
+local function shortTeleportFreezeCamera(targetCF, duration)
+    if isTeleporting then return end
+    isTeleporting = true
+
+    duration = duration or 0.2
+    if duration < 0.1 then duration = 0.1 end
+    if duration > 0.5 then duration = 0.5 end
+
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then
+        isTeleporting = false
+        return
+    end
+
+    local camera = workspace.CurrentCamera
+    if not camera then
+        isTeleporting = false
+        return
+    end
+
+    local lastPosition = humanoidRootPart.CFrame
+    local originalCameraType = camera.CameraType
+    local originalCameraSubject = camera.CameraSubject
+    local originalCameraCFrame = camera.CFrame
+
+    local function restoreCamera()
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            camera.CameraSubject = humanoid
+            camera.CameraType = Enum.CameraType.Custom
+        else
+            camera.CameraType = originalCameraType or Enum.CameraType.Custom
+            camera.CameraSubject = originalCameraSubject
+        end
+        camera.CFrame = originalCameraCFrame
+    end
+
+    local success, errorMessage = pcall(function()
+        camera.CameraType = Enum.CameraType.Scriptable
+        camera.CFrame = originalCameraCFrame
+
+        humanoidRootPart.CFrame = targetCF
+        task.wait(duration)
+        humanoidRootPart.CFrame = lastPosition
+    end)
+
+    restoreCamera()
+    isTeleporting = false
+
+    if not success then
+        warn("[SAB UTILS] shortTeleport error: " .. tostring(errorMessage))
+    end
+end
+
+-- INSTANT STEAL: Tới Delivery rồi về chỗ cũ
+local function doInstantSteal()
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    local deliveryHitbox = getDeliveryHitbox()
+    if not deliveryHitbox then return end
+
+    local targetCF = deliveryHitbox.CFrame * CFrame.new(0, 3, -3)
+    shortTeleportFreezeCamera(targetCF, 0.25)
+end
+
+-- TP Forward: bước nhỏ về phía trước
+local function doForwardTP()
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(0, 0, -8)
+end
+
+-- Patch Prompt: giảm HoldDuration
+local function patchPrompt(prompt)
+    if not prompt:IsA("ProximityPrompt") then return end
+
+    local success, _ = pcall(function()
+        if prompt.HoldDuration > 0.01 then
+            prompt.HoldDuration = 0.01
+        end
+    end)
+
+    if not success then
+        -- ignore lỗi nhẹ
+    end
+end
+
+-- FAST STEAL: loop patch mọi prompt
+local function setFastSteal(on)
+    fastStealOn = on
+
+    if on then
+        -- Patch prompt hiện có
+        task.spawn(function()
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    patchPrompt(obj)
+                end
+            end
+        end)
+
+        -- Loop patch liên tục
+        if not fastStealLoop then
+            fastStealLoop = task.spawn(function()
+                while fastStealOn do
+                    local success, errorMessage = pcall(function()
+                        for _, obj in ipairs(workspace:GetDescendants()) do
+                            if obj:IsA("ProximityPrompt") then
+                                patchPrompt(obj)
+                            end
+                        end
+                    end)
+
+                    if not success then
+                        warn("[SAB UTILS] FastSteal loop error:", errorMessage)
+                    end
+
+                    task.wait(0.08)
+                end
+                fastStealLoop = nil
+            end)
+        end
+
+        -- Patch prompt mới spawn
+        if fastStealConn then fastStealConn:Disconnect() end
+        fastStealConn = workspace.DescendantAdded:Connect(function(obj)
+            if fastStealOn and obj:IsA("ProximityPrompt") then
+                patchPrompt(obj)
+            end
+        end)
+    else
+        if fastStealConn then
+            fastStealConn:Disconnect()
+            fastStealConn = nil
+        end
+    end
+end
+
+----------------------------------------------------------------
+-- UI KIỂU MIRANDA HUB – HÌNH VUÔNG BO 10PX, LIST NÚT DỌC
+----------------------------------------------------------------
+local function createUI()
+    local TweenService = game:GetService("TweenService")
+
+    local function lighten(c, amount)
+        amount = amount or 30
+        local r = math.clamp(c.R * 255 + amount, 0, 255)
+        local g = math.clamp(c.G * 255 + amount, 0, 255)
+        local b = math.clamp(c.B * 255 + amount, 0, 255)
+        return Color3.fromRGB(r, g, b)
+    end
+
+    local guiParent = game:GetService("CoreGui")
+    pcall(function()
+        if gethui then
+            local h = gethui()
+            if h then guiParent = h end
+        end
+    end)
+
+    -- Xoá UI cũ nếu có
+    local old = guiParent:FindFirstChild("SAB_Utils_UI")
+    if old then old:Destroy() end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "SAB_Utils_UI"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    screenGui.Parent = guiParent
+
+    -- Nếu UI bị destroy thì tắt các mode
+    screenGui.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            setNoclip(false)
+            setFastSteal(false)
+        end
+    end)
+
+    ----------------------------------------------------------------
+    -- MAIN HUB (VUÔNG, BO 10PX)
+    ----------------------------------------------------------------
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.Size = UDim2.new(0, 280, 0, 260)
+    mainFrame.Position = UDim2.new(0.8, 0, 0.5, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.ZIndex = 10
+    mainFrame.Parent = screenGui
+
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    shadow.Position = UDim2.new(0.5, 0, 0.5, 10)
+    shadow.Size = UDim2.new(1, 26, 1, 26)
+    shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.BackgroundTransparency = 0 -- không trong suốt
+    shadow.ZIndex = 9
+    shadow.Image = "rbxassetid://5028857084"
+    shadow.ImageTransparency = 0.27
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(24, 24, 276, 276)
+    shadow.Parent = mainFrame
+
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 10)
+    mainCorner.Parent = mainFrame
+
+    local mainStroke = Instance.new("UIStroke")
+    mainStroke.Color = Color3.fromRGB(145, 110, 255)
+    mainStroke.Thickness = 1.4
+    mainStroke.Transparency = 0.2
+    mainStroke.Parent = mainFrame
+
+    local mainGradient = Instance.new("UIGradient")
+    mainGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 25, 80)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 12, 35)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 15))
+    })
+    mainGradient.Rotation = 90
+    mainGradient.Parent = mainFrame
+
+    ----------------------------------------------------------------
+    -- HEADER KIỂU HUB (ICON + TITLE + STATUS + CLOSE)
+    ----------------------------------------------------------------
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 32)
+    header.BackgroundColor3 = Color3.fromRGB(15, 12, 30)
+    header.BorderSizePixel = 0
+    header.ZIndex = 11
+    header.Parent = mainFrame
+
+    local headerCorner = Instance.new("UICorner")
+    headerCorner.CornerRadius = UDim.new(0, 10)
+    headerCorner.Parent = header
+
+    local headerStroke = Instance.new("UIStroke")
+    headerStroke.Color = Color3.fromRGB(100, 80, 200)
+    headerStroke.Thickness = 1
+    headerStroke.Transparency = 0.3
+    headerStroke.Parent = header
+
+    local headerGradient = Instance.new("UIGradient")
+    headerGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 40, 140)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 18, 55))
+    })
+    headerGradient.Rotation = 0
+    headerGradient.Parent = header
+
+    local icon = Instance.new("TextLabel")
+    icon.BackgroundTransparency = 1
+    icon.Size = UDim2.new(0, 26, 0, 26)
+    icon.Position = UDim2.new(0, 6, 0, 3)
+    icon.Font = Enum.Font.GothamBold
+    icon.Text = "⚒️"
+    icon.TextSize = 20
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.ZIndex = 12
+    icon.Parent = header
+
+    local title = Instance.new("TextLabel")
+    title.BackgroundTransparency = 1
+    title.Size = UDim2.new(0.6, 0, 1, 0)
+    title.Position = UDim2.new(0, 34, 0, 0)
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Steal A Brainrot Tools"
+    title.TextSize = 14
+    title.TextColor3 = Color3.fromRGB(235, 235, 255)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.ZIndex = 12
+    title.Parent = header
+
+    local status = Instance.new("TextLabel")
+    status.BackgroundTransparency = 1
+    status.Size = UDim2.new(0, 80, 0, 18)
+    status.Position = UDim2.new(1, -90, 0.5, -9)
+    status.Font = Enum.Font.Gotham
+    status.Text = "PvP • Miranda"
+    status.TextSize = 11
+    status.TextColor3 = Color3.fromRGB(190, 200, 255)
+    status.TextXAlignment = Enum.TextXAlignment.Right
+    status.ZIndex = 12
+    status.Parent = header
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 24, 0, 24)
+    closeBtn.Position = UDim2.new(1, -30, 0.5, -12)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(30, 20, 60)
+    closeBtn.BorderSizePixel = 0
+    closeBtn.AutoButtonColor = false
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Text = "X"
+    closeBtn.TextSize = 14
+    closeBtn.TextColor3 = Color3.fromRGB(235, 235, 245)
+    closeBtn.ZIndex = 13
+    closeBtn.Parent = header
+
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = closeBtn
+
+    local closeStroke = Instance.new("UIStroke")
+    closeStroke.Color = Color3.fromRGB(200, 120, 200)
+    closeStroke.Thickness = 1
+    closeStroke.Transparency = 0.3
+    closeStroke.Parent = closeBtn
+
+    closeBtn.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    closeBtn.MouseEnter:Connect(function()
+        TweenService:Create(
+            closeBtn,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(255, 80, 120)}
+        ):Play()
+    end)
+
+    closeBtn.MouseLeave:Connect(function()
+        TweenService:Create(
+            closeBtn,
+            TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(30, 20, 60)}
+        ):Play()
+    end)
+
+    ----------------------------------------------------------------
+    -- CONTENT HUB: DANH SÁCH NÚT DỌC (NỀN KHÔNG TRONG SUỐT)
+    ----------------------------------------------------------------
+    local content = Instance.new("Frame")
+    content.Name = "Content"
+    content.Size = UDim2.new(1, -16, 1, -44)
+    content.Position = UDim2.new(0, 8, 0, 36)
+    content.BackgroundColor3 = Color3.fromRGB(8, 6, 15)
+    content.BackgroundTransparency = 0
+    content.ZIndex = 11
+    content.Parent = mainFrame
+
+    local list = Instance.new("UIListLayout")
+    list.FillDirection = Enum.FillDirection.Vertical
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Padding = UDim.new(0, 6)
+    list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    list.Parent = content
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 4)
+    padding.PaddingBottom = UDim.new(0, 4)
+    padding.Parent = content
+
+    ----------------------------------------------------------------
+    -- BUTTON HUB STYLE: FULL WIDTH, CHỈ CÒN HOVER
+    ----------------------------------------------------------------
+    local function makeHubButton(titleText, subText, baseColor)
+        local holder = Instance.new("Frame")
+        holder.Size = UDim2.new(1, 0, 0, 48)
+        holder.BackgroundColor3 = Color3.fromRGB(8, 6, 15)
+        holder.BackgroundTransparency = 0
+        holder.ZIndex = 11
+        holder.Parent = content
+
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 1, 0)
+        btn.Position = UDim2.new(0, 0, 0, 0)
+        btn.BackgroundColor3 = baseColor
+        btn.BorderSizePixel = 0
+        btn.AutoButtonColor = false
+        btn.Text = ""
+        btn.ZIndex = 11
+        btn.Parent = holder
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = btn
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = lighten(baseColor, 35)
+        stroke.Thickness = 1
+        stroke.Transparency = 0.25
+        stroke.Parent = btn
+
+        local grad = Instance.new("UIGradient")
+        grad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, lighten(baseColor, 15)),
+            ColorSequenceKeypoint.new(1, baseColor)
+        })
+        grad.Rotation = 90
+        grad.Parent = btn
+
+        -- Title
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Size = UDim2.new(1, -16, 0, 20)
+        titleLabel.Position = UDim2.new(0, 8, 0, 4)
+        titleLabel.Font = Enum.Font.GothamSemibold
+        titleLabel.Text = titleText
+        titleLabel.TextSize = 13
+        titleLabel.TextColor3 = Color3.fromRGB(240, 240, 255)
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.ZIndex = 12
+        titleLabel.Parent = btn
+
+        -- Subtext
+        local subLabel = Instance.new("TextLabel")
+        subLabel.BackgroundTransparency = 1
+        subLabel.Size = UDim2.new(1, -16, 0, 18)
+        subLabel.Position = UDim2.new(0, 8, 0, 24)
+        subLabel.Font = Enum.Font.Gotham
+        subLabel.Text = subText
+        subLabel.TextSize = 11
+        subLabel.TextColor3 = Color3.fromRGB(210, 210, 235)
+        subLabel.TextXAlignment = Enum.TextXAlignment.Left
+        subLabel.ZIndex = 12
+        subLabel.Parent = btn
+
+        local originalColor = baseColor
+        local hoverColor = lighten(baseColor, 35)
+
+        -- Chỉ hover
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(
+                btn,
+                TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = hoverColor}
+            ):Play()
+        end)
+
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(
+                btn,
+                TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = originalColor}
+            ):Play()
+        end)
+
+        return btn, titleLabel, subLabel
+    end
+
+    ----------------------------------------------------------------
+    -- TẠO 4 NÚT CHÍNH
+    ----------------------------------------------------------------
+    local instantBtn, _instantTitle, _instantSub = makeHubButton(
+        "⚡ Instant Steal",
+        "Bring brainrot back to base super fast",
+        Color3.fromRGB(90, 130, 230)
+    )
+
+    local forwardBtn, _forwardTitle, _forwardSub = makeHubButton(
+        "➡ Teleport Forward ",
+        "Move forward a certain amount of time",
+        Color3.fromRGB(80, 190, 150)
+    )
+
+    local noclipBtn, noclipTitle, _noclipSub = makeHubButton(
+        "☁ Noclip [OFF]",
+        "Go through the wall",
+        Color3.fromRGB(125, 105, 190)
+    )
+
+    local fastBtn, fastTitle, _fastSub = makeHubButton(
+        "🚀 Fast Steal [OFF]",
+        "Picked up super fast with no waiting time",
+        Color3.fromRGB(150, 135, 160)
+    )
+
+    ----------------------------------------------------------------
+    -- NÚT TOGGLE HÌNH TRÒN, TO HƠN, KÉO ĐƯỢC
+    ----------------------------------------------------------------
+    local toggleBtn = Instance.new("ImageButton")
+    toggleBtn.Name = "ToggleButton"
+    toggleBtn.Size = UDim2.new(0, 52, 0, 52)
+    toggleBtn.Position = UDim2.new(0.02, 0, 0.65, -26)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(18, 15, 35)
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.AutoButtonColor = false
+    toggleBtn.Image = "rbxassetid://79827946921385"
+    toggleBtn.ImageTransparency = 0
+    toggleBtn.ZIndex = 15
+    toggleBtn.Parent = screenGui
+
+    local tCorner = Instance.new("UICorner")
+    tCorner.CornerRadius = UDim.new(1, 0)
+    tCorner.Parent = toggleBtn
+
+    local tStroke = Instance.new("UIStroke")
+    tStroke.Color = Color3.fromRGB(165, 115, 255)
+    tStroke.Thickness = 1.6
+    tStroke.Transparency = 0.14
+    tStroke.Parent = toggleBtn
+
+    local glow = Instance.new("ImageLabel")
+    glow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    glow.BackgroundTransparency = 0
+    glow.Size = UDim2.new(1.5, 0, 1.5, 0)
+    glow.AnchorPoint = Vector2.new(0.5, 0.5)
+    glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    glow.Image = "rbxassetid://5028857084"
+    glow.ImageTransparency = 0.5
+    glow.ImageColor3 = Color3.fromRGB(120, 90, 255)
+    glow.ScaleType = Enum.ScaleType.Slice
+    glow.SliceCenter = Rect.new(24, 24, 276, 276)
+    glow.ZIndex = 14
+    glow.Parent = toggleBtn
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        mainFrame.Visible = not mainFrame.Visible
+    end)
+
+    toggleBtn.MouseEnter:Connect(function()
+        TweenService:Create(
+            toggleBtn,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(55, 35, 110)}
+        ):Play()
+    end)
+
+    toggleBtn.MouseLeave:Connect(function()
+        TweenService:Create(
+            toggleBtn,
+            TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = Color3.fromRGB(18, 15, 35)}
+        ):Play()
+    end)
+
+    -- DRAG TOGGLE
+    do
+        local dragging = false
+        local dragInput, dragStart, startPos
+
+        local function update(input)
+            local delta = input.Position - dragStart
+            toggleBtn.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+
+        toggleBtn.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = toggleBtn.Position
+
+                input.Changed:Connect(function(i)
+                    if i.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        toggleBtn.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                update(input)
+            end
+        end)
+    end
+
+    ----------------------------------------------------------------
+    -- DRAG HUB (KÉO BẰNG HEADER)
+    ----------------------------------------------------------------
+    do
+        local dragging = false
+        local dragInput, dragStart, startPos
+
+        local function update(input)
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+
+        header.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = mainFrame.Position
+
+                input.Changed:Connect(function(i)
+                    if i.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        header.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                update(input)
+            end
+        end)
+    end
+
+    ----------------------------------------------------------------
+    -- SCALE CHO MÀN HÌNH NHỎ
+    ----------------------------------------------------------------
+    local uiScale = Instance.new("UIScale")
+    uiScale.Scale = 1
+    uiScale.Parent = mainFrame
+
+    local function updateScale()
+        local cam = workspace.CurrentCamera
+        if not cam then return end
+        local vp = cam.ViewportSize
+        local minSide = math.min(vp.X, vp.Y)
+        uiScale.Scale = (minSide <= 720) and 0.9 or 1
+    end
+
+    updateScale()
+    workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(updateScale)
+
+    ----------------------------------------------------------------
+    -- GÁN CHỨC NĂNG NÚT (GIỮ NGUYÊN LOGIC)
+    ----------------------------------------------------------------
+    instantBtn.MouseButton1Click:Connect(doInstantSteal)
+    forwardBtn.MouseButton1Click:Connect(doForwardTP)
+
+    noclipBtn.MouseButton1Click:Connect(function()
+        setNoclip(not noclipEnabled)
+        if noclipEnabled then
+            noclipBtn.BackgroundColor3 = Color3.fromRGB(205, 145, 255)
+            noclipTitle.Text = "☁ Noclip [ON]"
+        else
+            noclipBtn.BackgroundColor3 = Color3.fromRGB(125, 105, 190)
+            noclipTitle.Text = "☁ Noclip [OFF]"
+        end
+    end)
+
+    fastBtn.MouseButton1Click:Connect(function()
+        setFastSteal(not fastStealOn)
+        if fastStealOn then
+            fastBtn.BackgroundColor3 = Color3.fromRGB(245, 175, 100)
+            fastTitle.Text = "🚀 Fast Steal [ON]"
+        else
+            fastBtn.BackgroundColor3 = Color3.fromRGB(150, 135, 160)
+            fastTitle.Text = "🚀 Fast Steal [OFF]"
+        end
+    end)
+
+    -- Hiệu ứng spawn UI
+    uiScale.Scale = 0.9
+    TweenService:Create(
+        uiScale,
+        TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Scale = 1}
+    ):Play()
+end
+
+createUI()
