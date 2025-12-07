@@ -294,8 +294,7 @@ local function createUI()
     shadow.AnchorPoint = Vector2.new(0.5, 0.5)
     shadow.Position = UDim2.new(0.5, 0, 0.5, 10)
     shadow.Size = UDim2.new(1, 26, 1, 26)
-    shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.BackgroundTransparency = 0 -- không trong suốt
+    shadow.BackgroundTransparency = 1 -- ✅ nền trong suốt, không tràn đen
     shadow.ZIndex = 9
     shadow.Image = "rbxassetid://5028857084"
     shadow.ImageTransparency = 0.27
@@ -357,7 +356,7 @@ local function createUI()
     icon.Size = UDim2.new(0, 26, 0, 26)
     icon.Position = UDim2.new(0, 6, 0, 3)
     icon.Font = Enum.Font.GothamBold
-    icon.Text = "⚒️"
+    icon.Text = "🧠"
     icon.TextSize = 20
     icon.TextColor3 = Color3.fromRGB(255, 255, 255)
     icon.ZIndex = 12
@@ -368,7 +367,7 @@ local function createUI()
     title.Size = UDim2.new(0.6, 0, 1, 0)
     title.Position = UDim2.new(0, 34, 0, 0)
     title.Font = Enum.Font.GothamBold
-    title.Text = "Steal A Brainrot Tools"
+    title.Text = "PvP STEAL A BRAINROT"
     title.TextSize = 14
     title.TextColor3 = Color3.fromRGB(235, 235, 255)
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -380,7 +379,7 @@ local function createUI()
     status.Size = UDim2.new(0, 80, 0, 18)
     status.Position = UDim2.new(1, -90, 0.5, -9)
     status.Font = Enum.Font.Gotham
-    status.Text = "PvP • Miranda"
+    status.Text = "PvP • LIVE"
     status.TextSize = 11
     status.TextColor3 = Color3.fromRGB(190, 200, 255)
     status.TextXAlignment = Enum.TextXAlignment.Right
@@ -431,7 +430,7 @@ local function createUI()
     end)
 
     ----------------------------------------------------------------
-    -- CONTENT HUB: DANH SÁCH NÚT DỌC (NỀN KHÔNG TRONG SUỐT)
+    -- CONTENT HUB: DANH SÁCH NÚT DỌC
     ----------------------------------------------------------------
     local content = Instance.new("Frame")
     content.Name = "Content"
@@ -547,25 +546,25 @@ local function createUI()
     ----------------------------------------------------------------
     local instantBtn, _instantTitle, _instantSub = makeHubButton(
         "⚡ Instant Steal",
-        "Bring brainrot back to base super fast",
+        "TP tới Delivery rồi về vị trí cũ",
         Color3.fromRGB(90, 130, 230)
     )
 
     local forwardBtn, _forwardTitle, _forwardSub = makeHubButton(
-        "➡ Teleport Forward ",
-        "Move forward a certain amount of time",
+        "➡ Forward Blink",
+        "Nhảy nhanh về phía trước để outplay",
         Color3.fromRGB(80, 190, 150)
     )
 
     local noclipBtn, noclipTitle, _noclipSub = makeHubButton(
         "☁ Noclip [OFF]",
-        "Go through the wall",
+        "Đi xuyên tường, tránh kẹt khi PvP",
         Color3.fromRGB(125, 105, 190)
     )
 
     local fastBtn, fastTitle, _fastSub = makeHubButton(
         "🚀 Fast Steal [OFF]",
-        "Picked up super fast with no waiting time",
+        "Giảm HoldDuration của ProximityPrompt",
         Color3.fromRGB(150, 135, 160)
     )
 
@@ -595,8 +594,7 @@ local function createUI()
     tStroke.Parent = toggleBtn
 
     local glow = Instance.new("ImageLabel")
-    glow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    glow.BackgroundTransparency = 0
+    glow.BackgroundTransparency = 1 -- ✅ tránh vuông đen tràn ra
     glow.Size = UDim2.new(1.5, 0, 1.5, 0)
     glow.AnchorPoint = Vector2.new(0.5, 0.5)
     glow.Position = UDim2.new(0.5, 0, 0.5, 0)
