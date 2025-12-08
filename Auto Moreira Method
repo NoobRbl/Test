@@ -117,7 +117,7 @@ titleSub.Font = Enum.Font.Gotham
 titleSub.TextSize = 12
 titleSub.TextXAlignment = Enum.TextXAlignment.Left
 titleSub.TextColor3 = Color3.fromRGB(190,195,230)
-titleSub.Text = "Modern UI · Glow"
+titleSub.Text = "Premium · SAB"
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Parent = topBar
