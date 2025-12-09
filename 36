@@ -415,6 +415,7 @@ do
     -----------------------------
     -- INPUT: NAME + MUTATION
     -----------------------------
+
     local nameBox = Instance.new("TextBox", frame)
     nameBox.Size = UDim2.new(1, 0, 0, 28)
     nameBox.PlaceholderText = "Pet Name"
@@ -429,7 +430,7 @@ do
 
 
     -----------------------------
-    -- TRAIT DROPDOWN
+    -- TRAIT DROPDOWN (NEW)
     -----------------------------
 
     local traitOptions = {
@@ -446,7 +447,11 @@ do
     traitBtn.Size = UDim2.new(1, 0, 0, 28)
     traitBtn.Text = "Trait: None ▾"
     styleSecondaryButton(traitBtn)
-    traitBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- ⭐ Chữ giữa + xoá ô vuông
+    traitBtn.TextXAlignment = Enum.TextXAlignment.Center
+    traitBtn.TextYAlignment = Enum.TextYAlignment.Center
+    traitBtn.AutoButtonColor = false
 
     local dropFrame = Instance.new("Frame", frame)
     dropFrame.Size = UDim2.new(1,0,0,0)
@@ -484,9 +489,11 @@ do
         item.MouseButton1Click:Connect(function()
             selectedTrait = t
             traitBtn.Text = "Trait: " .. t .. " ▾"
+
             TweenService:Create(dropFrame, TweenInfo.new(0.25), {
                 Size = UDim2.new(1,0,0,0)
             }):Play()
+
             task.wait(0.25)
             dropFrame.Visible = false
         end)
@@ -544,7 +551,7 @@ do
         local args
         if brainrotName == "Meowl" then
             args = {[1] = "Meowl"}
-        elseif brainrotName == "Elephant" or brainrotName == "Strawberry Elephant" then
+        elseif brainrotName == "Strawberry" or brainrotName == "Strawberry Elephant" then
             args = {[1] = "Strawberry"}
         else
             return
