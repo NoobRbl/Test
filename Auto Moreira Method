@@ -1,4 +1,4 @@
--- Auto Moreira Method (Full, modern UI + glow + Status + Clear log + max 500 dòng + vàng player join)
+-- Auto Moreira Method 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
