@@ -410,7 +410,11 @@ end
 
 do
     local frame = spawnerTab
+    local TweenService = game:GetService("TweenService")
 
+    -----------------------------
+    -- INPUT: NAME + MUTATION
+    -----------------------------
     local nameBox = Instance.new("TextBox", frame)
     nameBox.Size = UDim2.new(1, 0, 0, 28)
     nameBox.PlaceholderText = "Pet Name"
@@ -423,10 +427,98 @@ do
     mutBox.Text = ""
     styleTextBox(mutBox)
 
-    local function getTraitsString()
-        return ""
+
+    -----------------------------
+    -- TRAIT DROPDOWN
+    -----------------------------
+
+    local traitOptions = {
+        "All","Fire","Sleepy","Zombie","RIP Gravestone","Sombrero","Disco",
+        "Skeleton","Tie","Snowy","Lightning","Claws","Bubblegum","Shark Fin",
+        "Indonesia","Glitched","Wet","Matteo Hat","Paint","Spider","Nyan",
+        "Meowl","Taco","Explosive","Brazil","Fireworks","Witch Hat","Strawberry",
+        "UFO","Galactic","10B"
+    }
+
+    local selectedTrait = ""
+
+    local traitBtn = Instance.new("TextButton", frame)
+    traitBtn.Size = UDim2.new(1, 0, 0, 28)
+    traitBtn.Text = "Trait: None ▾"
+    styleSecondaryButton(traitBtn)
+    traitBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+    local dropFrame = Instance.new("Frame", frame)
+    dropFrame.Size = UDim2.new(1,0,0,0)
+    dropFrame.BackgroundColor3 = BG_CARD
+    dropFrame.BorderSizePixel = 0
+    dropFrame.Visible = false
+    dropFrame.ClipsDescendants = true
+    r(dropFrame,10)
+    addStroke(dropFrame,1,Color3.fromRGB(50,60,120),0.35)
+
+    local scroll = Instance.new("ScrollingFrame", dropFrame)
+    scroll.Size = UDim2.new(1,-6,1,-6)
+    scroll.Position = UDim2.fromOffset(3,3)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 3
+    scroll.ScrollBarImageColor3 = ACCENT
+    scroll.BorderSizePixel = 0
+
+    local layout = Instance.new("UIListLayout", scroll)
+    layout.Padding = UDim.new(0,3)
+
+    for _, t in ipairs(traitOptions) do
+        local item = Instance.new("TextButton", scroll)
+        item.Size = UDim2.new(1,-4,0,24)
+        item.BackgroundColor3 = BG_MID
+        item.Text = t
+        item.Font = Enum.Font.Gotham
+        item.TextSize = 10
+        item.TextColor3 = TXT_MAIN
+        item.BorderSizePixel = 0
+        item.TextXAlignment = Enum.TextXAlignment.Left
+        r(item,6)
+        addStroke(item,1,Color3.fromRGB(60,70,130),0.3)
+
+        item.MouseButton1Click:Connect(function()
+            selectedTrait = t
+            traitBtn.Text = "Trait: " .. t .. " ▾"
+            TweenService:Create(dropFrame, TweenInfo.new(0.25), {
+                Size = UDim2.new(1,0,0,0)
+            }):Play()
+            task.wait(0.25)
+            dropFrame.Visible = false
+        end)
     end
 
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 4)
+    end)
+
+    traitBtn.MouseButton1Click:Connect(function()
+        local isOpen = dropFrame.Visible
+        dropFrame.Visible = true
+
+        TweenService:Create(dropFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+            Size = isOpen and UDim2.new(1,0,0,0) or UDim2.new(1,0,0,140)
+        }):Play()
+
+        if isOpen then
+            task.delay(0.25, function()
+                dropFrame.Visible = false
+            end)
+        end
+    end)
+
+    local function getTraitsString()
+        return selectedTrait ~= "" and selectedTrait or ""
+    end
+
+
+    -----------------------------
+    -- LOOP BUTTON
+    -----------------------------
     local looping = false
     local loopThread
 
@@ -435,10 +527,18 @@ do
     loopBtn.Text = "Loop: OFF"
     styleSecondaryButton(loopBtn)
 
+    -----------------------------
+    -- SPAWN BUTTON
+    -----------------------------
     local spawnBtn = Instance.new("TextButton", frame)
     spawnBtn.Size = UDim2.new(1, 0, 0, 28)
     spawnBtn.Text = "SPAWN BRAINROT 🧠"
     stylePrimaryButton(spawnBtn)
+
+
+    -----------------------------
+    -- SPAWN LOGIC
+    -----------------------------
 
     local function runSpecialStartEvent(brainrotName)
         local args
@@ -464,8 +564,8 @@ do
 
         local args = {
             [1] = name,
-            [2] = mutArg ~= "" and mutArg or "",
-            [3] = traitsArg ~= "" and traitsArg or ""
+            [2] = mutArg,
+            [3] = traitsArg
         }
 
         local ok_, res = pcall(function()
@@ -473,7 +573,8 @@ do
             runSpecialStartEvent(name)
         end)
 
-        if ok_ then ok("✅ Spawned: " .. name) else er("❌ " .. tostring(res)) end
+        if ok_ then ok("✅ Spawned: " .. name)
+        else er("❌ " .. tostring(res)) end
     end
 
     spawnBtn.MouseButton1Click:Connect(spawnPet)
@@ -481,13 +582,13 @@ do
     loopBtn.MouseButton1Click:Connect(function()
         looping = not looping
         loopBtn.Text = looping and "Loop: ON" or "Loop: OFF"
-        loopBtn.BackgroundColor3 = looping and Color3.fromRGB(80, 170, 110) or BG_CARD
+        loopBtn.BackgroundColor3 = looping and Color3.fromRGB(80,170,110) or BG_CARD
+
         if looping then
-            if loopThread and coroutine.status(loopThread) ~= "dead" then return end
             loopThread = coroutine.create(function()
                 while looping do
                     spawnPet()
-                    task.wait(0.1)
+                    task.wait(0.12)
                 end
             end)
             coroutine.resume(loopThread)
