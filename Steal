@@ -1,0 +1,315 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+--// STATE
+local isTeleporting = false
+
+--// LẤY NHÂN VẬT
+local function getCharacter()
+    local char = LocalPlayer.Character
+    if not char or not char.Parent then
+        char = LocalPlayer.CharacterAdded:Wait()
+    end
+    return char
+end
+
+--// TÌM PLOT CỦA MÌNH (tuỳ game, giống style thường dùng)
+local function getMyPlot()
+    local plotsFolder = workspace:FindFirstChild("Plots")
+    if not plotsFolder then return nil end
+
+    for _, plot in ipairs(plotsFolder:GetChildren()) do
+        local sign = plot:FindFirstChild("PlotSign")
+        if sign and sign:FindFirstChild("SurfaceGui") then
+            local sg = sign.SurfaceGui
+            local frame = sg:FindFirstChild("Frame")
+            local label = frame and frame:FindFirstChild("TextLabel")
+            if label then
+                local t = (label.ContentText or label.Text or "")
+                if t:find(LocalPlayer.DisplayName) and t:find("Base") then
+                    return plot
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+--// LẤY DELIVERY HITBOX TỪ PLOT CỦA MÌNH
+local function getDeliveryHitbox()
+    local myPlot = getMyPlot()
+    if not myPlot then return nil end
+
+    local delivery = myPlot:FindFirstChild("DeliveryHitbox") or myPlot:FindFirstChild("DeliveryHitbox", true)
+    if delivery and delivery:IsA("BasePart") then
+        return delivery
+    end
+
+    return nil
+end
+
+--// TELEPORT NGẮN (XOÁ TOÀN BỘ FREEZE CAMERA)
+local function shortTeleportFreezeCamera(targetCF, duration)
+    if isTeleporting then return end
+    isTeleporting = true
+
+    duration = duration or 0.2
+    if duration < 0.1 then duration = 0.1 end
+    if duration > 0.5 then duration = 0.5 end
+
+    local character = getCharacter()
+    if not character then
+        isTeleporting = false
+        return
+    end
+
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then
+        isTeleporting = false
+        return
+    end
+
+    if not targetCF then
+        isTeleporting = false
+        return
+    end
+
+    local lastPosition = humanoidRootPart.CFrame
+
+    local success, errorMessage = pcall(function()
+        humanoidRootPart.CFrame = targetCF
+        task.wait(duration)
+        humanoidRootPart.CFrame = lastPosition
+    end)
+
+    isTeleporting = false
+
+    if not success then
+        warn("[InstantStealToggle] shortTeleport error: " .. tostring(errorMessage))
+    end
+end
+
+--// INSTANT STEAL: TỚI DELIVERY RỒI VỀ CHỖ CŨ
+local function doInstantSteal()
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    local deliveryHitbox = getDeliveryHitbox()
+    if not deliveryHitbox then
+        warn("[InstantStealToggle] Không tìm thấy DeliveryHitbox")
+        return
+    end
+
+    -- Đứng lệch 0,3,-3 so với Delivery (đúng style bạn dùng)
+    local targetCF = deliveryHitbox.CFrame * CFrame.new(0, 3, -3)
+    shortTeleportFreezeCamera(targetCF, 0.25)
+end
+
+--// KICK: Thoát khỏi game
+local function doKick()
+    LocalPlayer:Kick("Kicked by script")
+end
+
+--// HÀM CHO PHÉP DRAG UI
+local function makeDraggable(btn)
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        btn.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragging = true
+            dragStart = input.Position
+            startPos = btn.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    btn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+--// TẠO UI 2 TOGGLE: INSTANT STEAL (TRÊN PHẢI) + KICK (DƯỚI PHẢI)
+local function createTogglesUI()
+    local guiParent = game:GetService("CoreGui")
+
+    pcall(function()
+        if gethui then
+            local uiRoot = gethui()
+            if uiRoot then
+                guiParent = uiRoot
+            end
+        end
+    end)
+
+    local old = guiParent:FindFirstChild("InstantSteal_Kick_Toggles_UI")
+    if old then old:Destroy() end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "InstantSteal_Kick_Toggles_UI"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    screenGui.Parent = guiParent
+
+    -- ========= TOGGLE 1: INSTANT STEAL (XANH, GÓC PHẢI TRÊN) =========
+    local stealBtn = Instance.new("TextButton")
+    stealBtn.Name = "InstantStealToggle"
+    stealBtn.Size = UDim2.new(0, 130, 0, 34)
+    stealBtn.Position = UDim2.new(1, -140, 0, 80) -- góc phải trên
+    stealBtn.BackgroundColor3 = Color3.fromRGB(25, 35, 60)
+    stealBtn.AutoButtonColor = false
+    stealBtn.Text = ""
+    stealBtn.Parent = screenGui
+
+    local stealCorner = Instance.new("UICorner")
+    stealCorner.CornerRadius = UDim.new(0, 16)
+    stealCorner.Parent = stealBtn
+
+    local stealStroke = Instance.new("UIStroke")
+    stealStroke.Thickness = 1.4
+    stealStroke.Color = Color3.fromRGB(90, 155, 255)
+    stealStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stealStroke.Parent = stealBtn
+
+    local stealIcon = Instance.new("TextLabel")
+    stealIcon.BackgroundTransparency = 1
+    stealIcon.Size = UDim2.new(0, 28, 1, 0)
+    stealIcon.Position = UDim2.new(0, 6, 0, 0)
+    stealIcon.Font = Enum.Font.GothamBold
+    stealIcon.TextSize = 18
+    stealIcon.Text = "🥷"
+    stealIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    stealIcon.Parent = stealBtn
+
+    local stealLabel = Instance.new("TextLabel")
+    stealLabel.BackgroundTransparency = 1
+    stealLabel.Size = UDim2.new(1, -34, 1, 0)
+    stealLabel.Position = UDim2.new(0, 34, 0, 0)
+    stealLabel.Font = Enum.Font.GothamSemibold
+    stealLabel.TextSize = 14
+    stealLabel.Text = "Instant Steal"
+    stealLabel.TextXAlignment = Enum.TextXAlignment.Left
+    stealLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
+    stealLabel.Parent = stealBtn
+
+    local stealNormalColor = stealBtn.BackgroundColor3
+    local stealHoverColor = Color3.fromRGB(40, 60, 100)
+
+    local function tweenBGSteal(color)
+        TweenService:Create(stealBtn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = color
+        }):Play()
+    end
+
+    stealBtn.MouseEnter:Connect(function()
+        tweenBGSteal(stealHoverColor)
+    end)
+
+    stealBtn.MouseLeave:Connect(function()
+        tweenBGSteal(stealNormalColor)
+    end)
+
+    stealBtn.MouseButton1Click:Connect(function()
+        doInstantSteal()
+    end)
+
+    makeDraggable(stealBtn)
+
+    -- ========= TOGGLE 2: KICK (ĐỎ, GÓC PHẢI DƯỚI) =========
+    local kickBtn = Instance.new("TextButton")
+    kickBtn.Name = "KickToggle"
+    kickBtn.Size = UDim2.new(0, 130, 0, 34)
+    kickBtn.Position = UDim2.new(1, -140, 1, -80) -- góc phải dưới
+    kickBtn.BackgroundColor3 = Color3.fromRGB(90, 30, 30)
+    kickBtn.AutoButtonColor = false
+    kickBtn.Text = ""
+    kickBtn.Parent = screenGui
+
+    local kickCorner = Instance.new("UICorner")
+    kickCorner.CornerRadius = UDim.new(0, 16)
+    kickCorner.Parent = kickBtn
+
+    local kickStroke = Instance.new("UIStroke")
+    kickStroke.Thickness = 1.4
+    kickStroke.Color = Color3.fromRGB(255, 80, 80)
+    kickStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    kickStroke.Parent = kickBtn
+
+    local kickIcon = Instance.new("TextLabel")
+    kickIcon.BackgroundTransparency = 1
+    kickIcon.Size = UDim2.new(0, 28, 1, 0)
+    kickIcon.Position = UDim2.new(0, 6, 0, 0)
+    kickIcon.Font = Enum.Font.GothamBold
+    kickIcon.TextSize = 18
+    kickIcon.Text = "🚪"
+    kickIcon.TextColor3 = Color3.fromRGB(255, 220, 220)
+    kickIcon.Parent = kickBtn
+
+    local kickLabel = Instance.new("TextLabel")
+    kickLabel.BackgroundTransparency = 1
+    kickLabel.Size = UDim2.new(1, -34, 1, 0)
+    kickLabel.Position = UDim2.new(0, 34, 0, 0)
+    kickLabel.Font = Enum.Font.GothamSemibold
+    kickLabel.TextSize = 14
+    kickLabel.Text = "Kick"
+    kickLabel.TextXAlignment = Enum.TextXAlignment.Left
+    kickLabel.TextColor3 = Color3.fromRGB(255, 220, 220)
+    kickLabel.Parent = kickBtn
+
+    local kickNormalColor = kickBtn.BackgroundColor3
+    local kickHoverColor = Color3.fromRGB(120, 40, 40)
+
+    local function tweenBGKick(color)
+        TweenService:Create(kickBtn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = color
+        }):Play()
+    end
+
+    kickBtn.MouseEnter:Connect(function()
+        tweenBGKick(kickHoverColor)
+    end)
+
+    kickBtn.MouseLeave:Connect(function()
+        tweenBGKick(kickNormalColor)
+    end)
+
+    kickBtn.MouseButton1Click:Connect(function()
+        doKick()
+    end)
+
+    makeDraggable(kickBtn)
+end
+
+createTogglesUI()
