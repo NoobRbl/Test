@@ -11,7 +11,7 @@ local old = playerGui:FindFirstChild(OLD_NAME)
 if old then old:Destroy() end
 
 ---------------------------------------------------------------------
--- Helper UI functions (chỉ thay đổi giao diện, KHÔNG đổi chức năng)
+-- Helper UI functions
 ---------------------------------------------------------------------
 local function addCorner(obj, radius)
     local c = Instance.new("UICorner")
@@ -53,7 +53,7 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
 ---------------------------------------------------------------------
--- Main frame (card chính)
+-- Main frame
 ---------------------------------------------------------------------
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 340, 0, 420)
@@ -67,7 +67,7 @@ addStroke(frame, 1.2, Color3.fromRGB(120,130,200), 0.35)
 addGradient(frame, Color3.fromRGB(18, 22, 34), Color3.fromRGB(8, 10, 16), 90)
 
 ---------------------------------------------------------------------
--- Glow background dính theo frame
+-- Glow background
 ---------------------------------------------------------------------
 local glow = Instance.new("ImageLabel")
 glow.Name = "Glow"
@@ -169,10 +169,10 @@ status.Font = Enum.Font.GothamMedium
 status.TextSize = 14
 status.TextXAlignment = Enum.TextXAlignment.Left
 status.TextColor3 = Color3.fromRGB(215,220,245)
-status.Text = "Status: ⏱️ Waiting" -- icon waiting mới
+status.Text = "Status: ⏱️ Waiting"
 
 ---------------------------------------------------------------------
--- Auto Block + Bypass (2 dòng full width)
+-- Auto Block + Bypass
 ---------------------------------------------------------------------
 local badgesCol = Instance.new("Frame")
 badgesCol.Parent = frame
@@ -247,7 +247,7 @@ logTitle.Font = Enum.Font.GothamSemibold
 logTitle.TextSize = 13
 logTitle.TextXAlignment = Enum.TextXAlignment.Left
 logTitle.TextColor3 = Color3.fromRGB(190,195,230)
-logTitle.Text = "Logs"
+logTitle.Text = "Logs (console)"
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Parent = logTop
@@ -290,7 +290,7 @@ logsContainer.BackgroundTransparency = 1
 local uiList = Instance.new("UIListLayout")
 uiList.Parent = logsContainer
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0,4)
+uiList.Padding = UDim.new(0,0) -- xếp chồng
 
 uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     local h = uiList.AbsoluteContentSize.Y
@@ -301,7 +301,7 @@ end)
 
 clearBtn.MouseButton1Click:Connect(function()
     for _, child in ipairs(logsContainer:GetChildren()) do
-        if child:IsA("TextLabel") then
+        if child:IsA("Frame") and child.Name == "LogLine" then
             child:Destroy()
         end
     end
@@ -382,54 +382,208 @@ startBtn.MouseLeave:Connect(function()
 end)
 
 ---------------------------------------------------------------------
--- LOGIC GỐC + STATUS MỚI
+-- FILTER OVERLAY (simple)
 ---------------------------------------------------------------------
-local function pushLogLine(text)
-    local lbl = Instance.new("TextLabel")
-    lbl.BackgroundTransparency = 1
-    lbl.Size = UDim2.new(1, -6, 0, 18)
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 14
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Text = text
-    lbl.Parent = logsContainer
+local function showFilter(onDone)
+    local overlay = Instance.new("Frame")
+    overlay.Name = "FilterOverlay"
+    overlay.Parent = screenGui
+    overlay.Size = UDim2.new(1,0,1,0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    overlay.BackgroundTransparency = 1
+    overlay.ZIndex = 50
+
+    local panel = Instance.new("Frame")
+    panel.Size = UDim2.new(0, 260, 0, 220)
+    panel.Position = UDim2.new(0.5, -130, 0.5, -110)
+    panel.BackgroundColor3 = Color3.fromRGB(18,20,30)
+    panel.BackgroundTransparency = 1
+    panel.ZIndex = 51
+    panel.Parent = overlay
+    addCorner(panel, 12)
+    addStroke(panel, 1, Color3.fromRGB(110,130,210), 0.3)
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Parent = panel
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 12, 0, 10)
+    titleLabel.Size = UDim2.new(1, -24, 0, 24)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 18
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.TextColor3 = Color3.fromRGB(235,240,255)
+    titleLabel.ZIndex = 52
+    titleLabel.Text = "Filter"
+
+    local noteLabel = Instance.new("TextLabel")
+    noteLabel.Parent = panel
+    noteLabel.BackgroundTransparency = 1
+    noteLabel.Position = UDim2.new(0, 12, 0, 38)
+    noteLabel.Size = UDim2.new(1, -24, 0, 52)
+    noteLabel.Font = Enum.Font.Gotham
+    noteLabel.TextSize = 12
+    noteLabel.TextWrapped = true
+    noteLabel.TextXAlignment = Enum.TextXAlignment.Left
+    noteLabel.TextYAlignment = Enum.TextYAlignment.Top
+    noteLabel.TextColor3 = Color3.fromRGB(195,200,230)
+    noteLabel.ZIndex = 52
+    noteLabel.Text = "The higher the m+, the more good brainrot your base must be, otherwise no one will join. When choosing a high m+, it will take a long time for players to join."
+
+    local buttonsFrame = Instance.new("Frame")
+    buttonsFrame.Parent = panel
+    buttonsFrame.BackgroundTransparency = 1
+    buttonsFrame.Position = UDim2.new(0, 12, 0, 94)
+    buttonsFrame.Size = UDim2.new(1, -24, 0, 110)
+    buttonsFrame.ZIndex = 52
+
+    local grid = Instance.new("UIGridLayout")
+    grid.Parent = buttonsFrame
+    grid.CellPadding = UDim2.new(0, 6, 0, 6)
+    grid.CellSize = UDim2.new(0.5, -6, 0, 26)
+    grid.FillDirection = Enum.FillDirection.Horizontal
+    grid.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local filters = {"10m+","20m+","30m+","40m+","50m+","75m+","100m+","200m+"}
+
+    for _, text in ipairs(filters) do
+        local btn = Instance.new("TextButton")
+        btn.Parent = buttonsFrame
+        btn.BackgroundColor3 = Color3.fromRGB(70, 100, 220)
+        btn.BorderSizePixel = 0
+        btn.AutoButtonColor = false
+        btn.Font = Enum.Font.GothamSemibold
+        btn.TextSize = 13
+        btn.TextColor3 = Color3.fromRGB(245,245,255)
+        btn.Text = text
+        btn.ZIndex = 53
+        addCorner(btn, 8)
+
+        btn.MouseEnter:Connect(function()
+            tween(btn, 0.15, {BackgroundColor3 = Color3.fromRGB(85,115,235)}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            tween(btn, 0.15, {BackgroundColor3 = Color3.fromRGB(70,100,220)}):Play()
+        end)
+
+        btn.MouseButton1Click:Connect(function()
+            local t1 = tween(overlay, 0.25, {BackgroundTransparency = 1})
+            local t2 = tween(panel, 0.25, {BackgroundTransparency = 1})
+            t1:Play()
+            t2:Play()
+            t2.Completed:Wait()
+            overlay:Destroy()
+            if onDone then
+                onDone(text)
+            end
+        end)
+    end
+
+    local tIn1 = tween(overlay, 0.25, {BackgroundTransparency = 0.35})
+    local tIn2 = tween(panel, 0.25, {BackgroundTransparency = 0})
+    tIn1:Play()
+    tIn2:Play()
+end
+
+---------------------------------------------------------------------
+-- LOGIC: time, icon, logs
+---------------------------------------------------------------------
+local function getTimePrefix()
+    local t = os.date("*t")
+    return string.format("[%02d:%02d:%02d] ", t.hour, t.min, t.sec)
+end
+
+local function chooseIcon(text)
+    if string.find(text,"Successfully sent") then
+        return "✅"
+    elseif string.find(text,"Failed to sent") then
+        return "❌"
+    elseif string.find(text,"Please wait a moment") then
+        return "⏱️"
+    elseif string.find(text,"Waiting for Moreira Method") then
+        return "⚙️"
+    elseif string.find(text,"Finished") then
+        return "🎉"
+    elseif string.find(text,"The player joined the server") or string.find(text,"The player has joined the server") then
+        return "👤"
+    elseif string.find(text,"Filter applied") then
+        return "🤖"
+    elseif string.find(text,"Waiting for players to join") then
+        return "⏳"
+    end
+    return "•"
+end
+
+local function countLogLines()
+    local count = 0
+    for _, c in ipairs(logsContainer:GetChildren()) do
+        if c:IsA("Frame") and c.Name == "LogLine" then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- CONSOLE LOG (không background ngăn cách)
+local function pushLogLine(text, iconOverride)
+    local row = Instance.new("Frame")
+    row.Name = "LogLine"
+    row.BackgroundTransparency = 1 -- xoá dòng ngăn cách / background
+    row.Size = UDim2.new(1, 0, 0, 18)
+    row.Parent = logsContainer
+
+    local iconLabel = Instance.new("TextLabel")
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Size = UDim2.new(0, 18, 1, 0)
+    iconLabel.Position = UDim2.new(0, 2, 0, 0)
+    iconLabel.Font = Enum.Font.Code
+    iconLabel.TextSize = 14
+    iconLabel.TextXAlignment = Enum.TextXAlignment.Center
+    iconLabel.TextColor3 = Color3.fromRGB(200,210,255)
+    iconLabel.Text = iconOverride or chooseIcon(text)
+    iconLabel.Parent = row
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = UDim2.new(1, -24, 1, 0)
+    textLabel.Position = UDim2.new(0, 24, 0, 0)
+    textLabel.Font = Enum.Font.Code
+    textLabel.TextSize = 14
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.Text = getTimePrefix() .. text
+    textLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
+    textLabel.Parent = row
 
     if string.find(text,"Successfully sent") then
-        lbl.TextColor3 = Color3.fromRGB(108,255,148)
+        textLabel.TextColor3 = Color3.fromRGB(108,255,148)
     elseif string.find(text,"Failed to sent") then
-        lbl.TextColor3 = Color3.fromRGB(255,120,135)
+        textLabel.TextColor3 = Color3.fromRGB(255,120,135)
     elseif string.find(text,"Please wait a moment") then
-        lbl.TextColor3 = Color3.fromRGB(150,190,255)
+        textLabel.TextColor3 = Color3.fromRGB(150,190,255)
     elseif string.find(text,"Waiting") then
-        lbl.TextColor3 = Color3.fromRGB(108,178,255)
+        textLabel.TextColor3 = Color3.fromRGB(108,178,255)
     elseif string.find(text,"Finished") then
-        lbl.TextColor3 = Color3.fromRGB(180,255,200)
+        textLabel.TextColor3 = Color3.fromRGB(180,255,200)
     elseif string.find(text,"The player joined the server") or string.find(text,"The player has joined the server") then
-        lbl.TextColor3 = Color3.fromRGB(255,225,120)
-    else
-        lbl.TextColor3 = Color3.fromRGB(235,240,255)
+        textLabel.TextColor3 = Color3.fromRGB(255,225,120)
     end
 
     clearBtn.Visible = true
 
-    local children = logsContainer:GetChildren()
-    local count = 0
-    for _, c in ipairs(children) do
-        if c:IsA("TextLabel") then
-            count = count + 1
-        end
-    end
+    local count = countLogLines()
     while count > 500 do
-        for _, c in ipairs(children) do
-            if c:IsA("TextLabel") then
+        for _, c in ipairs(logsContainer:GetChildren()) do
+            if c:IsA("Frame") and c.Name == "LogLine" then
                 c:Destroy()
-                count = count - 1
                 break
             end
         end
+        count = countLogLines()
     end
 end
 
+---------------------------------------------------------------------
+-- RANDOM + RESULT
+---------------------------------------------------------------------
 local function randomOddEven(minVal,maxVal)
     local num = math.random(minVal,maxVal)
     local chooseOdd = math.random(1,100) <= 70
@@ -441,22 +595,20 @@ local function randomOddEven(minVal,maxVal)
     return num
 end
 
+-- Failed: 50-300, Successfully: 700-1000
 local function pickResults()
-    local success
-    if math.random(1,100)<=70 then
-        success = randomOddEven(700,1000)
-    else
-        success = randomOddEven(500,550)
-    end
-    local fail = (success<600) and randomOddEven(15,25) or randomOddEven(30,50)
+    local success = randomOddEven(700,1000)
+    local fail    = randomOddEven(50,300)
     return success, fail
 end
 
+---------------------------------------------------------------------
+-- STATE
+---------------------------------------------------------------------
 local running = false
 local waitingForPlayers = false
 local brainrotActive = false
 
--- Khi player join trong lúc đang "waiting for players"
 Players.PlayerAdded:Connect(function(plr)
     if waitingForPlayers and plr ~= player then
         pushLogLine("The player joined the server📎")
@@ -469,10 +621,9 @@ Players.PlayerAdded:Connect(function(plr)
     end
 end)
 
--- Khi player out: về trạng thái Ready✅
 Players.PlayerRemoving:Connect(function(plr)
     if brainrotActive and plr ~= player then
-        status.Text = "Status: Ready✅"
+        status.Text = "Status: ✅ Ready"
         status.TextColor3 = Color3.fromRGB(190, 255, 200)
         tween(statusDot, 0.2, {
             BackgroundColor3 = Color3.fromRGB(110, 230, 130)
@@ -481,11 +632,18 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
-local function startProcess()
+---------------------------------------------------------------------
+-- MAIN PROCESS
+---------------------------------------------------------------------
+local function startProcess(selectedFilter)
     if running then return end
     running = true
     waitingForPlayers = false
     brainrotActive = false
+
+    if selectedFilter then
+        pushLogLine("Filter applied: "..selectedFilter)
+    end
 
     status.Text = "Status: 🟡 Sending..."
     status.TextColor3 = Color3.fromRGB(230, 230, 180)
@@ -493,7 +651,6 @@ local function startProcess()
         BackgroundColor3 = Color3.fromRGB(255, 200, 90)
     }):Play()
 
-    -- Fade out nút Start
     local hideTween = tween(startBtn, 0.3, {
         BackgroundTransparency = 1,
         TextTransparency = 1
@@ -502,7 +659,6 @@ local function startProcess()
     hideTween.Completed:Wait()
     startBtn.Visible = false
 
-    -- Fade in progress
     progressBack.Visible = true
     progressFill.Visible = true
     tween(progressBack, 0.25, {BackgroundTransparency = 0}):Play()
@@ -556,10 +712,10 @@ local function startProcess()
     }):Play()
 
     task.wait(2)
+    -- KHÔNG CÒN LOADING WHEEL, chỉ log thường
     pushLogLine("Waiting for players to join")
     waitingForPlayers = true
 
-    -- Fade out progress, rồi Start fade in
     local pbOut = tween(progressBack, 0.35, {BackgroundTransparency = 1})
     local pfOut = tween(progressFill, 0.35, {BackgroundTransparency = 1})
     pbOut:Play()
@@ -576,9 +732,8 @@ local function startProcess()
         TextTransparency = 0
     }):Play()
 
-    -- Sau vòng xử lý mà chưa có ai join thì về lại trạng thái Waiting
     if not brainrotActive then
-        status.Text = "Status: ⏱️ Waiting"
+        status.Text = "Status: ✅ Ready"
         status.TextColor3 = Color3.fromRGB(215,220,245)
         tween(statusDot, 0.2, {
             BackgroundColor3 = Color3.fromRGB(255, 80, 95)
@@ -588,4 +743,12 @@ local function startProcess()
     running = false
 end
 
-startBtn.MouseButton1Click:Connect(startProcess)
+---------------------------------------------------------------------
+-- START BUTTON: mở Filter rồi chạy
+---------------------------------------------------------------------
+startBtn.MouseButton1Click:Connect(function()
+    if running then return end
+    showFilter(function(selectedFilter)
+        startProcess(selectedFilter)
+    end)
+end)
