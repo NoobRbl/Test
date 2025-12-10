@@ -169,7 +169,7 @@ status.Font = Enum.Font.GothamMedium
 status.TextSize = 14
 status.TextXAlignment = Enum.TextXAlignment.Left
 status.TextColor3 = Color3.fromRGB(215,220,245)
-status.Text = "Status: ⏱️ Waiting"
+status.Text = "Status: ✅ Ready"
 
 ---------------------------------------------------------------------
 -- Auto Block + Bypass
@@ -382,7 +382,7 @@ startBtn.MouseLeave:Connect(function()
 end)
 
 ---------------------------------------------------------------------
--- FILTER OVERLAY (simple)
+-- FILTER OVERLAY (đã fix nút không tràn khung)
 ---------------------------------------------------------------------
 local function showFilter(onDone)
     local overlay = Instance.new("Frame")
@@ -394,7 +394,7 @@ local function showFilter(onDone)
     overlay.ZIndex = 50
 
     local panel = Instance.new("Frame")
-    panel.Size = UDim2.new(0, 260, 0, 220)
+    panel.Size = UDim2.new(0, 260, 0, 220) -- vẫn 220, đủ gọn
     panel.Position = UDim2.new(0.5, -130, 0.5, -110)
     panel.BackgroundColor3 = Color3.fromRGB(18,20,30)
     panel.BackgroundTransparency = 1
@@ -432,14 +432,16 @@ local function showFilter(onDone)
     local buttonsFrame = Instance.new("Frame")
     buttonsFrame.Parent = panel
     buttonsFrame.BackgroundTransparency = 1
+    -- kéo khung nút lên 1 chút và cao hơn để chứa đủ 4 hàng
     buttonsFrame.Position = UDim2.new(0, 12, 0, 94)
-    buttonsFrame.Size = UDim2.new(1, -24, 0, 110)
+    buttonsFrame.Size = UDim2.new(1, -24, 0, 120)
     buttonsFrame.ZIndex = 52
 
     local grid = Instance.new("UIGridLayout")
     grid.Parent = buttonsFrame
     grid.CellPadding = UDim2.new(0, 6, 0, 6)
-    grid.CellSize = UDim2.new(0.5, -6, 0, 26)
+    -- giảm chiều cao mỗi nút để 4 hàng vừa trong 120px
+    grid.CellSize = UDim2.new(0.5, -6, 0, 24)
     grid.FillDirection = Enum.FillDirection.Horizontal
     grid.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -483,7 +485,6 @@ local function showFilter(onDone)
     tIn1:Play()
     tIn2:Play()
 end
-
 ---------------------------------------------------------------------
 -- LOGIC: time, icon, logs
 ---------------------------------------------------------------------
