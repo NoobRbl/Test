@@ -488,11 +488,6 @@ end
 ---------------------------------------------------------------------
 -- LOGIC: time, icon, logs
 ---------------------------------------------------------------------
-local function getTimePrefix()
-    local t = os.date("*t")
-    return string.format("[%02d:%02d:%02d] ", t.hour, t.min, t.sec)
-end
-
 local function chooseIcon(text)
     if string.find(text,"Successfully sent") then
         return "✅"
@@ -507,69 +502,70 @@ local function chooseIcon(text)
     elseif string.find(text,"The player joined the server") or string.find(text,"The player has joined the server") then
         return "👤"
     elseif string.find(text,"Filter applied") then
-        return "🤖"
+        return "🎚️"
+    elseif string.find(text,"Starting auto-scan") then
+        return "🔍"
+    elseif string.find(text,"Starting scan") then
+        return "📡"
+    elseif string.find(text,"Scanned") then
+        return "🧠"
+    elseif string.find(text,"sending webhook") then
+        return "🌐"
     elseif string.find(text,"Waiting for players to join") then
         return "⏳"
     end
     return "•"
 end
 
-local function countLogLines()
-    local count = 0
-    for _, c in ipairs(logsContainer:GetChildren()) do
-        if c:IsA("Frame") and c.Name == "LogLine" then
-            count = count + 1
-        end
-    end
-    return count
-end
-
--- CONSOLE LOG (không background ngăn cách)
+-- CONSOLE LOG: icon đứng TRƯỚC text
 local function pushLogLine(text, iconOverride)
     local row = Instance.new("Frame")
     row.Name = "LogLine"
-    row.BackgroundTransparency = 1 -- xoá dòng ngăn cách / background
+    row.BackgroundTransparency = 1
     row.Size = UDim2.new(1, 0, 0, 18)
     row.Parent = logsContainer
 
-    local iconLabel = Instance.new("TextLabel")
-    iconLabel.BackgroundTransparency = 1
-    iconLabel.Size = UDim2.new(0, 18, 1, 0)
-    iconLabel.Position = UDim2.new(0, 2, 0, 0)
-    iconLabel.Font = Enum.Font.Code
-    iconLabel.TextSize = 14
-    iconLabel.TextXAlignment = Enum.TextXAlignment.Center
-    iconLabel.TextColor3 = Color3.fromRGB(200,210,255)
-    iconLabel.Text = iconOverride or chooseIcon(text)
-    iconLabel.Parent = row
+    local icon = iconOverride or chooseIcon(text)
+    local prefix = getTimePrefix()
 
+    -- Gộp ICON + TEXT vào chung label
     local textLabel = Instance.new("TextLabel")
     textLabel.BackgroundTransparency = 1
-    textLabel.Size = UDim2.new(1, -24, 1, 0)
-    textLabel.Position = UDim2.new(0, 24, 0, 0)
+    textLabel.Size = UDim2.new(1, -4, 1, 0)
+    textLabel.Position = UDim2.new(0, 2, 0, 0)
     textLabel.Font = Enum.Font.Code
     textLabel.TextSize = 14
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Text = getTimePrefix() .. text
+    textLabel.Text = prefix .. icon .. " " .. text
     textLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
     textLabel.Parent = row
 
+    -- MÀU THEO LOG
     if string.find(text,"Successfully sent") then
         textLabel.TextColor3 = Color3.fromRGB(108,255,148)
     elseif string.find(text,"Failed to sent") then
         textLabel.TextColor3 = Color3.fromRGB(255,120,135)
+    elseif string.find(text,"Starting auto%-scan") then
+        textLabel.TextColor3 = Color3.fromRGB(170,225,255)
+    elseif string.find(text,"Starting scan") then
+        textLabel.TextColor3 = Color3.fromRGB(150,205,255)
+    elseif string.find(text,"Scanned") then
+        textLabel.TextColor3 = Color3.fromRGB(210,190,255)
+    elseif string.find(text,"sending webhook") then
+        textLabel.TextColor3 = Color3.fromRGB(180,240,220)
     elseif string.find(text,"Please wait a moment") then
         textLabel.TextColor3 = Color3.fromRGB(150,190,255)
     elseif string.find(text,"Waiting") then
         textLabel.TextColor3 = Color3.fromRGB(108,178,255)
     elseif string.find(text,"Finished") then
         textLabel.TextColor3 = Color3.fromRGB(180,255,200)
-    elseif string.find(text,"The player joined the server") or string.find(text,"The player has joined the server") then
+    elseif string.find(text,"joined the server") then
         textLabel.TextColor3 = Color3.fromRGB(255,225,120)
     end
 
     clearBtn.Visible = true
 
+    -- Xoá nếu >500 log
     local count = countLogLines()
     while count > 500 do
         for _, c in ipairs(logsContainer:GetChildren()) do
@@ -580,6 +576,11 @@ local function pushLogLine(text, iconOverride)
         end
         count = countLogLines()
     end
+
+    return textLabel
+end
+
+    return textLabel
 end
 
 ---------------------------------------------------------------------
