@@ -5,6 +5,19 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Lấy tên người sử dụng script + icon 🟢
+local function getUserTitle()
+    local name = "User"
+    if player then
+        if player.DisplayName and player.DisplayName ~= "" then
+            name = player.DisplayName
+        elseif player.Name and player.Name ~= "" then
+            name = player.Name
+        end
+    end
+    return name .. " 🟢"
+end
+
 -- Remove old
 local OLD_NAME = "AutoMoreiraPanel_Full"
 local old = playerGui:FindFirstChild(OLD_NAME)
@@ -67,25 +80,6 @@ addStroke(frame, 1.2, Color3.fromRGB(120,130,200), 0.35)
 addGradient(frame, Color3.fromRGB(18, 22, 34), Color3.fromRGB(8, 10, 16), 90)
 
 ---------------------------------------------------------------------
--- Glow background
----------------------------------------------------------------------
-local glow = Instance.new("ImageLabel")
-glow.Name = "Glow"
-glow.BackgroundTransparency = 1
-glow.AnchorPoint = Vector2.new(0.5, 0.5)
-glow.Position = UDim2.new(0.5, 0, 0.5, 0)
-glow.Size = UDim2.new(1, 40, 1, 40)
-glow.Image = "rbxassetid://5028857084"
-glow.ImageColor3 = Color3.fromRGB(80, 110, 255)
-glow.ImageTransparency = 0.35
-glow.ScaleType = Enum.ScaleType.Slice
-glow.SliceCenter = Rect.new(24, 24, 276, 276)
-glow.ZIndex = 0
-glow.Parent = frame
-
-frame.ZIndex = 1
-
----------------------------------------------------------------------
 -- Top bar
 ---------------------------------------------------------------------
 local topBar = Instance.new("Frame")
@@ -117,7 +111,7 @@ titleSub.Font = Enum.Font.Gotham
 titleSub.TextSize = 12
 titleSub.TextXAlignment = Enum.TextXAlignment.Left
 titleSub.TextColor3 = Color3.fromRGB(190,195,230)
-titleSub.Text = "Premium · SAB"
+titleSub.Text = getUserTitle() -- tên người dùng + 🟢
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Parent = topBar
@@ -290,7 +284,7 @@ logsContainer.BackgroundTransparency = 1
 local uiList = Instance.new("UIListLayout")
 uiList.Parent = logsContainer
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0,0) -- xếp chồng
+uiList.Padding = UDim.new(0,2)
 
 uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     local h = uiList.AbsoluteContentSize.Y
@@ -298,6 +292,9 @@ uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     logScroll.CanvasSize = UDim2.new(0,0,0,h)
     logScroll.CanvasPosition = Vector2.new(0, math.max(0, h - logScroll.AbsoluteSize.Y))
 end)
+
+local logCount = 0
+local logSequence = 0
 
 clearBtn.MouseButton1Click:Connect(function()
     for _, child in ipairs(logsContainer:GetChildren()) do
@@ -308,6 +305,8 @@ clearBtn.MouseButton1Click:Connect(function()
     logsContainer.Size = UDim2.new(1,0,0,0)
     logScroll.CanvasSize = UDim2.new(0,0,0,0)
     clearBtn.Visible = false
+    logCount = 0
+    logSequence = 0
 end)
 
 ---------------------------------------------------------------------
@@ -344,19 +343,6 @@ progressFill.BackgroundTransparency = 1
 addCorner(progressFill, 999)
 addGradient(progressFill, Color3.fromRGB(140,165,255), Color3.fromRGB(70,95,255), 0)
 
-local progressGlow = Instance.new("ImageLabel")
-progressGlow.Parent = progressBack
-progressGlow.BackgroundTransparency = 1
-progressGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-progressGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
-progressGlow.Size = UDim2.new(1.2, 0, 2, 0)
-progressGlow.Image = "rbxassetid://5028857084"
-progressGlow.ImageColor3 = Color3.fromRGB(110, 140, 255)
-progressGlow.ImageTransparency = 0.8
-progressGlow.ScaleType = Enum.ScaleType.Slice
-progressGlow.SliceCenter = Rect.new(24, 24, 276, 276)
-progressGlow.ZIndex = 0
-
 local startBtn = Instance.new("TextButton")
 startBtn.Parent = bottomArea
 startBtn.Text = "Start Moreira"
@@ -382,7 +368,7 @@ startBtn.MouseLeave:Connect(function()
 end)
 
 ---------------------------------------------------------------------
--- FILTER OVERLAY (đã fix nút không tràn khung)
+-- FILTER OVERLAY
 ---------------------------------------------------------------------
 local function showFilter(onDone)
     local overlay = Instance.new("Frame")
@@ -394,7 +380,7 @@ local function showFilter(onDone)
     overlay.ZIndex = 50
 
     local panel = Instance.new("Frame")
-    panel.Size = UDim2.new(0, 260, 0, 220) -- vẫn 220, đủ gọn
+    panel.Size = UDim2.new(0, 260, 0, 220)
     panel.Position = UDim2.new(0.5, -130, 0.5, -110)
     panel.BackgroundColor3 = Color3.fromRGB(18,20,30)
     panel.BackgroundTransparency = 1
@@ -432,7 +418,6 @@ local function showFilter(onDone)
     local buttonsFrame = Instance.new("Frame")
     buttonsFrame.Parent = panel
     buttonsFrame.BackgroundTransparency = 1
-    -- kéo khung nút lên 1 chút và cao hơn để chứa đủ 4 hàng
     buttonsFrame.Position = UDim2.new(0, 12, 0, 94)
     buttonsFrame.Size = UDim2.new(1, -24, 0, 120)
     buttonsFrame.ZIndex = 52
@@ -440,7 +425,6 @@ local function showFilter(onDone)
     local grid = Instance.new("UIGridLayout")
     grid.Parent = buttonsFrame
     grid.CellPadding = UDim2.new(0, 6, 0, 6)
-    -- giảm chiều cao mỗi nút để 4 hàng vừa trong 120px
     grid.CellSize = UDim2.new(0.5, -6, 0, 24)
     grid.FillDirection = Enum.FillDirection.Horizontal
     grid.SortOrder = Enum.SortOrder.LayoutOrder
@@ -485,9 +469,15 @@ local function showFilter(onDone)
     tIn1:Play()
     tIn2:Play()
 end
+
 ---------------------------------------------------------------------
--- LOGIC: time, icon, logs
+-- LOGIC: time, icons, logs, animateDots
 ---------------------------------------------------------------------
+local function getTimePrefix()
+    local t = os.date("*t")
+    return string.format("[%02d:%02d:%02d] ", t.hour, t.min, t.sec)
+end
+
 local function chooseIcon(text)
     if string.find(text,"Successfully sent") then
         return "✅"
@@ -503,7 +493,7 @@ local function chooseIcon(text)
         return "👤"
     elseif string.find(text,"Filter applied") then
         return "🎚️"
-    elseif string.find(text,"Starting auto-scan") then
+    elseif string.find(text,"Starting auto%-scan") then
         return "🔍"
     elseif string.find(text,"Starting scan") then
         return "📡"
@@ -517,18 +507,26 @@ local function chooseIcon(text)
     return "•"
 end
 
--- CONSOLE LOG: icon đứng TRƯỚC text
 local function pushLogLine(text, iconOverride)
     local row = Instance.new("Frame")
     row.Name = "LogLine"
+
+    local rowHeight = 20
+    if string.find(text, "Finished") then
+        rowHeight = 32
+    end
+
     row.BackgroundTransparency = 1
-    row.Size = UDim2.new(1, 0, 0, 18)
+    row.Size = UDim2.new(1, 0, 0, rowHeight)
     row.Parent = logsContainer
+
+    logSequence += 1
+    row.LayoutOrder = logSequence
 
     local icon = iconOverride or chooseIcon(text)
     local prefix = getTimePrefix()
+    local content = icon .. " " .. text
 
-    -- Gộp ICON + TEXT vào chung label
     local textLabel = Instance.new("TextLabel")
     textLabel.BackgroundTransparency = 1
     textLabel.Size = UDim2.new(1, -4, 1, 0)
@@ -536,11 +534,19 @@ local function pushLogLine(text, iconOverride)
     textLabel.Font = Enum.Font.Code
     textLabel.TextSize = 14
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Text = prefix .. icon .. " " .. text
+    textLabel.Text = prefix .. content
     textLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
+
+    if string.find(text, "Finished") then
+        textLabel.TextWrapped = true
+        textLabel.TextYAlignment = Enum.TextYAlignment.Top
+    else
+        textLabel.TextWrapped = false
+        textLabel.TextYAlignment = Enum.TextYAlignment.Center
+    end
+
     textLabel.Parent = row
 
-    -- MÀU THEO LOG
     if string.find(text,"Successfully sent") then
         textLabel.TextColor3 = Color3.fromRGB(108,255,148)
     elseif string.find(text,"Failed to sent") then
@@ -565,26 +571,56 @@ local function pushLogLine(text, iconOverride)
 
     clearBtn.Visible = true
 
-    -- Xoá nếu >500 log
-    local count = countLogLines()
-    while count > 500 do
+    logCount += 1
+    if logCount > 500 then
+        local oldest = nil
         for _, c in ipairs(logsContainer:GetChildren()) do
             if c:IsA("Frame") and c.Name == "LogLine" then
-                c:Destroy()
-                break
+                if not oldest or c.LayoutOrder < oldest.LayoutOrder then
+                    oldest = c
+                end
             end
         end
-        count = countLogLines()
+        if oldest then
+            oldest:Destroy()
+            logCount -= 1
+        end
     end
 
     return textLabel
 end
 
-    return textLabel
+local function animateDots(label, duration)
+    if not label then return end
+
+    local original = label.Text or ""
+    local prefix = ""
+    local content = original
+
+    local bracketPos = string.find(original, "] ")
+    if bracketPos then
+        prefix = string.sub(original, 1, bracketPos + 1)
+        content = string.sub(original, bracketPos + 2)
+    end
+
+    local base = content:gsub("%.+$","")
+
+    local startTime = tick()
+    local dotCount = 0
+    while tick() - startTime < duration and label.Parent do
+        dotCount = (dotCount % 3) + 1
+        local dots = string.rep(".", dotCount)
+        label.Text = prefix .. base .. dots
+        task.wait(0.35)
+    end
+
+    if label.Parent then
+        label.Text = prefix .. base .. "..."
+    end
 end
 
 ---------------------------------------------------------------------
--- RANDOM + RESULT
+-- RANDOM HELPERS
 ---------------------------------------------------------------------
 local function randomOddEven(minVal,maxVal)
     local num = math.random(minVal,maxVal)
@@ -597,7 +633,40 @@ local function randomOddEven(minVal,maxVal)
     return num
 end
 
--- Failed: 50-300, Successfully: 700-1000
+local function randomOddInRange(minVal,maxVal)
+    local n = math.random(minVal,maxVal)
+    if n % 2 == 0 then
+        if n + 1 <= maxVal then
+            n = n + 1
+        else
+            n = n - 1
+        end
+    end
+    return n
+end
+
+local function getScannedCount(selectedFilter)
+    if selectedFilter == "200m+" then
+        return randomOddInRange(1000, 4000)
+    elseif selectedFilter == "100m+" then
+        return randomOddInRange(1000, 5000)
+    elseif selectedFilter == "75m+" then
+        return randomOddInRange(1000, 6000)
+    elseif selectedFilter == "50m+" then
+        return randomOddInRange(1000, 7000)
+    elseif selectedFilter == "40m+" then
+        return randomOddInRange(1000, 7500)
+    elseif selectedFilter == "30m+" then
+        return 8000
+    elseif selectedFilter == "20m+" then
+        return 8500
+    elseif selectedFilter == "10m+" then
+        return randomOddInRange(1000, 15000)
+    else
+        return randomOddInRange(1000, 10000)
+    end
+end
+
 local function pickResults()
     local success = randomOddEven(700,1000)
     local fail    = randomOddEven(50,300)
@@ -605,7 +674,7 @@ local function pickResults()
 end
 
 ---------------------------------------------------------------------
--- STATE
+-- STATE + player events
 ---------------------------------------------------------------------
 local running = false
 local waitingForPlayers = false
@@ -661,6 +730,19 @@ local function startProcess(selectedFilter)
     hideTween.Completed:Wait()
     startBtn.Visible = false
 
+    local lbl1 = pushLogLine("Starting auto-scan...")
+    animateDots(lbl1, 2)
+
+    local lbl2 = pushLogLine("Starting scan...")
+    animateDots(lbl2, 3)
+
+    local scannedCount = getScannedCount(selectedFilter)
+    local lbl3 = pushLogLine("Scanned "..scannedCount.." objects")
+    animateDots(lbl3, 2)
+
+    local lbl4 = pushLogLine("sending webhook...")
+    animateDots(lbl4, 2)
+
     progressBack.Visible = true
     progressFill.Visible = true
     tween(progressBack, 0.25, {BackgroundTransparency = 0}):Play()
@@ -676,7 +758,7 @@ local function startProcess(selectedFilter)
     local index = 0
 
     for i = 1, infoCount do
-        index = index + 1
+        index += 1
         pushLogLine("Please wait a moment for it to be sent to the server")
         tween(progressFill, 0.15, {
             Size = UDim2.new(index/totalLogs,0,1,0)
@@ -693,7 +775,7 @@ local function startProcess(selectedFilter)
     end
 
     for _, v in ipairs(arr) do
-        index = index + 1
+        index += 1
         if v == "S" then
             pushLogLine("Successfully sent to a server")
         else
@@ -714,7 +796,6 @@ local function startProcess(selectedFilter)
     }):Play()
 
     task.wait(2)
-    -- KHÔNG CÒN LOADING WHEEL, chỉ log thường
     pushLogLine("Waiting for players to join")
     waitingForPlayers = true
 
@@ -746,7 +827,7 @@ local function startProcess(selectedFilter)
 end
 
 ---------------------------------------------------------------------
--- START BUTTON: mở Filter rồi chạy
+-- START BUTTON
 ---------------------------------------------------------------------
 startBtn.MouseButton1Click:Connect(function()
     if running then return end
