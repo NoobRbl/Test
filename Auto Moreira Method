@@ -1,9 +1,420 @@
--- Auto Moreira Method 
+-- Auto Moreira Method (FULL + Tabs Main/Stealer) với Miranda Tools
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+
+-- Biến từ Miranda Tools
+local isTeleporting = false
+local noclipEnabled = false
+local noclipConn = nil
+
+local fastStealOn = false
+local fastStealLoop = nil
+local fastStealConn = nil
+
+-- Biến mới cho Speed Boost và Gravity
+local speedBoostOn = false
+local speedBoostConn = nil
+local originalWalkSpeed = 16
+
+local gravityOn = false
+local originalGravity = workspace.Gravity
+local gravityMultiplier = 0.1 -- Giảm xuống còn 10%
+local gravityJumpMultiplier = 12.0 -- Tăng độ nhảy cao hơn nữa
+local originalJumpPower = 50
+local gravityConn = nil
+
+-- ========== CÁC HÀM CỦA MIRANDA TOOLS ==========
+
+-- Lấy nhân vật hiện tại
+local function getCharacter()
+    local char = player.Character
+    if not char or not char.Parent then
+        char = player.CharacterAdded:Wait()
+    end
+    return char
+end
+
+-- Tìm plot của mình
+local function getMyPlot()
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+
+    for _, plot in ipairs(plots:GetChildren()) do
+        local label = plot:FindFirstChild("PlotSign")
+            and plot.PlotSign:FindFirstChild("SurfaceGui")
+            and plot.PlotSign.SurfaceGui:FindFirstChild("Frame")
+            and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
+
+        if label then
+            local textValue = label.ContentText or label.Text or ""
+            if textValue:find(player.DisplayName) and textValue:find("Base") then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+-- Lấy DeliveryHitbox
+local function getDeliveryHitbox()
+    local myPlot = getMyPlot()
+    if not myPlot then return nil end
+
+    local delivery = myPlot:FindFirstChild("DeliveryHitbox") or myPlot:FindFirstChild("DeliveryHitbox", true)
+    if delivery and delivery:IsA("BasePart") then
+        return delivery
+    end
+    return nil
+end
+
+-- NOCLIP
+local function setNoclip(on)
+    noclipEnabled = on
+
+    if on then
+        if noclipConn then
+            noclipConn:Disconnect()
+        end
+
+        noclipConn = RunService.Stepped:Connect(function()
+            local character = player.Character
+            if not character then return end
+
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        if noclipConn then
+            noclipConn:Disconnect()
+            noclipConn = nil
+        end
+
+        local character = player.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+-- Teleport ngắn, đóng băng camera
+local function shortTeleportFreezeCamera(targetCF, duration)
+    if isTeleporting then return end
+    isTeleporting = true
+
+    duration = duration or 0.2
+    if duration < 0.1 then duration = 0.1 end
+    if duration > 0.5 then duration = 0.5 end
+
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then
+        isTeleporting = false
+        return
+    end
+
+    local camera = workspace.CurrentCamera
+    if not camera then
+        isTeleporting = false
+        return
+    end
+
+    local lastPosition = humanoidRootPart.CFrame
+    local originalCameraType = camera.CameraType
+    local originalCameraSubject = camera.CameraSubject
+    local originalCameraCFrame = camera.CFrame
+
+    local function restoreCamera()
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            camera.CameraSubject = humanoid
+            camera.CameraType = Enum.CameraType.Custom
+        else
+            camera.CameraType = originalCameraType or Enum.CameraType.Custom
+            camera.CameraSubject = originalCameraSubject
+        end
+        camera.CFrame = originalCameraCFrame
+    end
+
+    local success, errorMessage = pcall(function()
+        camera.CameraType = Enum.CameraType.Scriptable
+        camera.CFrame = originalCameraCFrame
+
+        humanoidRootPart.CFrame = targetCF
+        task.wait(duration)
+        humanoidRootPart.CFrame = lastPosition
+    end)
+
+    restoreCamera()
+    isTeleporting = false
+
+    if not success then
+        warn("[SAB UTILS] shortTeleport error: " .. tostring(errorMessage))
+    end
+end
+
+-- INSTANT STEAL
+local function doInstantSteal()
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    local deliveryHitbox = getDeliveryHitbox()
+    if not deliveryHitbox then return end
+
+    local targetCF = deliveryHitbox.CFrame * CFrame.new(0, 3, -3)
+    shortTeleportFreezeCamera(targetCF, 0.25)
+end
+
+-- TP Forward
+local function doForwardTP()
+    local character = getCharacter()
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(0, 0, -8)
+end
+
+-- Patch Prompt
+local function patchPrompt(prompt)
+    if not prompt:IsA("ProximityPrompt") then return end
+
+    local success, _ = pcall(function()
+        if prompt.HoldDuration > 0.01 then
+            prompt.HoldDuration = 0.01
+        end
+    end)
+
+    if not success then
+        -- ignore lỗi nhẹ
+    end
+end
+
+-- FAST STEAL
+local function setFastSteal(on)
+    fastStealOn = on
+
+    if on then
+        -- Patch prompt hiện có
+        task.spawn(function()
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    patchPrompt(obj)
+                end
+            end
+        end)
+
+        -- Loop patch liên tục
+        if not fastStealLoop then
+            fastStealLoop = task.spawn(function()
+                while fastStealOn do
+                    local success, errorMessage = pcall(function()
+                        for _, obj in ipairs(workspace:GetDescendants()) do
+                            if obj:IsA("ProximityPrompt") then
+                                patchPrompt(obj)
+                            end
+                        end
+                    end)
+
+                    if not success then
+                        warn("[SAB UTILS] FastSteal loop error:", errorMessage)
+                    end
+
+                    task.wait(0.08)
+                end
+                fastStealLoop = nil
+            end)
+        end
+
+        -- Patch prompt mới spawn
+        if fastStealConn then fastStealConn:Disconnect() end
+        fastStealConn = workspace.DescendantAdded:Connect(function(obj)
+            if fastStealOn and obj:IsA("ProximityPrompt") then
+                patchPrompt(obj)
+            end
+        end)
+    else
+        if fastStealConn then
+            fastStealConn:Disconnect()
+            fastStealConn = nil
+        end
+    end
+end
+
+-- SPEED BOOST (giữ ở 25)
+local function setSpeedBoost(on)
+    speedBoostOn = on
+
+    if on then
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                originalWalkSpeed = humanoid.WalkSpeed
+                humanoid.WalkSpeed = 25 -- Giữ ở 25
+                
+                -- Kết nối để giữ tốc độ khi nhân vật thay đổi
+                if speedBoostConn then
+                    speedBoostConn:Disconnect()
+                end
+                
+                speedBoostConn = player.CharacterAdded:Connect(function(newChar)
+                    task.wait(0.5)
+                    local newHumanoid = newChar:FindFirstChildOfClass("Humanoid")
+                    if newHumanoid then
+                        newHumanoid.WalkSpeed = 25
+                    end
+                end)
+            end
+        end
+    else
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = originalWalkSpeed
+            end
+        end
+        
+        if speedBoostConn then
+            speedBoostConn:Disconnect()
+            speedBoostConn = nil
+        end
+    end
+end
+
+-- GRAVITY (giảm trọng lực xuống 10% và tăng nhảy cao hơn nữa)
+local function setGravity(on)
+    gravityOn = on
+
+    if on then
+        originalGravity = workspace.Gravity
+        workspace.Gravity = originalGravity * gravityMultiplier -- Giảm trọng lực còn 10%
+        
+        -- Tăng JumpPower và điều chỉnh các thông số khác để nhảy cao hơn
+        local function applyGravityToCharacter(char)
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    originalJumpPower = humanoid.JumpPower
+                    
+                    -- Tăng JumpPower lên 12 lần để nhảy rất cao
+                    humanoid.JumpPower = originalJumpPower * gravityJumpMultiplier
+                    
+                    -- Tăng thêm một số thông số để hỗ trợ nhảy cao
+                    if humanoid:FindFirstChild("HipHeight") then
+                        humanoid.HipHeight = humanoid.HipHeight * 1.5
+                    end
+                    
+                    -- Kích hoạt tính năng nhảy mạnh hơn
+                    if humanoid:FindFirstChild("UseJumpPower") then
+                        humanoid.UseJumpPower = true
+                    end
+                end
+            end
+        end
+        
+        local character = player.Character
+        applyGravityToCharacter(character)
+        
+        -- Kết nối để áp dụng cho nhân vật mới
+        if gravityConn then
+            gravityConn:Disconnect()
+        end
+        
+        gravityConn = player.CharacterAdded:Connect(function(newChar)
+            task.wait(0.1) -- Chờ một chút để đảm bảo nhân vật đã load đầy đủ
+            applyGravityToCharacter(newChar)
+        end)
+        
+        -- Thêm một script để kiểm tra và điều chỉnh jump liên tục
+        task.spawn(function()
+            while gravityOn do
+                local character = player.Character
+                if character then
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        -- Đảm bảo JumpPower luôn ở mức cao
+                        if humanoid.JumpPower < 300 then
+                            humanoid.JumpPower = 500 -- Đặt một giá trị rất cao
+                        end
+                        
+                        -- Nếu đang nhảy, tăng thêm một chút lực
+                        if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                            local hrp = character:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                local currentVelocity = hrp.Velocity
+                                hrp.Velocity = Vector3.new(currentVelocity.X, currentVelocity.Y + 15, currentVelocity.Z)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        -- Khôi phục trọng lực
+        workspace.Gravity = originalGravity
+        
+        -- Khôi phục JumpPower và các thông số khác
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = originalJumpPower
+                
+                -- Khôi phục HipHeight
+                if humanoid:FindFirstChild("HipHeight") then
+                    humanoid.HipHeight = humanoid.HipHeight / 1.5
+                end
+            end
+        end
+        
+        -- Ngắt kết nối
+        if gravityConn then
+            gravityConn:Disconnect()
+            gravityConn = nil
+        end
+    end
+end
+
+-- Hàm nhảy cực cao (super jump)
+local function doSuperJump()
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoid and hrp then
+        -- Kích hoạt nhảy
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        
+        -- Áp dụng lực nhảy cực mạnh
+        hrp.Velocity = Vector3.new(hrp.Velocity.X, 120, hrp.Velocity.Z)
+        
+        -- Nếu bật gravity, thêm lực nhảy thêm
+        if gravityOn then
+            task.wait(0.1)
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, hrp.Velocity.Y + 80, hrp.Velocity.Z)
+        end
+    end
+end
+
+-- ========== PHẦN CỦA AUTO MOREIRA METHOD ==========
 
 -- Lấy tên người sử dụng script + icon 🟢
 local function getUserTitle()
@@ -66,11 +477,11 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
 ---------------------------------------------------------------------
--- Main frame
+-- Main frame (UI NHỎ GỌN HƠN)
 ---------------------------------------------------------------------
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 340, 0, 420)
-frame.Position = UDim2.new(0.5, -170, 0.5, -210)
+frame.Size = UDim2.new(0, 320, 0, 420) -- Tăng chiều cao một chút để chứa thêm nút
+frame.Position = UDim2.new(0.5, -160, 0.5, -210)
 frame.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
 frame.Active = true
 frame.Draggable = true
@@ -83,7 +494,7 @@ addGradient(frame, Color3.fromRGB(18, 22, 34), Color3.fromRGB(8, 10, 16), 90)
 -- Top bar
 ---------------------------------------------------------------------
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 42)
+topBar.Size = UDim2.new(1, 0, 0, 36) -- Giảm chiều cao
 topBar.BackgroundColor3 = Color3.fromRGB(18, 24, 42)
 topBar.BorderSizePixel = 0
 topBar.Parent = frame
@@ -94,10 +505,10 @@ addGradient(topBar, Color3.fromRGB(70, 95, 255), Color3.fromRGB(30, 40, 120), 0)
 local title = Instance.new("TextLabel")
 title.Parent = topBar
 title.BackgroundTransparency = 1
-title.Position = UDim2.new(0, 14, 0, 2)
-title.Size = UDim2.new(1, -80, 0, 24)
+title.Position = UDim2.new(0, 12, 0, 2)
+title.Size = UDim2.new(1, -80, 0, 20)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 16
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Text = "Auto Moreira Method"
@@ -105,24 +516,24 @@ title.Text = "Auto Moreira Method"
 local titleSub = Instance.new("TextLabel")
 titleSub.Parent = topBar
 titleSub.BackgroundTransparency = 1
-titleSub.Position = UDim2.new(0, 14, 0, 22)
-titleSub.Size = UDim2.new(1, -80, 0, 18)
+titleSub.Position = UDim2.new(0, 12, 0, 18)
+titleSub.Size = UDim2.new(1, -80, 0, 16)
 titleSub.Font = Enum.Font.Gotham
-titleSub.TextSize = 12
+titleSub.TextSize = 11
 titleSub.TextXAlignment = Enum.TextXAlignment.Left
 titleSub.TextColor3 = Color3.fromRGB(190,195,230)
-titleSub.Text = getUserTitle() -- tên người dùng + 🟢
+titleSub.Text = getUserTitle()
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Parent = topBar
 closeBtn.Text = "✕"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 16
 closeBtn.TextColor3 = Color3.fromRGB(240,240,255)
 closeBtn.BackgroundTransparency = 1
 closeBtn.AutoButtonColor = false
-closeBtn.Size = UDim2.new(0, 32, 1, 0)
-closeBtn.Position = UDim2.new(1, -36, 0, 0)
+closeBtn.Size = UDim2.new(0, 28, 1, 0)
+closeBtn.Position = UDim2.new(1, -32, 0, 0)
 
 closeBtn.MouseEnter:Connect(function()
     tween(closeBtn, 0.15, {TextColor3 = Color3.fromRGB(255, 105, 120)}):Play()
@@ -133,50 +544,146 @@ closeBtn.MouseLeave:Connect(function()
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
+    -- Tắt tất cả các chức năng Miranda Tools trước khi đóng UI
+    setNoclip(false)
+    setFastSteal(false)
+    setSpeedBoost(false)
+    setGravity(false)
+    
+    -- Đợi một chút để đảm bảo các chức năng đã tắt hoàn toàn
+    task.wait(0.1)
+    
+    -- Hủy UI
     screenGui:Destroy()
 end)
 
 ---------------------------------------------------------------------
--- Status line
+-- Tabs bar (NHỎ HƠN)
 ---------------------------------------------------------------------
+local tabsBar = Instance.new("Frame")
+tabsBar.Parent = frame
+tabsBar.Size = UDim2.new(1, -20, 0, 28)
+tabsBar.Position = UDim2.new(0, 10, 0, 40)
+tabsBar.BackgroundTransparency = 1
+
+local tabsHolder = Instance.new("Frame")
+tabsHolder.Parent = tabsBar
+tabsHolder.Size = UDim2.new(1, 0, 1, 0)
+tabsHolder.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+tabsHolder.BorderSizePixel = 0
+addCorner(tabsHolder, 10)
+addStroke(tabsHolder, 1, Color3.fromRGB(90, 100, 170), 0.35)
+
+local function makeTabButton(text)
+    local b = Instance.new("TextButton")
+    b.AutoButtonColor = false
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.TextColor3 = Color3.fromRGB(220, 230, 255)
+    b.BackgroundColor3 = Color3.fromRGB(12, 16, 26)
+    b.BorderSizePixel = 0
+    addCorner(b, 8)
+    addStroke(b, 1, Color3.fromRGB(120, 140, 220), 0.6)
+    return b
+end
+
+local tabMainBtn = makeTabButton("Main")
+tabMainBtn.Parent = tabsHolder
+tabMainBtn.Size = UDim2.new(0.5, -4, 1, -6)
+tabMainBtn.Position = UDim2.new(0, 4, 0, 3)
+
+local tabStealerBtn = makeTabButton("Miranda Tools")
+tabStealerBtn.Parent = tabsHolder
+tabStealerBtn.Size = UDim2.new(0.5, -4, 1, -6)
+tabStealerBtn.Position = UDim2.new(0.5, 0, 0, 3)
+
+---------------------------------------------------------------------
+-- Pages container
+---------------------------------------------------------------------
+local pages = Instance.new("Frame")
+pages.Parent = frame
+pages.BackgroundTransparency = 1
+pages.Size = UDim2.new(1, 0, 1, -72) -- 36 top + 28 tabs + padding
+pages.Position = UDim2.new(0, 0, 0, 72)
+
+local mainPage = Instance.new("Frame")
+mainPage.Parent = pages
+mainPage.BackgroundTransparency = 1
+mainPage.Size = UDim2.new(1, 0, 1, 0)
+mainPage.Visible = true
+
+local stealerPage = Instance.new("Frame")
+stealerPage.Parent = pages
+stealerPage.BackgroundTransparency = 1
+stealerPage.Size = UDim2.new(1, 0, 1, 0)
+stealerPage.Visible = false
+
+local function setTabActive(which)
+    local activeCol = Color3.fromRGB(93,118,255)
+    local idleCol = Color3.fromRGB(12, 16, 26)
+
+    if which == "Main" then
+        mainPage.Visible = true
+        stealerPage.Visible = false
+        tabMainBtn.BackgroundColor3 = activeCol
+        tabStealerBtn.BackgroundColor3 = idleCol
+    else
+        mainPage.Visible = false
+        stealerPage.Visible = true
+        tabMainBtn.BackgroundColor3 = idleCol
+        tabStealerBtn.BackgroundColor3 = activeCol
+    end
+end
+
+tabMainBtn.MouseButton1Click:Connect(function() setTabActive("Main") end)
+tabStealerBtn.MouseButton1Click:Connect(function() setTabActive("Stealer") end)
+setTabActive("Main")
+
+---------------------------------------------------------------------
+-- Status line (NO state colors)
+---------------------------------------------------------------------
+local STATUS_COLOR = Color3.fromRGB(215,220,245)
+local DOT_COLOR    = Color3.fromRGB(255, 80, 95)
+
 local statusRow = Instance.new("Frame")
-statusRow.Parent = frame
-statusRow.Size = UDim2.new(1, -32, 0, 26)
-statusRow.Position = UDim2.new(0, 16, 0, 50)
+statusRow.Parent = mainPage
+statusRow.Size = UDim2.new(1, -24, 0, 22)
+statusRow.Position = UDim2.new(0, 12, 0, 8)
 statusRow.BackgroundTransparency = 1
 statusRow.BorderSizePixel = 0
 
 local statusDot = Instance.new("Frame")
 statusDot.Parent = statusRow
-statusDot.Size = UDim2.new(0, 10, 0, 10)
-statusDot.Position = UDim2.new(0, 0, 0.5, -5)
-statusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 95)
+statusDot.Size = UDim2.new(0, 8, 0, 8)
+statusDot.Position = UDim2.new(0, 0, 0.5, -4)
+statusDot.BackgroundColor3 = DOT_COLOR
 addCorner(statusDot, 8)
 addStroke(statusDot, 1, Color3.fromRGB(255,150,170), 0.15)
 
 local status = Instance.new("TextLabel")
 status.Parent = statusRow
-status.Size = UDim2.new(1, -18, 1, 0)
-status.Position = UDim2.new(0, 16, 0, 0)
+status.Size = UDim2.new(1, -14, 1, 0)
+status.Position = UDim2.new(0, 12, 0, 0)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.GothamMedium
-status.TextSize = 14
+status.TextSize = 12
 status.TextXAlignment = Enum.TextXAlignment.Left
-status.TextColor3 = Color3.fromRGB(215,220,245)
+status.TextColor3 = STATUS_COLOR
 status.Text = "Status: ✅ Ready"
 
 ---------------------------------------------------------------------
--- Auto Block + Bypass
+-- Auto Block + Bypass badges (Main tab) - NHỎ HƠN
 ---------------------------------------------------------------------
 local badgesCol = Instance.new("Frame")
-badgesCol.Parent = frame
-badgesCol.Size = UDim2.new(1, -32, 0, 48)
-badgesCol.Position = UDim2.new(0, 16, 0, 80)
+badgesCol.Parent = mainPage
+badgesCol.Size = UDim2.new(1, -24, 0, 42)
+badgesCol.Position = UDim2.new(0, 12, 0, 34)
 badgesCol.BackgroundTransparency = 1
 
 local autoBlockBadge = Instance.new("Frame")
 autoBlockBadge.Parent = badgesCol
-autoBlockBadge.Size = UDim2.new(1, 0, 0, 22)
+autoBlockBadge.Size = UDim2.new(1, 0, 0, 18)
 autoBlockBadge.Position = UDim2.new(0, 0, 0, 0)
 autoBlockBadge.BackgroundColor3 = Color3.fromRGB(10, 30, 18)
 addCorner(autoBlockBadge, 999)
@@ -186,18 +693,18 @@ addGradient(autoBlockBadge, Color3.fromRGB(20, 70, 40), Color3.fromRGB(10, 35, 2
 local autoBlockText = Instance.new("TextLabel")
 autoBlockText.Parent = autoBlockBadge
 autoBlockText.BackgroundTransparency = 1
-autoBlockText.Size = UDim2.new(1, -10, 1, 0)
-autoBlockText.Position = UDim2.new(0, 8, 0, 0)
+autoBlockText.Size = UDim2.new(1, -8, 1, 0)
+autoBlockText.Position = UDim2.new(0, 6, 0, 0)
 autoBlockText.Font = Enum.Font.GothamSemibold
-autoBlockText.TextSize = 13
+autoBlockText.TextSize = 11
 autoBlockText.TextXAlignment = Enum.TextXAlignment.Left
 autoBlockText.TextColor3 = Color3.fromRGB(90, 255, 140)
 autoBlockText.Text = "Auto Block: ON"
 
 local bypassBadge = Instance.new("Frame")
 bypassBadge.Parent = badgesCol
-bypassBadge.Size = UDim2.new(1, 0, 0, 22)
-bypassBadge.Position = UDim2.new(0, 0, 0, 26)
+bypassBadge.Size = UDim2.new(1, 0, 0, 18)
+bypassBadge.Position = UDim2.new(0, 0, 0, 22)
 bypassBadge.BackgroundColor3 = Color3.fromRGB(10, 22, 36)
 addCorner(bypassBadge, 999)
 addStroke(bypassBadge, 1, Color3.fromRGB(90, 160, 255), 0.25)
@@ -206,50 +713,72 @@ addGradient(bypassBadge, Color3.fromRGB(26, 60, 110), Color3.fromRGB(12, 26, 44)
 local bypassText = Instance.new("TextLabel")
 bypassText.Parent = bypassBadge
 bypassText.BackgroundTransparency = 1
-bypassText.Size = UDim2.new(1, -10, 1, 0)
-bypassText.Position = UDim2.new(0, 8, 0, 0)
+bypassText.Size = UDim2.new(1, -8, 1, 0)
+bypassText.Position = UDim2.new(0, 6, 0, 0)
 bypassText.Font = Enum.Font.GothamSemibold
-bypassText.TextSize = 13
+bypassText.TextSize = 11
 bypassText.TextXAlignment = Enum.TextXAlignment.Left
 bypassText.TextColor3 = Color3.fromRGB(130, 190, 255)
-bypassText.Text = "Bypass 30s cooldown: Successfully"
+bypassText.Text = "Bypass 30s cooldown: ON"
+
+local function setAutoBlockBadge(on)
+    autoBlockText.Text = "Auto Block: " .. (on and "ON" or "OFF")
+    if on then
+        autoBlockText.TextColor3 = Color3.fromRGB(90, 255, 140)
+        autoBlockBadge.BackgroundColor3 = Color3.fromRGB(10, 30, 18)
+    else
+        autoBlockText.TextColor3 = Color3.fromRGB(255, 120, 135)
+        autoBlockBadge.BackgroundColor3 = Color3.fromRGB(40, 12, 16)
+    end
+end
+
+local function setBypassBadge(on)
+    bypassText.Text = "Bypass 30s cooldown: " .. (on and "ON" or "OFF")
+    if on then
+        bypassText.TextColor3 = Color3.fromRGB(130, 190, 255)
+        bypassBadge.BackgroundColor3 = Color3.fromRGB(10, 22, 36)
+    else
+        bypassText.TextColor3 = Color3.fromRGB(255, 120, 135)
+        bypassBadge.BackgroundColor3 = Color3.fromRGB(40, 12, 16)
+    end
+end
 
 ---------------------------------------------------------------------
--- Log panel
+-- Log panel (Main tab) - NHỎ GỌN
 ---------------------------------------------------------------------
 local logCard = Instance.new("Frame")
-logCard.Parent = frame
-logCard.Size = UDim2.new(1, -32, 0, 190)
-logCard.Position = UDim2.new(0, 16, 0, 132)
+logCard.Parent = mainPage
+logCard.Size = UDim2.new(1, -24, 0, 120)
+logCard.Position = UDim2.new(0, 12, 0, 80)
 logCard.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
 logCard.BorderSizePixel = 0
-addCorner(logCard, 10)
+addCorner(logCard, 8)
 addStroke(logCard, 1, Color3.fromRGB(90, 100, 170), 0.35)
 
 local logTop = Instance.new("Frame")
 logTop.Parent = logCard
-logTop.Size = UDim2.new(1, -16, 0, 22)
-logTop.Position = UDim2.new(0, 8, 0, 6)
+logTop.Size = UDim2.new(1, -12, 0, 18)
+logTop.Position = UDim2.new(0, 6, 0, 4)
 logTop.BackgroundTransparency = 1
 
 local logTitle = Instance.new("TextLabel")
 logTitle.Parent = logTop
 logTitle.BackgroundTransparency = 1
-logTitle.Size = UDim2.new(1, -90, 1, 0)
+logTitle.Size = UDim2.new(1, -70, 1, 0)
 logTitle.Position = UDim2.new(0, 0, 0, 0)
 logTitle.Font = Enum.Font.GothamSemibold
-logTitle.TextSize = 13
+logTitle.TextSize = 11
 logTitle.TextXAlignment = Enum.TextXAlignment.Left
 logTitle.TextColor3 = Color3.fromRGB(190,195,230)
-logTitle.Text = "Logs (console)"
+logTitle.Text = "Logs"
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Parent = logTop
-clearBtn.Size = UDim2.new(0, 90, 1, 0)
-clearBtn.Position = UDim2.new(1, -92, 0, 0)
-clearBtn.Text = "Clear Logs"
+clearBtn.Size = UDim2.new(0, 70, 1, 0)
+clearBtn.Position = UDim2.new(1, -72, 0, 0)
+clearBtn.Text = "Clear"
 clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 12
+clearBtn.TextSize = 10
 clearBtn.TextColor3 = Color3.fromRGB(255,255,255)
 clearBtn.BackgroundColor3 = Color3.fromRGB(200,70,70)
 clearBtn.AutoButtonColor = false
@@ -269,11 +798,11 @@ end)
 
 local logScroll = Instance.new("ScrollingFrame")
 logScroll.Parent = logCard
-logScroll.Size = UDim2.new(1, -16, 1, -34)
-logScroll.Position = UDim2.new(0, 8, 0, 28)
+logScroll.Size = UDim2.new(1, -12, 1, -26)
+logScroll.Position = UDim2.new(0, 6, 0, 22)
 logScroll.BackgroundTransparency = 1
 logScroll.CanvasSize = UDim2.new(0,0,0,0)
-logScroll.ScrollBarThickness = 4
+logScroll.ScrollBarThickness = 3
 logScroll.BorderSizePixel = 0
 
 local logsContainer = Instance.new("Frame")
@@ -284,7 +813,7 @@ logsContainer.BackgroundTransparency = 1
 local uiList = Instance.new("UIListLayout")
 uiList.Parent = logsContainer
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0,2)
+uiList.Padding = UDim.new(0,1)
 
 uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     local h = uiList.AbsoluteContentSize.Y
@@ -310,17 +839,17 @@ clearBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------------------
--- Process bar + Start button
+-- Process bar + Start button (Main tab) - NHỎ GỌN
 ---------------------------------------------------------------------
 local bottomArea = Instance.new("Frame")
-bottomArea.Parent = frame
-bottomArea.Size = UDim2.new(1, -32, 0, 80)
-bottomArea.Position = UDim2.new(0, 16, 0, 326)
+bottomArea.Parent = mainPage
+bottomArea.Size = UDim2.new(1, -24, 0, 70)
+bottomArea.Position = UDim2.new(0, 12, 0, 210)
 bottomArea.BackgroundTransparency = 1
 
 local processCard = Instance.new("Frame")
 processCard.Parent = bottomArea
-processCard.Size = UDim2.new(1, 0, 0, 18)
+processCard.Size = UDim2.new(1, 0, 0, 14)
 processCard.Position = UDim2.new(0, 0, 0, 0)
 processCard.BackgroundColor3 = Color3.fromRGB(9, 13, 24)
 addCorner(processCard, 999)
@@ -347,12 +876,12 @@ local startBtn = Instance.new("TextButton")
 startBtn.Parent = bottomArea
 startBtn.Text = "Start Moreira"
 startBtn.Font = Enum.Font.GothamBold
-startBtn.TextSize = 16
+startBtn.TextSize = 14
 startBtn.TextColor3 = Color3.fromRGB(255,255,255)
 startBtn.BackgroundColor3 = Color3.fromRGB(93,118,255)
 startBtn.AutoButtonColor = false
-startBtn.Size = UDim2.new(1, 0, 0, 34)
-startBtn.Position = UDim2.new(0, 0, 0, 32)
+startBtn.Size = UDim2.new(1, 0, 0, 32)
+startBtn.Position = UDim2.new(0, 0, 0, 24)
 addCorner(startBtn, 999)
 addStroke(startBtn, 1.4, Color3.fromRGB(150,175,255), 0.1)
 addGradient(startBtn, Color3.fromRGB(130,150,255), Color3.fromRGB(90,110,230), 0)
@@ -368,7 +897,7 @@ startBtn.MouseLeave:Connect(function()
 end)
 
 ---------------------------------------------------------------------
--- FILTER OVERLAY
+-- FILTER OVERLAY (NHỎ GỌN)
 ---------------------------------------------------------------------
 local function showFilter(onDone)
     local overlay = Instance.new("Frame")
@@ -380,22 +909,22 @@ local function showFilter(onDone)
     overlay.ZIndex = 50
 
     local panel = Instance.new("Frame")
-    panel.Size = UDim2.new(0, 260, 0, 220)
-    panel.Position = UDim2.new(0.5, -130, 0.5, -110)
+    panel.Size = UDim2.new(0, 240, 0, 200)
+    panel.Position = UDim2.new(0.5, -120, 0.5, -100)
     panel.BackgroundColor3 = Color3.fromRGB(18,20,30)
     panel.BackgroundTransparency = 1
     panel.ZIndex = 51
     panel.Parent = overlay
-    addCorner(panel, 12)
+    addCorner(panel, 10)
     addStroke(panel, 1, Color3.fromRGB(110,130,210), 0.3)
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Parent = panel
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 12, 0, 10)
-    titleLabel.Size = UDim2.new(1, -24, 0, 24)
+    titleLabel.Position = UDim2.new(0, 10, 0, 8)
+    titleLabel.Size = UDim2.new(1, -20, 0, 20)
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 18
+    titleLabel.TextSize = 16
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.TextColor3 = Color3.fromRGB(235,240,255)
     titleLabel.ZIndex = 52
@@ -404,10 +933,10 @@ local function showFilter(onDone)
     local noteLabel = Instance.new("TextLabel")
     noteLabel.Parent = panel
     noteLabel.BackgroundTransparency = 1
-    noteLabel.Position = UDim2.new(0, 12, 0, 38)
-    noteLabel.Size = UDim2.new(1, -24, 0, 52)
+    noteLabel.Position = UDim2.new(0, 10, 0, 32)
+    noteLabel.Size = UDim2.new(1, -20, 0, 48)
     noteLabel.Font = Enum.Font.Gotham
-    noteLabel.TextSize = 12
+    noteLabel.TextSize = 11
     noteLabel.TextWrapped = true
     noteLabel.TextXAlignment = Enum.TextXAlignment.Left
     noteLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -418,14 +947,14 @@ local function showFilter(onDone)
     local buttonsFrame = Instance.new("Frame")
     buttonsFrame.Parent = panel
     buttonsFrame.BackgroundTransparency = 1
-    buttonsFrame.Position = UDim2.new(0, 12, 0, 94)
-    buttonsFrame.Size = UDim2.new(1, -24, 0, 120)
+    buttonsFrame.Position = UDim2.new(0, 10, 0, 84)
+    buttonsFrame.Size = UDim2.new(1, -20, 0, 110)
     buttonsFrame.ZIndex = 52
 
     local grid = Instance.new("UIGridLayout")
     grid.Parent = buttonsFrame
-    grid.CellPadding = UDim2.new(0, 6, 0, 6)
-    grid.CellSize = UDim2.new(0.5, -6, 0, 24)
+    grid.CellPadding = UDim2.new(0, 5, 0, 5)
+    grid.CellSize = UDim2.new(0.5, -5, 0, 22)
     grid.FillDirection = Enum.FillDirection.Horizontal
     grid.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -438,11 +967,11 @@ local function showFilter(onDone)
         btn.BorderSizePixel = 0
         btn.AutoButtonColor = false
         btn.Font = Enum.Font.GothamSemibold
-        btn.TextSize = 13
+        btn.TextSize = 12
         btn.TextColor3 = Color3.fromRGB(245,245,255)
         btn.Text = text
         btn.ZIndex = 53
-        addCorner(btn, 8)
+        addCorner(btn, 6)
 
         btn.MouseEnter:Connect(function()
             tween(btn, 0.15, {BackgroundColor3 = Color3.fromRGB(85,115,235)}):Play()
@@ -458,16 +987,12 @@ local function showFilter(onDone)
             t2:Play()
             t2.Completed:Wait()
             overlay:Destroy()
-            if onDone then
-                onDone(text)
-            end
+            if onDone then onDone(text) end
         end)
     end
 
-    local tIn1 = tween(overlay, 0.25, {BackgroundTransparency = 0.35})
-    local tIn2 = tween(panel, 0.25, {BackgroundTransparency = 0})
-    tIn1:Play()
-    tIn2:Play()
+    tween(overlay, 0.25, {BackgroundTransparency = 0.35}):Play()
+    tween(panel, 0.25, {BackgroundTransparency = 0}):Play()
 end
 
 ---------------------------------------------------------------------
@@ -511,9 +1036,9 @@ local function pushLogLine(text, iconOverride)
     local row = Instance.new("Frame")
     row.Name = "LogLine"
 
-    local rowHeight = 20
+    local rowHeight = 16
     if string.find(text, "Finished") then
-        rowHeight = 32
+        rowHeight = 24
     end
 
     row.BackgroundTransparency = 1
@@ -532,7 +1057,7 @@ local function pushLogLine(text, iconOverride)
     textLabel.Size = UDim2.new(1, -4, 1, 0)
     textLabel.Position = UDim2.new(0, 2, 0, 0)
     textLabel.Font = Enum.Font.Code
-    textLabel.TextSize = 14
+    textLabel.TextSize = 12
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.Text = prefix .. content
     textLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
@@ -572,7 +1097,7 @@ local function pushLogLine(text, iconOverride)
     clearBtn.Visible = true
 
     logCount += 1
-    if logCount > 500 then
+    if logCount > 300 then
         local oldest = nil
         for _, c in ipairs(logsContainer:GetChildren()) do
             if c:IsA("Frame") and c.Name == "LogLine" then
@@ -674,7 +1199,7 @@ local function pickResults()
 end
 
 ---------------------------------------------------------------------
--- STATE + player events
+-- STATE + player events (status NO color changes)
 ---------------------------------------------------------------------
 local running = false
 local waitingForPlayers = false
@@ -684,10 +1209,6 @@ Players.PlayerAdded:Connect(function(plr)
     if waitingForPlayers and plr ~= player then
         pushLogLine("The player joined the server📎")
         status.Text = "let's get brainrot"
-        status.TextColor3 = Color3.fromRGB(255, 230, 140)
-        tween(statusDot, 0.2, {
-            BackgroundColor3 = Color3.fromRGB(255, 210, 90)
-        }):Play()
         brainrotActive = true
     end
 end)
@@ -695,10 +1216,6 @@ end)
 Players.PlayerRemoving:Connect(function(plr)
     if brainrotActive and plr ~= player then
         status.Text = "Status: ✅ Ready"
-        status.TextColor3 = Color3.fromRGB(190, 255, 200)
-        tween(statusDot, 0.2, {
-            BackgroundColor3 = Color3.fromRGB(110, 230, 130)
-        }):Play()
         brainrotActive = false
     end
 end)
@@ -717,10 +1234,6 @@ local function startProcess(selectedFilter)
     end
 
     status.Text = "Status: 🟡 Sending..."
-    status.TextColor3 = Color3.fromRGB(230, 230, 180)
-    tween(statusDot, 0.2, {
-        BackgroundColor3 = Color3.fromRGB(255, 200, 90)
-    }):Play()
 
     local hideTween = tween(startBtn, 0.3, {
         BackgroundTransparency = 1,
@@ -790,10 +1303,6 @@ local function startProcess(selectedFilter)
     pushLogLine(("Finished. Success(%d)  Fail(%d)"):format(successCount, failCount))
 
     status.Text = "Status: 🟢 Finished"
-    status.TextColor3 = Color3.fromRGB(190, 255, 200)
-    tween(statusDot, 0.2, {
-        BackgroundColor3 = Color3.fromRGB(110, 230, 130)
-    }):Play()
 
     task.wait(2)
     pushLogLine("Waiting for players to join")
@@ -817,10 +1326,6 @@ local function startProcess(selectedFilter)
 
     if not brainrotActive then
         status.Text = "Status: ✅ Ready"
-        status.TextColor3 = Color3.fromRGB(215,220,245)
-        tween(statusDot, 0.2, {
-            BackgroundColor3 = Color3.fromRGB(255, 80, 95)
-        }):Play()
     end
 
     running = false
@@ -834,4 +1339,320 @@ startBtn.MouseButton1Click:Connect(function()
     showFilter(function(selectedFilter)
         startProcess(selectedFilter)
     end)
+end)
+
+---------------------------------------------------------------------
+-- MIRANDA TOOLS TAB (Stealer tab) - UI NHỎ GỌN
+---------------------------------------------------------------------
+-- Tạo container chính cho tab Miranda Tools
+local stealerContainer = Instance.new("Frame")
+stealerContainer.Parent = stealerPage
+stealerContainer.Size = UDim2.new(1, -20, 1, -12)
+stealerContainer.Position = UDim2.new(0, 10, 0, 6)
+stealerContainer.BackgroundTransparency = 1
+
+-- Tạo thẻ chính
+local stealerCard = Instance.new("Frame")
+stealerCard.Parent = stealerContainer
+stealerCard.Size = UDim2.new(1, 0, 1, 0)
+stealerCard.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+stealerCard.BorderSizePixel = 0
+addCorner(stealerCard, 8)
+addStroke(stealerCard, 1, Color3.fromRGB(90, 100, 170), 0.35)
+
+-- Tạo container cho các nút
+local controlsContainer = Instance.new("Frame")
+controlsContainer.Parent = stealerCard
+controlsContainer.BackgroundTransparency = 1
+controlsContainer.Size = UDim2.new(1, -16, 1, -16)
+controlsContainer.Position = UDim2.new(0, 8, 0, 8)
+
+-- Tạo UIListLayout cho các nút
+local controlsList = Instance.new("UIListLayout")
+controlsList.Parent = controlsContainer
+controlsList.SortOrder = Enum.SortOrder.LayoutOrder
+controlsList.Padding = UDim.new(0, 6) -- Giảm padding
+
+-- Tạo UIPadding để có khoảng cách với viền
+local controlsPadding = Instance.new("UIPadding")
+controlsPadding.Parent = controlsContainer
+controlsPadding.PaddingTop = UDim.new(0, 2)
+controlsPadding.PaddingBottom = UDim.new(0, 2)
+
+-- ====== Stealer states ======
+local stealerState = {
+    AutoBlock = true,
+    BypassCooldown = true,
+    FastGrab = false,
+    NoClip = false,
+    SpeedBoost = false,
+    Gravity = false
+}
+
+-- ====== Các hàm xử lý ======
+local function setAutoBlock(on)
+    stealerState.AutoBlock = on
+    setAutoBlockBadge(on)
+    pushLogLine("Auto Block: " .. (on and "ON" or "OFF"))
+end
+
+local function setBypassCooldown(on)
+    stealerState.BypassCooldown = on
+    setBypassBadge(on)
+    pushLogLine("Anti Bypass: " .. (on and "ON" or "OFF"))
+end
+
+local function setNoClip(on)
+    stealerState.NoClip = on
+    pushLogLine("No Clip: " .. (on and "ON" or "OFF"))
+    setNoclip(on)
+end
+
+local function setFastGrab(on)
+    stealerState.FastGrab = on
+    pushLogLine("Fast Grab: " .. (on and "ON" or "OFF"))
+    setFastSteal(on)
+end
+
+local function setSpeedBoostFunc(on)
+    stealerState.SpeedBoost = on
+    pushLogLine("Speed Boost: " .. (on and "ON" or "OFF"))
+    setSpeedBoost(on)
+end
+
+local function setGravityFunc(on)
+    stealerState.Gravity = on
+    pushLogLine("Gravity: " .. (on and "ON" or "OFF"))
+    setGravity(on)
+end
+
+-- ====== Các hàm tạo nút (NHỎ GỌN) ======
+local function makeToggleRow(name, defaultOn, onChanged)
+    local row = Instance.new("Frame")
+    row.BackgroundColor3 = Color3.fromRGB(12, 16, 26)
+    row.BorderSizePixel = 0
+    row.Size = UDim2.new(1, 0, 0, 32) -- Giảm chiều cao
+    row.LayoutOrder = #controlsContainer:GetChildren()
+    addCorner(row, 8)
+    addStroke(row, 1, Color3.fromRGB(90, 110, 190), 0.5)
+
+    local label = Instance.new("TextLabel")
+    label.Parent = row
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Size = UDim2.new(1, -100, 1, 0)
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = Color3.fromRGB(235,240,255)
+    label.Text = name
+
+    local pill = Instance.new("Frame")
+    pill.Parent = row
+    pill.Size = UDim2.new(0, 60, 0, 22) -- Nhỏ hơn
+    pill.Position = UDim2.new(1, -70, 0.5, -11)
+    pill.BackgroundColor3 = Color3.fromRGB(28, 34, 54)
+    pill.BorderSizePixel = 0
+    addCorner(pill, 999)
+    addStroke(pill, 1, Color3.fromRGB(130,145,220), 0.4)
+
+    local knob = Instance.new("Frame")
+    knob.Parent = pill
+    knob.Size = UDim2.new(0, 18, 0, 18) -- Nhỏ hơn
+    knob.Position = UDim2.new(0, 2, 0.5, -9)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 90, 110)
+    knob.BorderSizePixel = 0
+    addCorner(knob, 999)
+    addStroke(knob, 1, Color3.fromRGB(255,150,170), 0.2)
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = pill
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.AutoButtonColor = false
+
+    local state = defaultOn and true or false
+    local function render(instantly)
+        local targetX = state and (60 - 2 - 18) or 2
+        local onColor  = Color3.fromRGB(110, 230, 130)
+        local offColor = Color3.fromRGB(255, 90, 110)
+        if instantly then
+            knob.Position = UDim2.new(0, targetX, 0.5, -9)
+            knob.BackgroundColor3 = state and onColor or offColor
+        else
+            tween(knob, 0.15, {Position = UDim2.new(0, targetX, 0.5, -9)}):Play()
+            tween(knob, 0.15, {BackgroundColor3 = state and onColor or offColor}):Play()
+        end
+    end
+    render(true)
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        render(false)
+        if onChanged then onChanged(state) end
+    end)
+
+    return row
+end
+
+local function makeActionButton(name, onClick)
+    local row = Instance.new("TextButton")
+    row.AutoButtonColor = false
+    row.BackgroundColor3 = Color3.fromRGB(93,118,255)
+    row.BorderSizePixel = 0
+    row.Size = UDim2.new(1, 0, 0, 32) -- Giảm chiều cao
+    row.LayoutOrder = #controlsContainer:GetChildren()
+    row.Font = Enum.Font.GothamBold
+    row.TextSize = 13
+    row.TextColor3 = Color3.fromRGB(255,255,255)
+    row.Text = name
+    addCorner(row, 8)
+    addStroke(row, 1.2, Color3.fromRGB(150,175,255), 0.15)
+    addGradient(row, Color3.fromRGB(130,150,255), Color3.fromRGB(90,110,230), 0)
+
+    row.MouseEnter:Connect(function()
+        tween(row, 0.12, {BackgroundColor3 = Color3.fromRGB(110,135,255)}):Play()
+    end)
+    row.MouseLeave:Connect(function()
+        tween(row, 0.12, {BackgroundColor3 = Color3.fromRGB(93,118,255)}):Play()
+    end)
+
+    row.MouseButton1Click:Connect(function()
+        if onClick then onClick() end
+    end)
+    return row
+end
+
+-- ====== Build rows ======
+-- Tạo các nút theo thứ tự đúng
+local autoBlockRow = makeToggleRow("Auto Block", stealerState.AutoBlock, setAutoBlock)
+autoBlockRow.Parent = controlsContainer
+
+local antiBypassRow = makeToggleRow("Anti Bypass", stealerState.BypassCooldown, setBypassCooldown)
+antiBypassRow.Parent = controlsContainer
+
+local instantStealBtn = makeActionButton("⚡ Instant Steal", function()
+    pushLogLine("Instant Steal triggered")
+    doInstantSteal()
+end)
+instantStealBtn.Parent = controlsContainer
+
+local teleportForwardBtn = makeActionButton("➡ Teleport Forward", function()
+    pushLogLine("Teleport Forward triggered")
+    doForwardTP()
+end)
+teleportForwardBtn.Parent = controlsContainer
+
+local noclipRow = makeToggleRow("☁ Noclip", stealerState.NoClip, setNoClip)
+noclipRow.Parent = controlsContainer
+
+local fastStealRow = makeToggleRow("🚀 Fast Steal", stealerState.FastGrab, setFastGrab)
+fastStealRow.Parent = controlsContainer
+
+-- Thêm 2 nút mới
+local speedBoostRow = makeToggleRow("⚡ Speed Boost", stealerState.SpeedBoost, setSpeedBoostFunc)
+speedBoostRow.Parent = controlsContainer
+
+local gravityRow = makeToggleRow("🌍 Gravity", stealerState.Gravity, setGravityFunc)
+gravityRow.Parent = controlsContainer
+
+-- Thêm nút Super Jump mới
+local superJumpBtn = makeActionButton("🦘 Super Jump", function()
+    pushLogLine("Super Jump activated!")
+    doSuperJump()
+end)
+superJumpBtn.Parent = controlsContainer
+
+-- Thêm khoảng trống ở dưới cùng
+local spacer = Instance.new("Frame")
+spacer.BackgroundTransparency = 1
+spacer.Size = UDim2.new(1, 0, 0, 6)
+spacer.LayoutOrder = 100
+spacer.Parent = controlsContainer
+
+-- Sync initial badges (đồng bộ trạng thái ban đầu)
+setAutoBlockBadge(true)
+setBypassBadge(true)
+
+-- Tự động chuyển sang ScrollingFrame nếu cần
+task.spawn(function()
+    task.wait(0.1)
+    local totalHeight = 0
+    for _, child in ipairs(controlsContainer:GetChildren()) do
+        if child:IsA("Frame") or child:IsA("TextButton") then
+            totalHeight = totalHeight + child.AbsoluteSize.Y + 6
+        end
+    end
+    
+    if totalHeight > controlsContainer.AbsoluteSize.Y then
+        -- Xóa container cũ
+        controlsContainer:Destroy()
+        
+        -- Tạo ScrollingFrame mới
+        local newScroll = Instance.new("ScrollingFrame")
+        newScroll.Parent = stealerCard
+        newScroll.BackgroundTransparency = 1
+        newScroll.BorderSizePixel = 0
+        newScroll.Position = UDim2.new(0, 8, 0, 8)
+        newScroll.Size = UDim2.new(1, -16, 1, -16)
+        newScroll.ScrollBarThickness = 3
+        newScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        
+        -- Tạo container bên trong ScrollingFrame
+        local newContainer = Instance.new("Frame")
+        newContainer.Parent = newScroll
+        newContainer.BackgroundTransparency = 1
+        newContainer.Size = UDim2.new(1, 0, 0, 0)
+        
+        -- Tạo UIListLayout mới
+        local newList = Instance.new("UIListLayout")
+        newList.Parent = newContainer
+        newList.SortOrder = Enum.SortOrder.LayoutOrder
+        newList.Padding = UDim.new(0, 6)
+        
+        -- Tạo UIPadding mới
+        local newPadding = Instance.new("UIPadding")
+        newPadding.Parent = newContainer
+        newPadding.PaddingTop = UDim.new(0, 2)
+        newPadding.PaddingBottom = UDim.new(0, 2)
+        
+        -- Tạo lại các nút
+        local buttonsToCreate = {
+            {name = "Auto Block", isToggle = true, default = stealerState.AutoBlock, func = setAutoBlock},
+            {name = "Anti Bypass", isToggle = true, default = stealerState.BypassCooldown, func = setBypassCooldown},
+            {name = "⚡ Instant Steal", isToggle = false, func = function() pushLogLine("Instant Steal triggered"); doInstantSteal() end},
+            {name = "➡ Teleport Forward", isToggle = false, func = function() pushLogLine("Teleport Forward triggered"); doForwardTP() end},
+            {name = "☁ Noclip", isToggle = true, default = stealerState.NoClip, func = setNoClip},
+            {name = "🚀 Fast Steal", isToggle = true, default = stealerState.FastGrab, func = setFastGrab},
+            {name = "⚡ Speed Boost", isToggle = true, default = stealerState.SpeedBoost, func = setSpeedBoostFunc},
+            {name = "🌍 Gravity", isToggle = true, default = stealerState.Gravity, func = setGravityFunc},
+            {name = "🦘 Super Jump", isToggle = false, func = function() pushLogLine("Super Jump activated!"); doSuperJump() end}
+        }
+        
+        for _, btnData in ipairs(buttonsToCreate) do
+            if btnData.isToggle then
+                local row = makeToggleRow(btnData.name, btnData.default, btnData.func)
+                row.Parent = newContainer
+                row.LayoutOrder = #newContainer:GetChildren()
+            else
+                local btn = makeActionButton(btnData.name, btnData.func)
+                btn.Parent = newContainer
+                btn.LayoutOrder = #newContainer:GetChildren()
+            end
+        end
+        
+        -- Thêm spacer
+        local newSpacer = Instance.new("Frame")
+        newSpacer.BackgroundTransparency = 1
+        newSpacer.Size = UDim2.new(1, 0, 0, 6)
+        newSpacer.LayoutOrder = 100
+        newSpacer.Parent = newContainer
+        
+        -- Cập nhật kích thước canvas
+        newList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            newContainer.Size = UDim2.new(1, 0, 0, newList.AbsoluteContentSize.Y)
+            newScroll.CanvasSize = UDim2.new(0, 0, 0, newList.AbsoluteContentSize.Y)
+        end)
+    end
 end)
