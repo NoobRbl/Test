@@ -24,7 +24,7 @@ local originalWalkSpeed = 16
 local gravityOn = false
 local originalGravity = workspace.Gravity
 local gravityMultiplier = 0.1 -- Giảm xuống còn 10%
-local gravityJumpMultiplier = 12.0 -- Tăng độ nhảy cao hơn nữa
+local gravityJumpMultiplier = 8.0 -- Tăng độ nhảy cao hơn nữa
 local originalJumpPower = 50
 local gravityConn = nil
 
@@ -490,6 +490,109 @@ addCorner(frame, 14)
 addStroke(frame, 1.2, Color3.fromRGB(120,130,200), 0.35)
 addGradient(frame, Color3.fromRGB(18, 22, 34), Color3.fromRGB(8, 10, 16), 90)
 
+--================ MIRANDA TOGGLE + SMOOTH HIDE/SHOW (PASTE HERE) ================
+local frameScale = frame:FindFirstChildOfClass("UIScale")
+if not frameScale then
+    frameScale = Instance.new("UIScale")
+    frameScale.Scale = 1
+    frameScale.Parent = frame
+end
+
+local uiVisible = true
+local lastFramePos = frame.Position
+local animToken = 0
+local hiddenOffset = UDim2.new(0, 0, 0, 16)
+
+local function setUIVisible(on)
+    animToken += 1
+    local myToken = animToken
+
+    uiVisible = on
+    if on then
+        frame.Visible = true
+        frame.Position = lastFramePos + hiddenOffset
+        frameScale.Scale = 0.92
+        tween(frameScale, 0.18, {Scale = 1}):Play()
+        tween(frame, 0.18, {Position = lastFramePos}):Play()
+    else
+        lastFramePos = frame.Position
+        local t1 = tween(frameScale, 0.18, {Scale = 0.92})
+        local t2 = tween(frame, 0.18, {Position = lastFramePos + hiddenOffset})
+        t1:Play(); t2:Play()
+        t1.Completed:Wait()
+        if animToken == myToken and not uiVisible then
+            frame.Visible = false
+        end
+    end
+end
+
+local UI_TOGGLE_IMG = "rbxassetid://83139832285045"
+
+local uiToggle = Instance.new("Frame")
+uiToggle.Name = "MirandaUIToggle"
+uiToggle.Parent = screenGui
+uiToggle.Size = UDim2.new(0, 52, 0, 52)
+uiToggle.Position = UDim2.new(1, -70, 0.5, -26)
+uiToggle.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
+uiToggle.BorderSizePixel = 0
+uiToggle.Active = true
+uiToggle.ZIndex = 999
+addCorner(uiToggle, 999)
+addStroke(uiToggle, 1, Color3.fromRGB(140, 160, 255), 0.35)
+
+local toggleBtn = Instance.new("ImageButton")
+toggleBtn.Parent = uiToggle
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.Image = UI_TOGGLE_IMG
+toggleBtn.AutoButtonColor = false
+toggleBtn.ZIndex = 1000
+
+toggleBtn.MouseButton1Click:Connect(function()
+    setUIVisible(not uiVisible)
+end)
+
+-- Drag tự do (PC + Mobile)
+do
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        uiToggle.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+
+    uiToggle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = uiToggle.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    uiToggle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            update(input)
+        end
+    end)
+end
+
 ---------------------------------------------------------------------
 -- Top bar
 ---------------------------------------------------------------------
@@ -544,17 +647,14 @@ closeBtn.MouseLeave:Connect(function()
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
-    -- Tắt tất cả các chức năng Miranda Tools trước khi đóng UI
+    -- (giữ các dòng tắt state của bạn nếu muốn)
     setNoclip(false)
     setFastSteal(false)
     setSpeedBoost(false)
     setGravity(false)
-    
-    -- Đợi một chút để đảm bảo các chức năng đã tắt hoàn toàn
-    task.wait(0.1)
-    
-    -- Hủy UI
-    screenGui:Destroy()
+    task.wait(0.05)
+
+    setUIVisible(false) -- ✅ chỉ ẩn UI
 end)
 
 ---------------------------------------------------------------------
