@@ -158,7 +158,7 @@ local status = Instance.new("TextLabel", mainFrame)
 status.Position = UDim2.new(0, 20, 0, 55)
 status.Size = UDim2.new(1, -40, 0, 25)
 status.BackgroundTransparency = 1
-status.Text = "Status: Anti Crash..."
+status.Text = "Status: System Ready"
 status.Font = Enum.Font.GothamMedium
 status.TextSize = 14
 status.TextColor3 = Theme.Accent
@@ -193,7 +193,7 @@ local footer = Instance.new("TextLabel", mainFrame)
 footer.Size = UDim2.new(1, 0, 0, 20)
 footer.Position = UDim2.new(0, 0, 1, -25)
 footer.BackgroundTransparency = 1
-footer.Text = "Steal A Brainrot| Noob Roblox | Duplicate"
+footer.Text = "Steal A Brainrot | Noob Roblox | Duplicate"
 footer.Font = Enum.Font.Gotham
 footer.TextSize = 12
 footer.TextColor3 = Theme.TextDim
@@ -249,7 +249,7 @@ startBtn.MouseButton1Click:Connect(function()
     animateDots(startBtn, "Bypassing Security", 2)
     startBtn.TextColor3 = Theme.Success
     status.Text = "Status: Anti-Ban Enabled 🛡️"
-    createPopup("🛡️", "SYSTEM SECURED", "Anti-Ban enabled. Glow removed.")
+    createPopup("🛡️", "SYSTEM SECURED", "Anti-Ban enabled. .")
     task.wait(1)
 
     animateDots(startBtn, "Hashing Bypass", 2)
@@ -365,26 +365,123 @@ toggleBtn.InputEnded:Connect(function(input)
 end)
 
 -- ==========================================
--- 🖱️ DRAG MAIN UI
+-- 🔘 GRADIENT DRAGGABLE TOGGLE (Green->Yellow->Black Smooth)
+-- Logo: rbxassetid://80028101304111
 -- ==========================================
-local dragging, dragStart, startPos
-topBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true; dragStart = input.Position; startPos = mainFrame.Position
+
+-- Holder (kéo thả holder này)
+local toggleHolder = Instance.new("Frame", ScreenGui)
+toggleHolder.Name = "ToggleHolder"
+toggleHolder.Size = UDim2.new(0, 56, 0, 56)
+toggleHolder.Position = UDim2.new(0.9, 0, 0.15, 0)
+toggleHolder.BackgroundTransparency = 1
+toggleHolder.BorderSizePixel = 0
+toggleHolder.Active = true
+
+-- Vòng viền gradient (lớp ngoài)
+local ring = Instance.new("Frame", toggleHolder)
+ring.Name = "Ring"
+ring.Size = UDim2.new(1, 0, 1, 0)
+ring.Position = UDim2.new(0, 0, 0, 0)
+ring.BackgroundTransparency = 0
+ring.BorderSizePixel = 0
+
+local ringCorner = Instance.new("UICorner", ring)
+ringCorner.CornerRadius = UDim.new(1, 0)
+
+local ringGrad = Instance.new("UIGradient", ring)
+ringGrad.Rotation = 0
+ringGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 255, 0)),   -- xanh lá
+    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)), -- vàng
+    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 0)),     -- đen
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 255, 0)),   -- quay về xanh lá để loop mượt
+})
+
+-- Lõi trong (để tạo cảm giác “viền”)
+local inner = Instance.new("Frame", toggleHolder)
+inner.Name = "Inner"
+inner.Size = UDim2.new(1, -6, 1, -6) -- độ dày viền = 3px mỗi bên
+inner.Position = UDim2.new(0, 3, 0, 3)
+inner.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+inner.BorderSizePixel = 0
+
+local innerCorner = Instance.new("UICorner", inner)
+innerCorner.CornerRadius = UDim.new(1, 0)
+
+-- Nút bấm thật sự (đặt trong inner)
+local toggleBtn = Instance.new("TextButton", inner)
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.Position = UDim2.new(0, 0, 0, 0)
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Text = ""
+toggleBtn.AutoButtonColor = false
+
+-- Icon (logo)
+local tIcon = Instance.new("ImageLabel", toggleBtn)
+tIcon.Name = "Icon"
+tIcon.Size = UDim2.new(0, 30, 0, 30)
+tIcon.Position = UDim2.new(0.5, -15, 0.5, -15)
+tIcon.BackgroundTransparency = 1
+tIcon.Image = "rbxassetid://80028101304111"
+tIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Animation viền gradient mượt: xoay liên tục
+task.spawn(function()
+    while toggleHolder.Parent do
+        ringGrad.Rotation = 0
+        local tw = TweenService:Create(
+            ringGrad,
+            TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+            {Rotation = 360}
+        )
+        tw:Play()
+        tw.Completed:Wait()
     end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-topBar.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 end)
 
-UserInputService.InputBegan:Connect(function(input, gp)
-    if not gp and input.KeyCode == Enum.KeyCode.RightControl then
-        uiContainer.Visible = not uiContainer.Visible
+-- Drag / Click logic (kéo thả + bấm để ẩn/hiện UI)
+local isDragging = false
+local dragStart = nil
+local startPos = nil
+
+toggleHolder.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = false
+        dragStart = input.Position
+        startPos = toggleHolder.Position
+    end
+end)
+
+toggleHolder.InputChanged:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragStart then
+        local delta = input.Position - dragStart
+        if delta.Magnitude > 6 then
+            isDragging = true
+            toggleHolder.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+toggleHolder.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if not isDragging then
+            -- Hiện/ẩn UI chính (giữ nguyên logic của bạn: uiContainer)
+            uiContainer.Visible = not uiContainer.Visible
+
+            -- feedback nhỏ cho “đã bấm” (nhẹ, mượt)
+            inner.Size = UDim2.new(1, -8, 1, -8)
+            inner.Position = UDim2.new(0, 4, 0, 4)
+            TweenService:Create(inner, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(1, -6, 1, -6),
+                Position = UDim2.new(0, 3, 0, 3)
+            }):Play()
+        end
+        dragStart = nil
+        isDragging = false
     end
 end)
