@@ -19,7 +19,7 @@ local fastStealConn = nil
 -- Biến mới cho Speed Boost và Gravity
 local speedBoostOn = false
 local speedBoostConn = nil
-local originalWalkSpeed = 16
+local originalWalkSpeed = 40
 
 local gravityOn = false
 local originalGravity = workspace.Gravity
@@ -264,7 +264,7 @@ local function setSpeedBoost(on)
             local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 originalWalkSpeed = humanoid.WalkSpeed
-                humanoid.WalkSpeed = 25 -- Giữ ở 25
+                humanoid.WalkSpeed = 35 -- Giữ ở 25
                 
                 -- Kết nối để giữ tốc độ khi nhân vật thay đổi
                 if speedBoostConn then
@@ -275,7 +275,7 @@ local function setSpeedBoost(on)
                     task.wait(0.5)
                     local newHumanoid = newChar:FindFirstChildOfClass("Humanoid")
                     if newHumanoid then
-                        newHumanoid.WalkSpeed = 25
+                        newHumanoid.WalkSpeed = 35
                     end
                 end)
             end
