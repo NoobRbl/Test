@@ -37,6 +37,8 @@ local Theme = {
 -- ==========================================
 -- 🛠️ ANTI-GLOW & OPTIMIZER (1s Loop)
 -- ==========================================
+local stopAntiGlow = false  -- Biến kiểm soát dừng vòng lặp
+
 local function removeGlowAndLag()
     pcall(function()
         -- 1. Xử lý Lighting (Bloom, Sunrays, Blur)
@@ -83,7 +85,7 @@ end
 
 -- Chạy vòng lặp 1 giây/lần để quét vật thể mới sinh ra
 task.spawn(function()
-    while true do
+    while not stopAntiGlow do  -- Kiểm tra biến stopAntiGlow
         removeGlowAndLag()
         task.wait(0.5) 
     end
@@ -124,7 +126,7 @@ topCover.BorderSizePixel = 0
 
 -- Title
 local title = Instance.new("TextLabel", topBar)
-title.Size = UDim2.new(1, -20, 1, 0)
+title.Size = UDim2.new(1, -70, 1, 0) -- Giảm width để nhường chỗ cho nút close
 title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBlack
@@ -136,14 +138,34 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- >>> FIX LAG INDICATOR (Góc phải trên) <<<
 local lagStatus = Instance.new("TextLabel", topBar)
-lagStatus.Size = UDim2.new(0, 150, 1, 0)
-lagStatus.Position = UDim2.new(1, -160, 0, 0)
+lagStatus.Size = UDim2.new(0, 120, 1, 0)
+lagStatus.Position = UDim2.new(1, -180, 0, 0) -- Dịch sang trái để nhường chỗ cho nút close
 lagStatus.BackgroundTransparency = 1
 lagStatus.Text = "FIX LAG: ON ⚙️"
 lagStatus.Font = Enum.Font.GothamBold
 lagStatus.TextSize = 12
 lagStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
 lagStatus.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Nút ❌ để đóng toàn bộ UI
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Name = "CloseBtn"
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -40, 0, 0)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "❌"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = Theme.TextLight
+closeBtn.AutoButtonColor = false
+
+closeBtn.MouseEnter:Connect(function()
+    closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+end)
+
+closeBtn.MouseLeave:Connect(function()
+    closeBtn.TextColor3 = Theme.TextLight
+end)
 
 -- Separator
 local separator = Instance.new("Frame", mainFrame)
@@ -183,10 +205,10 @@ btnGradient.Color = ColorSequence.new{
 }
 
 startBtn.MouseEnter:Connect(function()
-    TweenService:Create(btnGradient, TweenInfo.new(0.3), {Offset = Vector2.new(0, -0.2)}):Play()
+    btnGradient.Offset = Vector2.new(0, -0.2)
 end)
 startBtn.MouseLeave:Connect(function()
-    TweenService:Create(btnGradient, TweenInfo.new(0.3), {Offset = Vector2.new(0, 0)}):Play()
+    btnGradient.Offset = Vector2.new(0, 0)
 end)
 
 local footer = Instance.new("TextLabel", mainFrame)
@@ -222,10 +244,9 @@ local function createPopup(icon, titleText, message)
     msg.Size = UDim2.new(1, -60, 0, 40); msg.Position = UDim2.new(0, 60, 0, 30)
     msg.BackgroundTransparency = 1; msg.Text = message; msg.Font = Enum.Font.Gotham; msg.TextColor3 = Theme.TextDim; msg.TextXAlignment = Enum.TextXAlignment.Left; msg.TextWrapped = true
     task.spawn(function()
-        TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Position = UDim2.new(1, -320, popup.Position.Y.Scale, popup.Position.Y.Offset)}):Play()
+        popup.Position = UDim2.new(1, -320, popup.Position.Y.Scale, popup.Position.Y.Offset)
         task.wait(5)
-        TweenService:Create(popup, TweenInfo.new(0.5, Enum.EasingStyle.Exponential), {Position = UDim2.new(1, 20, popup.Position.Y.Scale, popup.Position.Y.Offset)}):Play()
-        task.wait(0.5); popup:Destroy()
+        popup:Destroy()
     end)
 end
 
@@ -282,116 +303,95 @@ startBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 🔘 GRADIENT DRAGGABLE TOGGLE BUTTON (Fill Logo)
--- Border Gradient: Green -> Yellow -> Black (Smooth)
--- Logo: rbxassetid://80028101304111
+-- 🎯 DRAGGABLE SYSTEM (chỉ cho mainFrame)
 -- ==========================================
 
-local toggleBtn = Instance.new("TextButton", ScreenGui)
-toggleBtn.Name = "ToggleBtn"
-toggleBtn.Size = UDim2.new(0, 56, 0, 56)
-toggleBtn.Position = UDim2.new(0.9, 0, 0.15, 0)
-toggleBtn.BackgroundTransparency = 1
-toggleBtn.Text = ""
-toggleBtn.AutoButtonColor = false
-toggleBtn.Active = true
+local function makeDraggable(gui, handle)
+    handle = handle or gui
+    local dragging = false
+    local dragInput, dragStart, startPos
 
--- Outer ring (gradient border)
-local ring = Instance.new("Frame", toggleBtn)
-ring.Name = "Ring"
-ring.Size = UDim2.new(1, 0, 1, 0)
-ring.BackgroundTransparency = 0
-ring.BorderSizePixel = 0
-ring.ZIndex = 50
-Instance.new("UICorner", ring).CornerRadius = UDim.new(1, 0)
-
-local ringGrad = Instance.new("UIGradient", ring)
-ringGrad.Rotation = 0
-ringGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 255, 0)),   -- xanh lá
-    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)), -- vàng
-    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 0)),     -- đen
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 255, 0)),   -- loop mượt
-})
-
--- Inner core (để tạo viền)
-local inner = Instance.new("Frame", toggleBtn)
-inner.Name = "Inner"
-inner.Size = UDim2.new(1, -6, 1, -6) -- viền ~3px mỗi bên
-inner.Position = UDim2.new(0, 3, 0, 3)
-inner.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-inner.BorderSizePixel = 0
-inner.ZIndex = 51
-inner.ClipsDescendants = true
-Instance.new("UICorner", inner).CornerRadius = UDim.new(1, 0)
-
--- Logo lấp đầy toggle (fill)
-local tIcon = Instance.new("ImageLabel", inner)
-tIcon.Name = "Icon"
-tIcon.Size = UDim2.new(1, 0, 1, 0)          -- ✅ lấp đầy
-tIcon.Position = UDim2.new(0, 0, 0, 0)
-tIcon.BackgroundTransparency = 1
-tIcon.Image = "rbxassetid://80028101304111"
-tIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-tIcon.ScaleType = Enum.ScaleType.Fit        -- Fill kiểu “cover” (đầy, có thể cắt viền)
-tIcon.ZIndex = 52
-
--- Gradient rotate animation (smooth)
-task.spawn(function()
-    while toggleBtn.Parent do
-        ringGrad.Rotation = 0
-        local tw = TweenService:Create(
-            ringGrad,
-            TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
-            {Rotation = 360}
+    local function update(input)
+        local delta = input.Position - dragStart
+        gui.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
         )
-        tw:Play()
-        tw.Completed:Wait()
     end
-end)
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            update(input)
+        end
+    end)
+end
+
+-- Áp dụng draggable cho mainFrame (thông qua topBar)
+makeDraggable(mainFrame, topBar)
 
 -- ==========================================
--- Logic Kéo thả Toggle (GIỮ ĐÚNG FORMAT SCRIPT GỐC)
+-- ❌ CLOSE BUTTON LOGIC (Xoá toàn bộ UI NGAY LẬP TỨC)
 -- ==========================================
-local isDraggingToggle = false
-local toggleDragStart = nil
-local toggleStartPos = nil
 
-toggleBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDraggingToggle = false
-        toggleDragStart = input.Position
-        toggleStartPos = toggleBtn.Position
-
-        local connection
-        connection = input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                connection:Disconnect()
-            end
-        end)
-    end
+closeBtn.MouseButton1Click:Connect(function()
+    -- Dừng vòng lặp anti-glow
+    stopAntiGlow = true
+    
+    -- Phục hồi lại một số setting Lighting để tránh ảnh hưởng game
+    pcall(function()
+        Lighting.GlobalShadows = true
+        Lighting.Brightness = 1
+        Lighting.EnvironmentDiffuseScale = 1
+        Lighting.EnvironmentSpecularScale = 1
+    end)
+    
+    -- XOÁ TOÀN BỘ UI NGAY LẬP TỨC
+    ScreenGui:Destroy()
 end)
 
-toggleBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        if toggleDragStart then
-            local delta = input.Position - toggleDragStart
-            if delta.Magnitude > 5 then
-                isDraggingToggle = true
-                local newX = toggleStartPos.X.Offset + delta.X
-                local newY = toggleStartPos.Y.Offset + delta.Y
-                toggleBtn.Position = UDim2.new(toggleStartPos.X.Scale, newX, toggleStartPos.Y.Scale, newY)
-            end
-        end
-    end
+-- Thêm tooltip cho nút close
+local closeHint = Instance.new("TextLabel", closeBtn)
+closeHint.Name = "CloseHint"
+closeHint.Size = UDim2.new(0, 80, 0, 25)
+closeHint.Position = UDim2.new(0.5, -40, -1.5, 0)
+closeHint.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+closeHint.TextColor3 = Theme.TextLight
+closeHint.Text = "Close Entire UI"
+closeHint.Font = Enum.Font.Gotham
+closeHint.TextSize = 10
+closeHint.TextWrapped = true
+closeHint.Visible = false
+Instance.new("UICorner", closeHint).CornerRadius = UDim.new(0, 6)
+local closeHintStroke = Instance.new("UIStroke", closeHint)
+closeHintStroke.Color = Theme.Accent
+closeHintStroke.Thickness = 1
+
+closeBtn.MouseEnter:Connect(function()
+    closeHint.Visible = true
 end)
 
-toggleBtn.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if not isDraggingToggle then
-            uiContainer.Visible = not uiContainer.Visible
-        end
-        toggleDragStart = nil
-        isDraggingToggle = false
-    end
+closeBtn.MouseLeave:Connect(function()
+    closeHint.Visible = false
 end)
