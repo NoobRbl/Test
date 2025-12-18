@@ -1,55 +1,73 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- Tạo GUI với thiết kế hiện đại
+-- =========================
+-- CONFIG
+-- =========================
+local TARGET_W, TARGET_H = 320, 330
+local DESIRED_DROP_H = 200
+
+local traitOptions = {
+	"All", "RIP Gravestone", "Sombrero", "Skeleton", "Meowl", "Zombie", "Taco", "Cometstruck",
+	"Disco", "Witch Hat", "Fire", "Fireworks", "Snowy", "10B", "Claws", "Sleepy", "Lightning",
+	"Tie", "Indonesia", "Nyan", "Santa Hat", "Matteo Hat", "Bubblegum", "Strawberry", "Shark Fin",
+	"Brazil", "Explosive", "Wet", "Glitched", "Spider", "UFO", "Paint", "Galactic", "Jackolantern Pet"
+}
+
+-- =========================
+-- GUI
+-- =========================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BrainrotAdderGui"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = PlayerGui
 
--- Main container với background mờ nhẹ
+-- Overlay để click ra ngoài dropdown => đóng
+local overlay = Instance.new("TextButton")
+overlay.Name = "DropdownOverlay"
+overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.Position = UDim2.new(0, 0, 0, 0)
+overlay.BackgroundTransparency = 1
+overlay.Text = ""
+overlay.AutoButtonColor = false
+overlay.Visible = false
+overlay.ZIndex = 90
+overlay.Parent = screenGui
+
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 220)
+mainFrame.Size = UDim2.new(0, TARGET_W, 0, TARGET_H)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 mainFrame.BackgroundTransparency = 0.2
 mainFrame.BorderSizePixel = 0
+mainFrame.ZIndex = 91
 mainFrame.Parent = screenGui
 
--- Rounded corners
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 15)
 corner.Parent = mainFrame
 
--- Header với accent color
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 50)
 header.BackgroundColor3 = Color3.fromRGB(120, 80, 220)
 header.BackgroundTransparency = 0.1
 header.BorderSizePixel = 0
+header.ZIndex = 92
 header.Parent = mainFrame
 
 local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 15)
 headerCorner.Parent = header
 
--- Title container - điều chỉnh để title sát trái
-local titleContainer = Instance.new("Frame")
-titleContainer.Size = UDim2.new(1, 0, 1, 0)
-titleContainer.BackgroundTransparency = 1
-titleContainer.Parent = header
-
--- Title "ADD BRAINROT" - sát bên trái
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.7, 0, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)  -- Sát trái với padding 15
+title.Size = UDim2.new(1, -60, 1, 0)
+title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "ADD BRAINROT"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -57,9 +75,9 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.TextYAlignment = Enum.TextYAlignment.Center
-title.Parent = titleContainer
+title.ZIndex = 93
+title.Parent = header
 
--- Close button với dấu X rõ ràng
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 32, 0, 32)
 closeButton.Position = UDim2.new(1, -37, 0.5, 0)
@@ -71,82 +89,399 @@ closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeButton.Font = Enum.Font.GothamBold
 closeButton.TextSize = 16
 closeButton.AutoButtonColor = false
-closeButton.Parent = titleContainer
+closeButton.ZIndex = 93
+closeButton.Parent = header
 
 local closeButtonCorner = Instance.new("UICorner")
 closeButtonCorner.CornerRadius = UDim.new(0, 8)
 closeButtonCorner.Parent = closeButton
 
--- Content container
-local contentContainer = Instance.new("Frame")
-contentContainer.Size = UDim2.new(1, 0, 1, -60)
-contentContainer.Position = UDim2.new(0, 0, 0, 60)
-contentContainer.BackgroundTransparency = 1
-contentContainer.Parent = mainFrame
+-- =========================
+-- CONTENT
+-- =========================
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -60)
+content.Position = UDim2.new(0, 0, 0, 60)
+content.BackgroundTransparency = 1
+content.ZIndex = 92
+content.Parent = mainFrame
 
--- Input container với spacing
-local inputContainer = Instance.new("Frame")
-inputContainer.Size = UDim2.new(1, -30, 1, -20)
-inputContainer.Position = UDim2.new(0, 15, 0, 15)
-inputContainer.BackgroundTransparency = 1
-inputContainer.Parent = contentContainer
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, -30, 1, -20)
+container.Position = UDim2.new(0, 15, 0, 15)
+container.BackgroundTransparency = 1
+container.ZIndex = 92
+container.Parent = content
 
--- TextBox modern design
-local textBoxOuter = Instance.new("Frame")
-textBoxOuter.Size = UDim2.new(1, 0, 0, 50)
-textBoxOuter.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-textBoxOuter.BackgroundTransparency = 0.2
-textBoxOuter.Parent = inputContainer
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 8)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = container
 
-local textBoxCorner = Instance.new("UICorner")
-textBoxCorner.CornerRadius = UDim.new(0, 10)
-textBoxCorner.Parent = textBoxOuter
+local function makeRow(height)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, height or 46)
+	row.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	row.BackgroundTransparency = 0.2
+	row.BorderSizePixel = 0
+	row.ZIndex = 92
+	row.Parent = container
 
-local textBox = Instance.new("TextBox")
-textBox.Size = UDim2.new(1, -20, 1, 0)
-textBox.Position = UDim2.new(0, 10, 0, 0)
-textBox.PlaceholderText = "Enter brainrot name here"
-textBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 170)
-textBox.BackgroundTransparency = 1
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.ClearTextOnFocus = false
-textBox.Font = Enum.Font.Gotham
-textBox.TextSize = 15
-textBox.TextXAlignment = Enum.TextXAlignment.Left
-textBox.TextYAlignment = Enum.TextYAlignment.Center
-textBox.Parent = textBoxOuter
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 10)
+	c.Parent = row
+	return row
+end
 
--- Placeholder label
-local placeholderLabel = Instance.new("TextLabel")
-placeholderLabel.Text = "BRAINROT NAME"
-placeholderLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-placeholderLabel.BackgroundTransparency = 1
-placeholderLabel.Font = Enum.Font.GothamSemibold
-placeholderLabel.TextSize = 11
-placeholderLabel.Position = UDim2.new(0, 12, 0, -18)
-placeholderLabel.Size = UDim2.new(0.5, 0, 0, 16)
-placeholderLabel.TextXAlignment = Enum.TextXAlignment.Left
-placeholderLabel.Visible = (textBox.Text == "")
-placeholderLabel.Parent = textBoxOuter
+local function makeLabeledTextBox(row, labelText, placeholderText)
+	local pl = Instance.new("TextLabel")
+	pl.Text = labelText
+	pl.TextColor3 = Color3.fromRGB(150, 150, 170)
+	pl.BackgroundTransparency = 1
+	pl.Font = Enum.Font.GothamSemibold
+	pl.TextSize = 11
+	pl.Position = UDim2.new(0, 12, 0, -16)
+	pl.Size = UDim2.new(0.9, 0, 0, 16)
+	pl.TextXAlignment = Enum.TextXAlignment.Left
+	pl.ZIndex = 93
+	pl.Parent = row
 
--- Button với spacing
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(1, 0, 0, 50)
-button.Position = UDim2.new(0, 0, 0, 70)
-button.Text = "SPAWN"
-button.BackgroundColor3 = Color3.fromRGB(120, 80, 220)
-button.BackgroundTransparency = 0.1
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.GothamBold
-button.TextSize = 16
-button.AutoButtonColor = false
-button.Parent = inputContainer
+	local tb = Instance.new("TextBox")
+	tb.Size = UDim2.new(1, -20, 1, 0)
+	tb.Position = UDim2.new(0, 10, 0, 0)
+	tb.PlaceholderText = placeholderText or ""
+	tb.PlaceholderColor3 = Color3.fromRGB(150, 150, 170)
+	tb.BackgroundTransparency = 1
+	tb.TextColor3 = Color3.fromRGB(255, 255, 255)
+	tb.ClearTextOnFocus = false
+	tb.Font = Enum.Font.Gotham
+	tb.TextSize = 15
+	tb.TextXAlignment = Enum.TextXAlignment.Left
+	tb.TextYAlignment = Enum.TextYAlignment.Center
+	tb.Text = ""
+	tb.ZIndex = 93
+	tb.Parent = row
 
-local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = UDim.new(0, 10)
-buttonCorner.Parent = button
+	return tb
+end
 
--- DRAG FUNCTIONALITY - Có thể kéo từ HEADER
+-- Row: Brainrot name
+local rowName = makeRow(46)
+local brainrotBox = makeLabeledTextBox(rowName, "BRAINROT NAME", "Enter brainrot name here")
+
+-- Row: Mutations
+local rowMut = makeRow(46)
+local mutationBox = makeLabeledTextBox(rowMut, "Mutations", "Enter mutations here")
+
+-- Row: Traits selector
+local rowTraits = makeRow(46)
+
+local traitsLabel = Instance.new("TextLabel")
+traitsLabel.Text = "TRAITS"
+traitsLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+traitsLabel.BackgroundTransparency = 1
+traitsLabel.Font = Enum.Font.GothamSemibold
+traitsLabel.TextSize = 11
+traitsLabel.Position = UDim2.new(0, 12, 0, -16)
+traitsLabel.Size = UDim2.new(0.9, 0, 0, 16)
+traitsLabel.TextXAlignment = Enum.TextXAlignment.Left
+traitsLabel.ZIndex = 93
+traitsLabel.Parent = rowTraits
+
+local traitsValue = Instance.new("TextLabel")
+traitsValue.Size = UDim2.new(1, -70, 1, 0)
+traitsValue.Position = UDim2.new(0, 12, 0, 0)
+traitsValue.BackgroundTransparency = 1
+traitsValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+traitsValue.Font = Enum.Font.Gotham
+traitsValue.TextSize = 14
+traitsValue.TextXAlignment = Enum.TextXAlignment.Left
+traitsValue.Text = "Select traits..."
+traitsValue.ZIndex = 93
+traitsValue.Parent = rowTraits
+
+local caret = Instance.new("TextLabel")
+caret.Size = UDim2.new(0, 24, 0, 24)
+caret.Position = UDim2.new(1, -30, 0.5, 0)
+caret.AnchorPoint = Vector2.new(0, 0.5)
+caret.BackgroundTransparency = 1
+caret.Text = "▾"
+caret.TextColor3 = Color3.fromRGB(200, 200, 220)
+caret.Font = Enum.Font.GothamBold
+caret.TextSize = 18
+caret.ZIndex = 93
+caret.Parent = rowTraits
+
+local traitsButton = Instance.new("TextButton")
+traitsButton.Size = UDim2.new(1, 0, 1, 0)
+traitsButton.BackgroundTransparency = 1
+traitsButton.Text = ""
+traitsButton.AutoButtonColor = false
+traitsButton.ZIndex = 94
+traitsButton.Parent = rowTraits
+
+-- Row: Spawn (UI only)
+local spawnRow = makeRow(50)
+spawnRow.BackgroundTransparency = 1
+
+local spawnButton = Instance.new("TextButton")
+spawnButton.Size = UDim2.new(1, 0, 0, 50)
+spawnButton.Text = "SPAWN"
+spawnButton.BackgroundColor3 = Color3.fromRGB(120, 80, 220)
+spawnButton.BackgroundTransparency = 0.1
+spawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+spawnButton.Font = Enum.Font.GothamBold
+spawnButton.TextSize = 16
+spawnButton.AutoButtonColor = false
+spawnButton.ZIndex = 92
+spawnButton.Parent = spawnRow
+
+local spawnCorner = Instance.new("UICorner")
+spawnCorner.CornerRadius = UDim.new(0, 10)
+spawnCorner.Parent = spawnButton
+
+-- =========================
+-- Dropdown OVERLAY (đè lên SPAWN) + Multi-select + All
+-- =========================
+local selected = {} -- [trait] = true/false
+local optionUI = {} -- [trait] = {box=Frame, tick=TextLabel}
+
+local dropdown = Instance.new("Frame")
+dropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+dropdown.BackgroundTransparency = 0.05
+dropdown.BorderSizePixel = 0
+dropdown.ClipsDescendants = true
+dropdown.Visible = false
+dropdown.ZIndex = 110
+dropdown.Parent = mainFrame
+
+local dropCorner = Instance.new("UICorner")
+dropCorner.CornerRadius = UDim.new(0, 10)
+dropCorner.Parent = dropdown
+
+local list = Instance.new("ScrollingFrame")
+list.Size = UDim2.new(1, -10, 1, -10)
+list.Position = UDim2.new(0, 5, 0, 5)
+list.BackgroundTransparency = 1
+list.BorderSizePixel = 0
+list.ScrollBarThickness = 4
+list.CanvasSize = UDim2.new(0, 0, 0, 0)
+list.ZIndex = 111
+list.Parent = dropdown
+
+local optLayout = Instance.new("UIListLayout")
+optLayout.Padding = UDim.new(0, 6)
+optLayout.SortOrder = Enum.SortOrder.LayoutOrder
+optLayout.Parent = list
+
+local function recomputeCanvas()
+	task.wait()
+	list.CanvasSize = UDim2.new(0, 0, 0, optLayout.AbsoluteContentSize.Y + 6)
+end
+optLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(recomputeCanvas)
+
+local function anySelected()
+	for _, opt in ipairs(traitOptions) do
+		if selected[opt] then return true end
+	end
+	return false
+end
+
+local function countSelected()
+	local n = 0
+	for _, opt in ipairs(traitOptions) do
+		if selected[opt] then n += 1 end
+	end
+	return n
+end
+
+local function allOthersOn()
+	for _, opt in ipairs(traitOptions) do
+		if opt ~= "All" and not selected[opt] then
+			return false
+		end
+	end
+	return true
+end
+
+local function refreshTraitsText()
+	if not anySelected() then
+		traitsValue.Text = "Select traits..."
+		return
+	end
+	if selected["All"] then
+		traitsValue.Text = "All (" .. tostring(#traitOptions) .. ")"
+	else
+		traitsValue.Text = tostring(countSelected()) .. " selected"
+	end
+end
+
+local function setOptionVisual(opt)
+	local ui = optionUI[opt]
+	if not ui then return end
+	if selected[opt] then
+		ui.box.BackgroundTransparency = 0.15
+		ui.tick.TextTransparency = 0
+	else
+		ui.box.BackgroundTransparency = 0.65
+		ui.tick.TextTransparency = 1
+	end
+end
+
+local function setAll(on)
+	for _, opt in ipairs(traitOptions) do
+		selected[opt] = on
+	end
+	for _, opt in ipairs(traitOptions) do
+		setOptionVisual(opt)
+	end
+	refreshTraitsText()
+end
+
+local function toggleOption(opt)
+	if opt == "All" then
+		local turnOn = not selected["All"]
+		setAll(turnOn)
+		return
+	end
+
+	selected[opt] = not selected[opt]
+	setOptionVisual(opt)
+
+	if selected["All"] and not selected[opt] then
+		selected["All"] = false
+		setOptionVisual("All")
+	end
+
+	if allOthersOn() then
+		selected["All"] = true
+		setOptionVisual("All")
+	end
+
+	refreshTraitsText()
+end
+
+for i, opt in ipairs(traitOptions) do
+	local row = Instance.new("TextButton")
+	row.Size = UDim2.new(1, 0, 0, 30)
+	row.BackgroundTransparency = 1
+	row.Text = ""
+	row.AutoButtonColor = false
+	row.LayoutOrder = i
+	row.ZIndex = 112
+	row.Parent = list
+
+	local txt = Instance.new("TextLabel")
+	txt.Size = UDim2.new(1, -60, 1, 0)
+	txt.Position = UDim2.new(0, 10, 0, 0)
+	txt.BackgroundTransparency = 1
+	txt.TextColor3 = Color3.fromRGB(230, 230, 245)
+	txt.Font = Enum.Font.Gotham
+	txt.TextSize = 14
+	txt.TextXAlignment = Enum.TextXAlignment.Left
+	txt.Text = opt
+	txt.ZIndex = 113
+	txt.Parent = row
+
+	local box = Instance.new("Frame")
+	box.Size = UDim2.new(0, 16, 0, 16)
+	box.Position = UDim2.new(1, -26, 0.5, 0)
+	box.AnchorPoint = Vector2.new(0, 0.5)
+	box.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	box.BackgroundTransparency = 0.65
+	box.BorderSizePixel = 0
+	box.ZIndex = 113
+	box.Parent = row
+
+	local bc = Instance.new("UICorner")
+	bc.CornerRadius = UDim.new(0, 3)
+	bc.Parent = box
+
+	local tick = Instance.new("TextLabel")
+	tick.Size = UDim2.new(1, 0, 1, 0)
+	tick.BackgroundTransparency = 1
+	tick.Text = "✓"
+	tick.TextColor3 = Color3.fromRGB(20, 20, 25)
+	tick.Font = Enum.Font.GothamBold
+	tick.TextSize = 14
+	tick.TextTransparency = 1
+	tick.ZIndex = 114
+	tick.Parent = box
+
+	optionUI[opt] = {box = box, tick = tick}
+
+	row.Activated:Connect(function()
+		toggleOption(opt)
+	end)
+end
+
+task.defer(function()
+	recomputeCanvas()
+	refreshTraitsText()
+end)
+
+local function placeDropdown(h)
+	local x = 0
+	local w = mainFrame.AbsoluteSize.X
+	local traitsBottomY = (rowTraits.AbsolutePosition.Y - mainFrame.AbsolutePosition.Y) + rowTraits.AbsoluteSize.Y
+	local topY = traitsBottomY + 8
+
+	local maxH = math.max(0, (mainFrame.AbsoluteSize.Y - 12) - topY)
+	local finalH = math.min(h, maxH)
+
+	dropdown.Position = UDim2.new(0, x, 0, topY)
+	dropdown.Size = UDim2.new(0, w, 0, finalH)
+end
+
+local dropOpen = false
+local dropTween
+
+local function setDropdown(open)
+	dropOpen = open
+	caret.Text = open and "▴" or "▾"
+
+	if dropTween then
+		dropTween:Cancel()
+		dropTween = nil
+	end
+
+	if open then
+		overlay.Visible = true
+		dropdown.Visible = true
+		placeDropdown(DESIRED_DROP_H)
+		local targetH = dropdown.AbsoluteSize.Y
+
+		dropdown.Size = UDim2.new(dropdown.Size.X.Scale, dropdown.Size.X.Offset, 0, 0)
+		dropTween = TweenService:Create(dropdown, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = UDim2.new(dropdown.Size.X.Scale, dropdown.Size.X.Offset, 0, targetH)
+		})
+		dropTween:Play()
+	else
+		overlay.Visible = false
+		if not dropdown.Visible then return end
+		dropTween = TweenService:Create(dropdown, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Size = UDim2.new(dropdown.Size.X.Scale, dropdown.Size.X.Offset, 0, 0)
+		})
+		dropTween:Play()
+		dropTween.Completed:Connect(function()
+			if not dropOpen then dropdown.Visible = false end
+		end)
+	end
+end
+
+traitsButton.Activated:Connect(function()
+	setDropdown(not dropOpen)
+end)
+
+overlay.Activated:Connect(function()
+	if dropOpen then
+		setDropdown(false)
+	end
+end)
+
+-- =========================
+-- Draggable header
+-- =========================
 local dragging = false
 local dragStart
 local startPos
@@ -159,22 +494,22 @@ local function updateDrag(input)
 		startPos.Y.Scale,
 		startPos.Y.Offset + delta.Y
 	)
+	if dropOpen and dropdown.Visible then
+		placeDropdown(dropdown.AbsoluteSize.Y)
+	end
 end
 
--- Cho phép kéo từ HEADER (không phải từ toàn bộ mainFrame)
 header.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		dragStart = input.Position
 		startPos = mainFrame.Position
-		
+
 		local connection
 		connection = input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				dragging = false
-				if connection then
-					connection:Disconnect()
-				end
+				if connection then connection:Disconnect() end
 			end
 		end)
 	end
@@ -186,158 +521,48 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Hiệu ứng textbox
-textBox:GetPropertyChangedSignal("Text"):Connect(function()
-	placeholderLabel.Visible = (textBox.Text == "")
-end)
-
-textBox.Focused:Connect(function()
-	local tween = TweenService:Create(textBoxOuter, TweenInfo.new(0.2), {
-		BackgroundColor3 = Color3.fromRGB(60, 60, 75),
-		BackgroundTransparency = 0.1
-	})
-	tween:Play()
-	
-	placeholderLabel.TextColor3 = Color3.fromRGB(140, 100, 255)
-end)
-
-textBox.FocusLost:Connect(function()
-	local tween = TweenService:Create(textBoxOuter, TweenInfo.new(0.3), {
-		BackgroundColor3 = Color3.fromRGB(40, 40, 50),
-		BackgroundTransparency = 0.2
-	})
-	tween:Play()
-	
-	placeholderLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
-end)
-
--- Hiệu ứng hover cho button
-button.MouseEnter:Connect(function()
-	local tween = TweenService:Create(button, TweenInfo.new(0.2), {
-		BackgroundColor3 = Color3.fromRGB(130, 90, 230),
-		BackgroundTransparency = 0.05
-	})
-	tween:Play()
-end)
-
-button.MouseLeave:Connect(function()
-	local tween = TweenService:Create(button, TweenInfo.new(0.2), {
-		BackgroundColor3 = Color3.fromRGB(120, 80, 220),
-		BackgroundTransparency = 0.1
-	})
-	tween:Play()
-end)
-
--- Hiệu ứng click cho button
-button.MouseButton1Down:Connect(function()
-	local tween = TweenService:Create(button, TweenInfo.new(0.1), {
-		BackgroundColor3 = Color3.fromRGB(100, 60, 200),
-		BackgroundTransparency = 0
-	})
-	tween:Play()
-end)
-
-button.MouseButton1Up:Connect(function()
-	local tween = TweenService:Create(button, TweenInfo.new(0.15), {
-		BackgroundColor3 = Color3.fromRGB(120, 80, 220),
-		BackgroundTransparency = 0.1
-	})
-	tween:Play()
-end)
-
--- Hiệu ứng cho close button
-closeButton.MouseEnter:Connect(function()
-	local tween = TweenService:Create(closeButton, TweenInfo.new(0.2), {
-		BackgroundColor3 = Color3.fromRGB(240, 100, 100),
-		BackgroundTransparency = 0,
-		Size = UDim2.new(0, 34, 0, 34)
-	})
-	tween:Play()
-end)
-
-closeButton.MouseLeave:Connect(function()
-	local tween = TweenService:Create(closeButton, TweenInfo.new(0.2), {
-		BackgroundColor3 = Color3.fromRGB(220, 80, 80),
-		BackgroundTransparency = 0.2,
-		Size = UDim2.new(0, 32, 0, 32)
-	})
-	tween:Play()
-end)
-
-closeButton.MouseButton1Down:Connect(function()
-	local tween = TweenService:Create(closeButton, TweenInfo.new(0.1), {
-		Size = UDim2.new(0, 30, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-	})
-	tween:Play()
-end)
-
-closeButton.MouseButton1Up:Connect(function()
-	local tween = TweenService:Create(closeButton, TweenInfo.new(0.1), {
-		Size = UDim2.new(0, 32, 0, 32),
-		BackgroundColor3 = Color3.fromRGB(220, 80, 80)
-	})
-	tween:Play()
-end)
-
+-- Close
 closeButton.Activated:Connect(function()
-	-- Animation đóng
-	local destroyTween = TweenService:Create(mainFrame, TweenInfo.new(0.2), {
-		Size = UDim2.new(0, 320, 0, 0),
-		BackgroundTransparency = 1
-	})
-	destroyTween:Play()
-	
-	destroyTween.Completed:Wait()
 	screenGui:Destroy()
 end)
 
--- Spawn functionality
-button.Activated:Connect(function()
-	local name = textBox.Text
-	if name ~= "" and name ~= nil then
-		-- Hiệu ứng loading
-		button.Text = "SPAWNING..."
-		
-		local originalColor = button.BackgroundColor3
-		local tween = TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {
-			BackgroundColor3 = Color3.fromRGB(80, 50, 180)
-		})
-		tween:Play()
-		
-		pcall(function()
-			ReplicatedStorage:WaitForChild("Packages")
-				:WaitForChild("Net")
-				:WaitForChild("RF/AdminService/SpawnBrainrotInBase")
-				:InvokeServer(name, "", "")
-		end)
-		
-		-- Reset button
-		tween:Cancel()
-		button.BackgroundColor3 = originalColor
-		button.Text = "SPAWN"
-		
-		-- Reset textbox với hiệu ứng
-		local textTween = TweenService:Create(textBox, TweenInfo.new(0.3), {
-			TextTransparency = 1
-		})
-		textTween:Play()
-		
-		textTween.Completed:Wait()
-		textBox.Text = ""
-		
-		local textTween2 = TweenService:Create(textBox, TweenInfo.new(0.3), {
-			TextTransparency = 0
-		})
-		textTween2:Play()
+-- =========================
+-- SPAWN FUNCTIONALITY
+-- =========================
+spawnButton.Activated:Connect(function()
+	-- Get brainrot name
+	local brainrotName = brainrotBox.Text
+	
+	-- Get mutations
+	local mutations = mutationBox.Text
+	
+	-- Get selected traits
+	local traits = ""
+	if selected["All"] then
+		traits = "All"
+	else
+		local selectedTraits = {}
+		for _, opt in ipairs(traitOptions) do
+			if opt ~= "All" and selected[opt] then
+				table.insert(selectedTraits, opt)
+			end
+		end
+		traits = table.concat(selectedTraits, ",")
+	end
+	
+	-- Create arguments array
+	local args = {
+		[1] = brainrotName,
+		[2] = mutations,
+		[3] = traits
+	}
+	
+	-- Find and call the RemoteFunction
+	local remoteFunction = game:GetService("ReplicatedStorage").Packages.Net:FindFirstChild("RF/AdminService/SpawnBrainrotInBase")
+	
+	if remoteFunction then
+		remoteFunction:InvokeServer(unpack(args))
+	else
+		warn("RemoteFunction not found: RF/AdminService/SpawnBrainrotInBase")
 	end
 end)
-
--- Hiệu ứng mở GUI
-mainFrame.Size = UDim2.new(0, 0, 0, 220)
-mainFrame.BackgroundTransparency = 1
-local openTween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-	Size = UDim2.new(0, 320, 0, 220),
-	BackgroundTransparency = 0.2
-})
-openTween:Play()
