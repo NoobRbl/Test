@@ -1,0 +1,215 @@
+--------------------------------------------------
+-- STANDALONE XRAY BUTTON (NO SHADOW + COMPACT)
+-- XRAY = FADE HOUSE (client-side only)
+--------------------------------------------------
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- notify fallback (không cần showNotify vẫn chạy)
+local function notify(msg)
+	if typeof(showNotify) == "function" then
+		pcall(showNotify, msg)
+	else
+		warn(msg)
+	end
+end
+
+--------------------------------------------------
+-- XRAY CORE
+--------------------------------------------------
+local xrayActive = false
+local xrayTouchedParts = {} -- [BasePart] = old LocalTransparencyModifier
+local xrayFolderConn = nil
+
+-- GIỮ ĐÚNG findfirstchild gốc của bạn
+local function findHouseFolder()
+	return Workspace:FindFirstChild("Plots")
+		or Workspace:FindFirstChild("Bases")
+		or Workspace:FindFirstChild("Houses")
+		or Workspace:FindFirstChild("Tycoons")
+end
+
+local function isValidHousePart(part)
+	return part:IsA("BasePart") and part.CanCollide and part.Size.Magnitude > 5
+end
+
+local function fadePart(part, fadeAmount)
+	if xrayTouchedParts[part] == nil then
+		xrayTouchedParts[part] = part.LocalTransparencyModifier
+	end
+	part.LocalTransparencyModifier = fadeAmount
+end
+
+local function fadeHouseParts(model, fadeAmount)
+	for _, obj in ipairs(model:GetDescendants()) do
+		if isValidHousePart(obj) then
+			fadePart(obj, fadeAmount)
+		end
+	end
+end
+
+local function clearXrayFade()
+	if xrayFolderConn then
+		xrayFolderConn:Disconnect()
+		xrayFolderConn = nil
+	end
+
+	for part, oldVal in pairs(xrayTouchedParts) do
+		if part and part.Parent then
+			part.LocalTransparencyModifier = oldVal
+		end
+	end
+	table.clear(xrayTouchedParts)
+end
+
+local function startXrayFadeScan(fadeAmount)
+	local houseFolder = findHouseFolder()
+	if not houseFolder then
+		notify("❌ Không tìm thấy thư mục nhà!")
+		return false
+	end
+
+	-- quét hiện tại
+	for _, model in ipairs(houseFolder:GetChildren()) do
+		if model:IsA("Model") then
+			fadeHouseParts(model, fadeAmount)
+		end
+	end
+
+	-- theo dõi model mới spawn
+	if xrayFolderConn then xrayFolderConn:Disconnect() end
+	xrayFolderConn = houseFolder.ChildAdded:Connect(function(child)
+		if not xrayActive then return end
+		if child:IsA("Model") then
+			task.defer(function()
+				if xrayActive and child.Parent then
+					fadeHouseParts(child, fadeAmount)
+				end
+			end)
+		end
+	end)
+
+	return true
+end
+
+--------------------------------------------------
+-- UI: standalone in CoreGui (riêng biệt)
+--------------------------------------------------
+local function getUiParent()
+	local ok, hui = pcall(function()
+		return (gethui and gethui()) or CoreGui
+	end)
+	return (ok and hui) or CoreGui
+end
+
+local parent = getUiParent()
+
+-- tránh chạy lại bị trùng
+local old = parent:FindFirstChild("StandaloneXrayButton_UI")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "StandaloneXrayButton_UI"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = parent
+
+local btn = Instance.new("TextButton")
+btn.Name = "XrayStandaloneBtn"
+btn.Parent = gui
+btn.Size = UDim2.new(0, 118, 0, 34)
+btn.Position = UDim2.new(1, -132, 0.5, -17)
+btn.Text = "XRAY OFF"
+btn.Font = Enum.Font.GothamSemibold
+btn.TextSize = 13
+btn.TextColor3 = Color3.fromRGB(235, 238, 245)
+btn.BackgroundColor3 = Color3.fromRGB(24, 26, 31)
+btn.BorderSizePixel = 0
+btn.AutoButtonColor = true
+
+local corner = Instance.new("UICorner", btn)
+corner.CornerRadius = UDim.new(0, 10)
+
+local stroke = Instance.new("UIStroke", btn)
+stroke.Thickness = 1
+stroke.Transparency = 0.55
+stroke.Color = Color3.fromRGB(255, 255, 255)
+
+-- draggable
+do
+	local dragging = false
+	local dragStart, startPos
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+
+	btn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = btn.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
+	end)
+end
+
+local function setBtnState(on)
+	if on then
+		btn.Text = "XRAY ON"
+		btn.BackgroundColor3 = Color3.fromRGB(27, 46, 38) -- xanh trầm
+		btn.TextColor3 = Color3.fromRGB(225, 255, 240)
+		stroke.Transparency = 0.35
+	else
+		btn.Text = "XRAY OFF"
+		btn.BackgroundColor3 = Color3.fromRGB(41, 28, 31) -- đỏ trầm
+		btn.TextColor3 = Color3.fromRGB(255, 235, 238)
+		stroke.Transparency = 0.50
+	end
+end
+setBtnState(false)
+
+--------------------------------------------------
+-- Click toggle
+--------------------------------------------------
+local XRAY_FADE = 0.75
+
+btn.MouseButton1Click:Connect(function()
+	-- guard chống lỗi nil (nếu bạn sửa/ghép thiếu)
+	if type(clearXrayFade) ~= "function" or type(startXrayFadeScan) ~= "function" then
+		notify("❌ Thiếu hàm XRAY core (clearXrayFade/startXrayFadeScan)!")
+		return
+	end
+
+	xrayActive = not xrayActive
+
+	if xrayActive then
+		clearXrayFade()
+		local ok = startXrayFadeScan(XRAY_FADE)
+		if ok then
+			setBtnState(true)
+			notify("✅ Xray ON")
+		else
+			xrayActive = false
+			setBtnState(false)
+		end
+	else
+		clearXrayFade()
+		setBtnState(false)
+		notify("❌ Xray OFF")
+	end
+end)
