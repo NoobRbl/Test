@@ -1,0 +1,140 @@
+-- Anti-lag Steal A Brainrot 
+
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+-- ====== CONFIG ======
+local ENFORCE_INTERVAL = 3 -- giây; tăng lên 5-8 nếu sợ nặng lúc đầu
+local REMOVE_DECALS_TEXTURES = true
+local DISABLE_LIGHTS = true
+local DISABLE_PARTICLES = true
+local DISABLE_HIGHLIGHT = true
+local FORCE_PLASTIC = true
+local DISABLE_CAST_SHADOW = true
+
+-- ====== HELPERS ======
+local function safeDestroy(x)
+	if x and x.Parent then pcall(function() x:Destroy() end) end
+end
+
+local function killPostFX()
+	for _, obj in ipairs(Lighting:GetChildren()) do
+		if obj:IsA("BlurEffect")
+			or obj:IsA("BloomEffect")
+			or obj:IsA("ColorCorrectionEffect")
+			or obj:IsA("DepthOfFieldEffect")
+			or obj:IsA("SunRaysEffect")
+			or obj:IsA("Atmosphere") then
+			safeDestroy(obj)
+		end
+	end
+
+	pcall(function()
+		Lighting.GlobalShadows = false
+		Lighting.ShadowSoftness = 0
+		Lighting.EnvironmentDiffuseScale = 0
+		Lighting.EnvironmentSpecularScale = 0
+	end)
+
+	pcall(function()
+		Lighting.Technology = Enum.Technology.Compatibility
+	end)
+
+	-- Terrain nước nhẹ hơn (tuỳ game có nước hay không)
+	pcall(function()
+		Workspace.Terrain.WaterWaveSize = 0
+		Workspace.Terrain.WaterWaveSpeed = 0
+		Workspace.Terrain.WaterReflectance = 0
+		Workspace.Terrain.WaterTransparency = 1
+	end)
+end
+
+local function stripFX(inst)
+	-- Xoá/tắt "glow" và hạt
+	if DISABLE_PARTICLES then
+		if inst:IsA("ParticleEmitter") or inst:IsA("Trail") or inst:IsA("Beam") then
+			pcall(function() inst.Enabled = false end)
+			-- safeDestroy(inst) -- nếu muốn xoá hẳn, mở dòng này
+		elseif inst:IsA("Fire") or inst:IsA("Smoke") or inst:IsA("Sparkles") then
+			pcall(function() inst.Enabled = false end)
+			-- safeDestroy(inst)
+		end
+	end
+
+	if DISABLE_LIGHTS then
+		if inst:IsA("PointLight") or inst:IsA("SpotLight") or inst:IsA("SurfaceLight") then
+			pcall(function() inst.Enabled = false end)
+			-- safeDestroy(inst)
+		end
+	end
+
+	if DISABLE_HIGHLIGHT then
+		if inst:IsA("Highlight") then
+			pcall(function() inst.Enabled = false end)
+			-- safeDestroy(inst)
+		end
+	end
+
+	-- Xoá decal/texture để hết “vòng sáng” kiểu decal/texture phát quang
+	if REMOVE_DECALS_TEXTURES then
+		if inst:IsA("Decal") or inst:IsA("Texture") or inst:IsA("SurfaceAppearance") then
+			safeDestroy(inst)
+		end
+	end
+end
+
+local function plasticize(part)
+	if not FORCE_PLASTIC then return end
+	if part:IsA("BasePart") then
+		pcall(function()
+			-- ép cả Neon về Plastic để hết glow “cứng”
+			part.Material = Enum.Material.Plastic
+			part.Reflectance = 0
+			if DISABLE_CAST_SHADOW then
+				part.CastShadow = false
+			end
+		end)
+	end
+end
+
+-- ====== APPLY ONCE ======
+killPostFX()
+
+for _, inst in ipairs(Workspace:GetDescendants()) do
+	stripFX(inst)
+	if inst:IsA("BasePart") then
+		plasticize(inst)
+	end
+end
+
+-- ====== HANDLE STREAMING / SPAWN NEW ======
+Workspace.DescendantAdded:Connect(function(inst)
+	stripFX(inst)
+	if inst:IsA("BasePart") then
+		-- defer để đợi con của part (Decal/Light) spawn xong rồi dọn luôn
+		task.defer(function()
+			plasticize(inst)
+			for _, ch in ipairs(inst:GetDescendants()) do
+				stripFX(ch)
+			end
+		end)
+	end
+end)
+
+-- ====== ENFORCER LOOP (fix map bị đổi lại / parts load sau) ======
+task.spawn(function()
+	while task.wait(ENFORCE_INTERVAL) do
+		killPostFX()
+		-- quét lại nhưng tránh giật: quét theo batch nhỏ
+		local list = Workspace:GetDescendants()
+		for i = 1, #list do
+			local inst = list[i]
+			stripFX(inst)
+			if inst:IsA("BasePart") then
+				plasticize(inst)
+			end
+			if i % 800 == 0 then task.wait() end -- giảm spike lag
+		end
+	end
+end)
