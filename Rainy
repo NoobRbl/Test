@@ -392,4 +392,4 @@ button.Activated:Connect(function()
 	busy = false
 end)
 
-setState(false)
+setState(true)
