@@ -1,67 +1,102 @@
+-- Rainy Lucky Block UI (single button + 3s loading progress + chat /luckyblockmode toggle)
+
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+-- Cleanup old
+pcall(function()
+	local old = PlayerGui:FindFirstChild("RainyLuckyBlockUI")
+	if old then old:Destroy() end
+end)
+
+-- ===== Helpers =====
+local function round(ui, r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r)
+	c.Parent = ui
+	return c
+end
+
+local function sendChat(msg)
+	-- Prefer new TextChatService
+	local ok = pcall(function()
+		if TextChatService and TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+			local channels = TextChatService:FindFirstChild("TextChannels")
+			local ch = channels and (channels:FindFirstChild("RBXGeneral") or channels:FindFirstChildWhichIsA("TextChannel"))
+			if ch then
+				ch:SendAsync(msg)
+				return
+			end
+		end
+		error("fallback")
+	end)
+	if ok then return true end
+
+	-- Fallback: Default chat system
+	local ok2 = pcall(function()
+		local ev = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest")
+		ev:FireServer(msg, "All")
+	end)
+	if ok2 then return true end
+
+	-- Last fallback
+	local ok3 = pcall(function()
+		Player:Chat(msg)
+	end)
+	return ok3
+end
+
+-- ===== UI =====
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "LuckyBlockEditor"
+screenGui.Name = "RainyLuckyBlockUI"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = PlayerGui
 
--- Main container với shadow effect
 local container = Instance.new("Frame")
-container.Size = UDim2.new(0, 320, 0, 220)
+container.Size = UDim2.new(0, 340, 0, 170)
 container.Position = UDim2.new(0.5, 0, 0.5, 0)
 container.AnchorPoint = Vector2.new(0.5, 0.5)
-container.BackgroundColor3 = Color3.fromRGB(13, 17, 23)
-container.BackgroundTransparency = 0.1
+container.BackgroundColor3 = Color3.fromRGB(14, 18, 24)
+container.BackgroundTransparency = 0.06
+container.BorderSizePixel = 0
 container.Parent = screenGui
+round(container, 16)
 
-local containerCorner = Instance.new("UICorner")
-containerCorner.CornerRadius = UDim.new(0, 16)
-containerCorner.Parent = container
+-- Subtle outline
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1
+stroke.Transparency = 0.45
+stroke.Color = Color3.fromRGB(110, 140, 190)
+stroke.Parent = container
 
-local containerShadow = Instance.new("ImageLabel")
-containerShadow.Name = "Shadow"
-containerShadow.Size = UDim2.new(1, 10, 1, 10)
-containerShadow.Position = UDim2.new(0, -5, 0, -5)
-containerAnchorPoint = Vector2.new(0.5, 0.5)
-containerShadow.BackgroundTransparency = 1
-containerShadow.Image = "rbxassetid://1316045217"
-containerShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-containerShadow.ImageTransparency = 0.8
-containerShadow.ScaleType = Enum.ScaleType.Slice
-containerShadow.SliceCenter = Rect.new(10, 10, 118, 118)
-containerShadow.Parent = container
-
--- Header với gradient
+-- Header (draggable)
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 40)
-header.BackgroundColor3 = Color3.fromRGB(22, 27, 34)
+header.Size = UDim2.new(1, 0, 0, 42)
+header.BackgroundColor3 = Color3.fromRGB(20, 26, 36)
 header.BorderSizePixel = 0
 header.Parent = container
+round(header, 16)
 
-local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 16)
-headerCorner.Parent = header
-
-local headerGradient = Instance.new("UIGradient")
-headerGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 95, 180)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 27, 34))
+local headerGrad = Instance.new("UIGradient")
+headerGrad.Rotation = 90
+headerGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 120, 210)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 26, 36))
 })
-headerGradient.Rotation = 90
-headerGradient.Parent = header
+headerGrad.Parent = header
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
+title.Size = UDim2.new(1, -18, 1, 0)
+title.Position = UDim2.new(0, 12, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "ZEROS LUCKY BLOCK EDITOR"
+title.Text = "RAINY LUCKY BLOCK"
 title.TextColor3 = Color3.fromRGB(240, 246, 252)
 title.Font = Enum.Font.GothamSemibold
 title.TextSize = 16
@@ -69,120 +104,126 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = header
 
 local subtitle = Instance.new("TextLabel")
-subtitle.Size = UDim2.new(1, 0, 0, 14)
-subtitle.Position = UDim2.new(0, 0, 0, 50)
+subtitle.Size = UDim2.new(1, -18, 0, 16)
+subtitle.Position = UDim2.new(0, 12, 0, 46)
 subtitle.BackgroundTransparency = 1
-subtitle.Text = "Select a block to modify"
-subtitle.TextColor3 = Color3.fromRGB(139, 148, 158)
+subtitle.Text = "Toggle luckyblock mode with loading process"
+subtitle.TextColor3 = Color3.fromRGB(160, 170, 185)
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 12
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = container
 
--- Input container
-local inputContainer = Instance.new("Frame")
-inputContainer.Size = UDim2.new(0.9, 0, 0, 40)
-inputContainer.Position = UDim2.new(0.05, 0, 0, 80)
-inputContainer.BackgroundColor3 = Color3.fromRGB(22, 27, 34)
-inputContainer.Parent = container
-
-local inputCorner = Instance.new("UICorner")
-inputCorner.CornerRadius = UDim.new(0, 8)
-inputCorner.Parent = inputContainer
-
-local inputIcon = Instance.new("ImageLabel")
-inputIcon.Size = UDim2.new(0, 20, 0, 20)
-inputIcon.Position = UDim2.new(0, 10, 0.5, -10)
-inputIcon.BackgroundTransparency = 1
-inputIcon.Image = "rbxassetid://3926305904"
-inputIcon.ImageColor3 = Color3.fromRGB(139, 148, 158)
-inputIcon.ImageRectOffset = Vector2.new(964, 324)
-inputIcon.ImageRectSize = Vector2.new(36, 36)
-inputIcon.Parent = inputContainer
-
-local luckyText = Instance.new("TextBox")
-luckyText.Size = UDim2.new(1, -50, 1, 0)
-luckyText.Position = UDim2.new(0, 40, 0, 0)
-luckyText.BackgroundTransparency = 1
-luckyText.TextColor3 = Color3.fromRGB(240, 246, 252)
-luckyText.Font = Enum.Font.GothamMedium
-luckyText.TextSize = 14
-luckyText.ClearTextOnFocus = false
-luckyText.PlaceholderText = "Enter lucky block name..."
-luckyText.PlaceholderColor3 = Color3.fromRGB(139, 148, 158)
-luckyText.Text = ""
-luckyText.TextXAlignment = Enum.TextXAlignment.Left
-luckyText.Parent = inputContainer
-
--- Modern button với hover effect
+-- Button
 local button = Instance.new("TextButton")
-button.Size = UDim2.new(0.9, 0, 0, 44)
-button.Position = UDim2.new(0.05, 0, 0, 140)
-button.BackgroundColor3 = Color3.fromRGB(35, 134, 54)
+button.Size = UDim2.new(0.92, 0, 0, 46)
+button.Position = UDim2.new(0.04, 0, 0, 78)
+button.BackgroundColor3 = Color3.fromRGB(34, 92, 180)
+button.BorderSizePixel = 0
 button.AutoButtonColor = false
-button.Text = "EDIT BLOCK"
+button.Text = "Rainy Lucky Block🎲"
 button.TextColor3 = Color3.fromRGB(255, 255, 255)
 button.Font = Enum.Font.GothamBold
-button.TextSize = 14
+button.TextSize = 15
 button.Parent = container
+round(button, 12)
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 10)
-btnCorner.Parent = button
-
-local buttonGradient = Instance.new("UIGradient")
-buttonGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 160, 67)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 134, 54))
+local btnGrad = Instance.new("UIGradient")
+btnGrad.Rotation = 90
+btnGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 150, 240)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(34, 92, 180))
 })
-buttonGradient.Rotation = 90
-buttonGradient.Parent = button
+btnGrad.Parent = button
 
--- Status indicator
-local statusContainer = Instance.new("Frame")
-statusContainer.Size = UDim2.new(0.9, 0, 0, 30)
-statusContainer.Position = UDim2.new(0.05, 0, 1, -40)
-statusContainer.BackgroundTransparency = 1
-statusContainer.Parent = container
+-- Status line
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(0.92, 0, 0, 18)
+status.Position = UDim2.new(0.04, 0, 1, -26)
+status.BackgroundTransparency = 1
+status.Text = "Rainy Lucky Block🎲: Disable"
+status.TextColor3 = Color3.fromRGB(248, 81, 73)
+status.Font = Enum.Font.GothamMedium
+status.TextSize = 13
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.Parent = container
 
-local statusIcon = Instance.new("ImageLabel")
-statusIcon.Size = UDim2.new(0, 20, 0, 20)
-statusIcon.Position = UDim2.new(0, 0, 0.5, -10)
-statusIcon.BackgroundTransparency = 1
-statusIcon.Image = "rbxassetid://3926305904"
-statusIcon.ImageColor3 = Color3.fromRGB(139, 148, 158)
-statusIcon.ImageRectOffset = Vector2.new(324, 124)
-statusIcon.ImageRectSize = Vector2.new(36, 36)
-statusIcon.Visible = false
-statusIcon.Parent = statusContainer
+-- ===== Loading Overlay =====
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+overlay.BackgroundTransparency = 1
+overlay.Visible = false
+overlay.ZIndex = 50
+overlay.Parent = screenGui
 
-local note = Instance.new("TextLabel")
-note.Size = UDim2.new(1, -25, 1, 0)
-note.Position = UDim2.new(0, 25, 0, 0)
-note.BackgroundTransparency = 1
-note.Text = ""
-note.Font = Enum.Font.GothamMedium
-note.TextSize = 13
-note.TextXAlignment = Enum.TextXAlignment.Left
-note.Parent = statusContainer
+local overlayPanel = Instance.new("Frame")
+overlayPanel.Size = UDim2.new(0, 360, 0, 120)
+overlayPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
+overlayPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+overlayPanel.BackgroundColor3 = Color3.fromRGB(16, 20, 28)
+overlayPanel.BorderSizePixel = 0
+overlayPanel.ZIndex = 51
+overlayPanel.Parent = overlay
+round(overlayPanel, 16)
 
--- Drag functionality (chỉ kéo từ header)
+local overlayStroke = Instance.new("UIStroke")
+overlayStroke.Thickness = 1
+overlayStroke.Transparency = 0.55
+overlayStroke.Color = Color3.fromRGB(95, 130, 190)
+overlayStroke.Parent = overlayPanel
+
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(1, -20, 0, 24)
+loadingText.Position = UDim2.new(0, 10, 0, 18)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Loading..."
+loadingText.TextColor3 = Color3.fromRGB(240, 246, 252)
+loadingText.Font = Enum.Font.GothamSemibold
+loadingText.TextSize = 16
+loadingText.ZIndex = 52
+loadingText.Parent = overlayPanel
+
+local barOuter = Instance.new("Frame")
+barOuter.Size = UDim2.new(0.92, 0, 0, 7) -- dài + mỏng
+barOuter.Position = UDim2.new(0.04, 0, 0, 70)
+barOuter.BackgroundColor3 = Color3.fromRGB(28, 34, 46)
+barOuter.BorderSizePixel = 0
+barOuter.ZIndex = 52
+barOuter.Parent = overlayPanel
+round(barOuter, 999)
+
+local barFill = Instance.new("Frame")
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.Position = UDim2.new(0, 0, 0, 0)
+barFill.BackgroundColor3 = Color3.fromRGB(90, 170, 255)
+barFill.BorderSizePixel = 0
+barFill.ZIndex = 53
+barFill.Parent = barOuter
+round(barFill, 999)
+
+local fillGrad = Instance.new("UIGradient")
+fillGrad.Rotation = 90
+fillGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(140, 210, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 130, 255))
+})
+fillGrad.Parent = barFill
+
+-- ===== Drag (header only) =====
 local dragging = false
-local dragStart
-local startPos
-local activeInput
+local dragStart, startPos, activeInput
 
 local function updateDrag(input)
 	local delta = input.Position - dragStart
 	container.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
+		startPos.X.Scale, startPos.X.Offset + delta.X,
+		startPos.Y.Scale, startPos.Y.Offset + delta.Y
 	)
 end
 
 header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		activeInput = input
 		dragStart = input.Position
@@ -202,99 +243,86 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Button hover effects
-local function tweenButtonHover()
-	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(button, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 160, 67)})
-	tween:Play()
+-- ===== Button hover (soft) =====
+local function tweenBtn(toColor0, toColor1)
+	TweenService:Create(btnGrad, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, toColor0),
+			ColorSequenceKeypoint.new(1, toColor1)
+		})
+	}):Play()
 end
 
-local function tweenButtonLeave()
-	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(button, tweenInfo, {BackgroundColor3 = Color3.fromRGB(35, 134, 54)})
-	tween:Play()
-end
-
-local function tweenButtonClick()
-	local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(button, tweenInfo, {BackgroundColor3 = Color3.fromRGB(28, 107, 43)})
-	tween:Play()
-end
-
-button.MouseEnter:Connect(tweenButtonHover)
-button.MouseLeave:Connect(tweenButtonLeave)
-
-button.MouseButton1Down:Connect(function()
-	tweenButtonClick()
+button.MouseEnter:Connect(function()
+	tweenBtn(Color3.fromRGB(160, 225, 255), Color3.fromRGB(70, 150, 240))
 end)
 
-button.MouseButton1Up:Connect(function()
-	tweenButtonHover()
+button.MouseLeave:Connect(function()
+	tweenBtn(Color3.fromRGB(70, 150, 240), Color3.fromRGB(34, 92, 180))
 end)
 
--- Data và logic
-local blocks = {
-	["Secret Lucky Block"] = "La Secret Combinasion",
-	["Festive Lucky Block"] = "La Ginger Sekolah",
-	["Premium Festive Lucky Block"] = "La Ginger Sekolah",
-	["Spooky Lucky Block"] = "La Casa Boo",
-	["Taco Lucky Block"] = "Burrito Bandito",
-	["Los Taco Blocks"] = "Los Burritos",
-	["Los Lucky Blocks"] = "Los 67",
-	["Admin Lucky Block"] = "La Grande Combinasion"
-}
+-- ===== Logic =====
+local enabled = false
+local busy = false
 
-local function showNote(text, color, icon)
-	statusIcon.ImageColor3 = color
-	statusIcon.ImageRectOffset = icon
-	statusIcon.Visible = true
-	
-	note.Text = text
-	note.TextColor3 = color
-	
-	-- Fade in
-	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(statusIcon, tweenInfo, {ImageTransparency = 0}):Play()
-	TweenService:Create(note, tweenInfo, {TextTransparency = 0}):Play()
-	
-	task.delay(3.5, function()
-		-- Fade out
-		TweenService:Create(statusIcon, tweenInfo, {ImageTransparency = 1}):Play()
-		TweenService:Create(note, tweenInfo, {TextTransparency = 1}):Play()
-		task.wait(0.3)
-		statusIcon.Visible = false
-	end)
+local function setStatus(isEnabled)
+	if isEnabled then
+		status.Text = "Rainy Lucky Block🎲: Enable"
+		status.TextColor3 = Color3.fromRGB(63, 185, 120)
+	else
+		status.Text = "Rainy Lucky Block🎲: Disable"
+		status.TextColor3 = Color3.fromRGB(248, 81, 73)
+	end
+end
+
+local function runLoading3s()
+	overlay.Visible = true
+	overlay.BackgroundTransparency = 1
+	barFill.Size = UDim2.new(0, 0, 1, 0)
+
+	-- Fade in overlay background a bit
+	TweenService:Create(overlay, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0.45
+	}):Play()
+
+	-- Fill bar in exactly 3s
+	local tw = TweenService:Create(barFill, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
+		Size = UDim2.new(1, 0, 1, 0)
+	})
+	tw:Play()
+	tw.Completed:Wait()
+
+	-- Fade out overlay
+	TweenService:Create(overlay, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 1
+	}):Play()
+	task.wait(0.2)
+	overlay.Visible = false
 end
 
 button.Activated:Connect(function()
-	tweenButtonClick()
-	task.wait(0.1)
-	tweenButtonHover()
-	
-	local name = luckyText.Text
-	if name == "" or not blocks[name] then
-		showNote("Block not supported", Color3.fromRGB(248, 81, 73), Vector2.new(124, 124))
-		return
-	end
-	
-	for blockName, secondArg in pairs(blocks) do
-		local chance = "0.5"
-		if blockName == name then
-			chance = "9999999999999"
-		end
-		pcall(function()
-			ReplicatedStorage:WaitForChild("Packages")
-				:WaitForChild("Net")
-				:WaitForChild("RF/AdminService/SetLuckyBlockChance")
-				:InvokeServer(blockName, secondArg, chance)
-		end)
-	end
-	
-	showNote("Successfully modified block", Color3.fromRGB(56, 139, 253), Vector2.new(724, 204))
+	if busy then return end
+	busy = true
+	button.Active = false
+
+	-- click feedback (tiny)
+	TweenService:Create(button, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0.92, 0, 0, 44)
+	}):Play()
+	task.wait(0.08)
+	TweenService:Create(button, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0.92, 0, 0, 46)
+	}):Play()
+
+	-- Loading + action
+	runLoading3s()
+	sendChat("/luckyblockmode") -- toggle on/off
+	enabled = not enabled
+	setStatus(enabled)
+
+	button.Active = true
+	busy = false
 end)
 
--- Tự động focus vào textbox khi mở
-task.spawn(function()
-	task.wait(0.5)
-	luckyText:CaptureFocus()
-end)
+-- init
+setStatus(false)
