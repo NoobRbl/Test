@@ -390,9 +390,9 @@ local EVENT_LIST_EXECUTE_ALL = {
     "Matteo", "Phase 2: Galaxy Introduction", "Los Matteos", "4th of July",
     "Brazil", "Starfall", "La Vacca Saturno Saturnita", "Candy", "Rainbow"
 }
-local ddButton -- FIX: forward declare để refreshDropdownText bắt đúng ddButton
+local ddButton -- FIX: forward declare để refreshDropdownText dùng đúng nút dropdown
 local function refreshDropdownText()
-    if not ddButton then return end -- FIX: chống nil (an toàn)
+    if not ddButton then return end -- an toàn, tránh nil lúc chưa tạo
 
     local selectedCount = 0
     for evName, isSelected in pairs(selectedEvents) do
@@ -402,7 +402,7 @@ local function refreshDropdownText()
     end
 
     if selectedCount == 0 then
-        ddButton.Text = "Selected event (" .. 0 .. ")   ▼"
+        ddButton.Text = "Selected event (0)   ▼"
     elseif selectedEvents["All"] then
         ddButton.Text = "Selected event (" .. (#EVENT_LIST_DISPLAY - 1) .. ")   ▼"
     else
@@ -439,7 +439,7 @@ round(ddWrap, 12)
 stroke(ddWrap, 1, 0.90)
 padding(ddWrap, 10, 10, 0, 0)
 
-local ddButton = Instance.new("TextButton") -- FIX: bỏ local vì đã declare ở trên
+ddButton = Instance.new("TextButton") -- FIX: bỏ local vì đã declare ở trên
 ddButton.AutoButtonColor = false
 ddButton.BackgroundTransparency = 1
 ddButton.Size = UDim2.new(1, 0, 1, 0)
@@ -449,7 +449,7 @@ ddButton.TextSize = 13
 ddButton.TextColor3 = CFG.Txt
 ddButton.Parent = ddWrap
 ddButton.ZIndex = 650
-ddButton.Text = "Selected events (0)   ▼"
+ddButton.Text = "Selected event (0)   ▼"
 
 listFrame = Instance.new("Frame")
 listFrame.Visible = false
