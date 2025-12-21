@@ -1,6 +1,8 @@
--- Rainy Lucky Block UI (1 nút + Loading FULL MÀN HÌNH nền đen + Process fill 3s + title "Waiting to turn on the lucky block rain")
--- Button: loading 3s -> chat /luckyblockmode -> đổi Enable/Disable trên nút
--- ❌: nếu đang Enable thì chat /luckyblockmode lần cuối để tắt, rồi Destroy GUI
+-- Rainy Lucky Block UI
+-- - Loading FULL màn hình nền đen + process fill 3s + title "Waiting to turn on the lucky block rain"
+-- - Button: Loading 3s -> chat /luckyblockmode -> toggle Enable/Disable -> ẨN UI panel
+-- - Mini 🎲 button (góc phải dưới): mở lại UI panel
+-- - ❌: nếu đang Enable thì chat /luckyblockmode để tắt, rồi Destroy GUI
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -16,6 +18,7 @@ pcall(function()
 	if old then old:Destroy() end
 end)
 
+-- ===== Helpers =====
 local function round(ui, r)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, r)
@@ -49,13 +52,32 @@ local function sendChat(msg)
 	return ok3
 end
 
--- ===== UI base =====
+local function setAllTransparency(root, t)
+	for _, d in ipairs(root:GetDescendants()) do
+		if d:IsA("Frame") then
+			d.BackgroundTransparency = t
+		elseif d:IsA("TextLabel") or d:IsA("TextButton") then
+			d.BackgroundTransparency = t
+			if d:IsA("TextLabel") then
+				d.TextTransparency = t
+			else
+				d.TextTransparency = t
+			end
+		elseif d:IsA("UIStroke") then
+			d.Transparency = math.clamp(t + 0.25, 0, 1)
+		end
+	end
+	root.BackgroundTransparency = t
+end
+
+-- ===== UI Base =====
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RainyLuckyBlockUI"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = PlayerGui
 
+-- Main panel
 local container = Instance.new("Frame")
 container.Size = UDim2.new(0, 340, 0, 160)
 container.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -72,7 +94,6 @@ stroke.Transparency = 0.45
 stroke.Color = Color3.fromRGB(110, 140, 190)
 stroke.Parent = container
 
--- Header
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 42)
 header.BackgroundColor3 = Color3.fromRGB(20, 26, 36)
@@ -99,7 +120,6 @@ title.TextSize = 16
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = header
 
--- ❌ close
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 34, 0, 26)
 closeBtn.Position = UDim2.new(1, -40, 0, 8)
@@ -119,17 +139,6 @@ closeStroke.Transparency = 0.65
 closeStroke.Color = Color3.fromRGB(120, 140, 170)
 closeStroke.Parent = closeBtn
 
-closeBtn.MouseEnter:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundColor3 = Color3.fromRGB(44, 52, 70)
-	}):Play()
-end)
-closeBtn.MouseLeave:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundColor3 = Color3.fromRGB(32, 38, 52)
-	}):Play()
-end)
-
 local subtitle = Instance.new("TextLabel")
 subtitle.Size = UDim2.new(1, -18, 0, 16)
 subtitle.Position = UDim2.new(0, 12, 0, 46)
@@ -141,7 +150,6 @@ subtitle.TextSize = 12
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = container
 
--- Main Button
 local button = Instance.new("TextButton")
 button.Size = UDim2.new(0.92, 0, 0, 50)
 button.Position = UDim2.new(0.04, 0, 0, 86)
@@ -162,11 +170,32 @@ btnGrad.Color = ColorSequence.new({
 })
 btnGrad.Parent = button
 
--- ===== FULLSCREEN Loading: black background + title + 1 progress bar =====
+-- Mini toggle button (chỉ hiện khi panel bị ẩn)
+local mini = Instance.new("TextButton")
+mini.Size = UDim2.new(0, 54, 0, 54)
+mini.Position = UDim2.new(1, -74, 1, -84)
+mini.BackgroundColor3 = Color3.fromRGB(16, 18, 22)
+mini.BorderSizePixel = 0
+mini.AutoButtonColor = false
+mini.Text = "🎲"
+mini.TextColor3 = Color3.fromRGB(255, 255, 255)
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 22
+mini.Visible = false
+mini.Parent = screenGui
+round(mini, 18)
+
+local miniStroke = Instance.new("UIStroke")
+miniStroke.Thickness = 1
+miniStroke.Transparency = 0.55
+miniStroke.Color = Color3.fromRGB(120, 150, 210)
+miniStroke.Parent = mini
+
+-- ===== FULLSCREEN Loading (đen + title + process) =====
 local overlay = Instance.new("Frame")
 overlay.Size = UDim2.new(1, 0, 1, 0)
 overlay.Position = UDim2.new(0, 0, 0, 0)
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- nền đen
+overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 overlay.BackgroundTransparency = 1
 overlay.Visible = false
 overlay.ZIndex = 200
@@ -234,6 +263,7 @@ end)
 -- ===== Logic =====
 local enabled = false
 local busy = false
+local hidden = false
 
 local function setState(isEnabled)
 	enabled = isEnabled
@@ -244,39 +274,93 @@ local function setState(isEnabled)
 	end
 end
 
+local function showPanel()
+	if not hidden then return end
+	hidden = false
+	container.Visible = true
+	mini.Visible = false
+	setAllTransparency(container, 1)
+	TweenService:Create(container, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0.06
+	}):Play()
+	-- fade in descendants manually
+	for _, d in ipairs(container:GetDescendants()) do
+		if d:IsA("Frame") then
+			TweenService:Create(d, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = (d == container and 0.06 or d.BackgroundTransparency)}):Play()
+		elseif d:IsA("TextLabel") or d:IsA("TextButton") then
+			TweenService:Create(d, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0, BackgroundTransparency = d.BackgroundTransparency}):Play()
+		elseif d:IsA("UIStroke") then
+			TweenService:Create(d, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = d.Transparency}):Play()
+		end
+	end
+	-- đơn giản hóa: set thẳng sau 1 nhịp
+	task.delay(0.2, function()
+		if container and container.Parent then
+			setAllTransparency(container, 0) -- đưa về rõ
+			container.BackgroundTransparency = 0.06
+		end
+	end)
+end
+
+local function hidePanel()
+	if hidden then return end
+	hidden = true
+	-- fade out nhanh
+	for _, d in ipairs(container:GetDescendants()) do
+		if d:IsA("TextLabel") or d:IsA("TextButton") then
+			TweenService:Create(d, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+		end
+		if d:IsA("Frame") then
+			TweenService:Create(d, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+		end
+		if d:IsA("UIStroke") then
+			TweenService:Create(d, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 1}):Play()
+		end
+	end
+	TweenService:Create(container, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+	task.delay(0.16, function()
+		if container and container.Parent then
+			container.Visible = false
+			mini.Visible = true
+		end
+	end)
+end
+
 local function runLoading3s()
 	overlay.Visible = true
 	overlay.BackgroundTransparency = 1
 	barFill.Size = UDim2.new(0, 0, 1, 0)
 
-	-- fade in nền đen
-	TweenService:Create(overlay, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	TweenService:Create(overlay, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 0
 	}):Play()
 
-	-- fill 3s
 	local tw = TweenService:Create(barFill, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
 		Size = UDim2.new(1, 0, 1, 0)
 	})
 	tw:Play()
 	tw.Completed:Wait()
 
-	-- fade out
-	TweenService:Create(overlay, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	TweenService:Create(overlay, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 1
 	}):Play()
-	task.wait(0.15)
+	task.wait(0.12)
 	overlay.Visible = false
 end
 
--- ❌: chỉ "chat lần cuối" để TẮT nếu đang Enable, rồi destroy UI
+-- Mini opens panel
+mini.Activated:Connect(function()
+	if busy then return end
+	showPanel()
+end)
+
+-- ❌: nếu đang Enable thì chat để tắt, rồi destroy
 closeBtn.Activated:Connect(function()
 	if busy then return end
 	busy = true
 
 	if enabled then
 		pcall(function() sendChat("/luckyblockmode") end)
-		setState(false)
 	end
 
 	task.wait(0.05)
@@ -285,7 +369,7 @@ closeBtn.Activated:Connect(function()
 	end
 end)
 
--- Button: loading -> chat -> flip state nếu chat OK
+-- Main button: loading -> chat -> toggle state -> hide panel
 button.Activated:Connect(function()
 	if busy then return end
 	busy = true
@@ -295,7 +379,8 @@ button.Activated:Connect(function()
 
 	local ok = sendChat("/luckyblockmode")
 	if ok then
-		setState(not enabled)
+		setState(not enabled) -- ✅ Disable vẫn có thể bấm bật lại
+		hidePanel()           -- ✅ chat xong ẩn UI
 	else
 		local oldText = button.Text
 		button.Text = "Chat failed"
