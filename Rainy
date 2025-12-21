@@ -1,4 +1,4 @@
--- Rainy Lucky Block UI (single button + 3s loading progress + chat /luckyblockmode toggle)
+-- Rainy Lucky Block UI (1 nút + Loading FULL MÀN HÌNH 3s + chat /luckyblockmode toggle + X: chat 1 lần cuối rồi destroy)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -69,7 +69,6 @@ container.BorderSizePixel = 0
 container.Parent = screenGui
 round(container, 16)
 
--- Subtle outline
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 1
 stroke.Transparency = 0.45
@@ -93,7 +92,7 @@ headerGrad.Color = ColorSequence.new({
 headerGrad.Parent = header
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -18, 1, 0)
+title.Size = UDim2.new(1, -50, 1, 0)
 title.Position = UDim2.new(0, 12, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "RAINY LUCKY BLOCK"
@@ -102,6 +101,37 @@ title.Font = Enum.Font.GothamSemibold
 title.TextSize = 16
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = header
+
+-- X close button (top-right)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 34, 0, 26)
+closeBtn.Position = UDim2.new(1, -40, 0, 8)
+closeBtn.BackgroundColor3 = Color3.fromRGB(32, 38, 52)
+closeBtn.BorderSizePixel = 0
+closeBtn.AutoButtonColor = false
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(230, 235, 245)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.Parent = header
+round(closeBtn, 10)
+
+local closeStroke = Instance.new("UIStroke")
+closeStroke.Thickness = 1
+closeStroke.Transparency = 0.65
+closeStroke.Color = Color3.fromRGB(120, 140, 170)
+closeStroke.Parent = closeBtn
+
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundColor3 = Color3.fromRGB(44, 52, 70)
+	}):Play()
+end)
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundColor3 = Color3.fromRGB(32, 38, 52)
+	}):Play()
+end)
 
 local subtitle = Instance.new("TextLabel")
 subtitle.Size = UDim2.new(1, -18, 0, 16)
@@ -114,7 +144,7 @@ subtitle.TextSize = 12
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = container
 
--- Button
+-- Main Button
 local button = Instance.new("TextButton")
 button.Size = UDim2.new(0.92, 0, 0, 46)
 button.Position = UDim2.new(0.04, 0, 0, 78)
@@ -136,7 +166,6 @@ btnGrad.Color = ColorSequence.new({
 })
 btnGrad.Parent = button
 
--- Status line
 local status = Instance.new("TextLabel")
 status.Size = UDim2.new(0.92, 0, 0, 18)
 status.Position = UDim2.new(0.04, 0, 1, -26)
@@ -148,49 +177,36 @@ status.TextSize = 13
 status.TextXAlignment = Enum.TextXAlignment.Left
 status.Parent = container
 
--- ===== Loading Overlay =====
+-- ===== FULLSCREEN Loading Overlay =====
 local overlay = Instance.new("Frame")
 overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.Position = UDim2.new(0, 0, 0, 0)
 overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 overlay.BackgroundTransparency = 1
 overlay.Visible = false
-overlay.ZIndex = 50
+overlay.ZIndex = 200
 overlay.Parent = screenGui
 
-local overlayPanel = Instance.new("Frame")
-overlayPanel.Size = UDim2.new(0, 360, 0, 120)
-overlayPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
-overlayPanel.AnchorPoint = Vector2.new(0.5, 0.5)
-overlayPanel.BackgroundColor3 = Color3.fromRGB(16, 20, 28)
-overlayPanel.BorderSizePixel = 0
-overlayPanel.ZIndex = 51
-overlayPanel.Parent = overlay
-round(overlayPanel, 16)
-
-local overlayStroke = Instance.new("UIStroke")
-overlayStroke.Thickness = 1
-overlayStroke.Transparency = 0.55
-overlayStroke.Color = Color3.fromRGB(95, 130, 190)
-overlayStroke.Parent = overlayPanel
-
-local loadingText = Instance.new("TextLabel")
-loadingText.Size = UDim2.new(1, -20, 0, 24)
-loadingText.Position = UDim2.new(0, 10, 0, 18)
-loadingText.BackgroundTransparency = 1
-loadingText.Text = "Loading..."
-loadingText.TextColor3 = Color3.fromRGB(240, 246, 252)
-loadingText.Font = Enum.Font.GothamSemibold
-loadingText.TextSize = 16
-loadingText.ZIndex = 52
-loadingText.Parent = overlayPanel
+local overlayText = Instance.new("TextLabel")
+overlayText.Size = UDim2.new(1, -40, 0, 30)
+overlayText.Position = UDim2.new(0, 20, 0.5, -70)
+overlayText.BackgroundTransparency = 1
+overlayText.Text = "Loading Rainy Lucky Block..."
+overlayText.TextColor3 = Color3.fromRGB(240, 246, 252)
+overlayText.Font = Enum.Font.GothamSemibold
+overlayText.TextSize = 18
+overlayText.TextXAlignment = Enum.TextXAlignment.Center
+overlayText.ZIndex = 201
+overlayText.Parent = overlay
 
 local barOuter = Instance.new("Frame")
-barOuter.Size = UDim2.new(0.92, 0, 0, 7) -- dài + mỏng
-barOuter.Position = UDim2.new(0.04, 0, 0, 70)
+barOuter.Size = UDim2.new(0.65, 0, 0, 8) -- dài + mỏng
+barOuter.Position = UDim2.new(0.5, 0, 0.5, -20)
+barOuter.AnchorPoint = Vector2.new(0.5, 0.5)
 barOuter.BackgroundColor3 = Color3.fromRGB(28, 34, 46)
 barOuter.BorderSizePixel = 0
-barOuter.ZIndex = 52
-barOuter.Parent = overlayPanel
+barOuter.ZIndex = 201
+barOuter.Parent = overlay
 round(barOuter, 999)
 
 local barFill = Instance.new("Frame")
@@ -198,7 +214,7 @@ barFill.Size = UDim2.new(0, 0, 1, 0)
 barFill.Position = UDim2.new(0, 0, 0, 0)
 barFill.BackgroundColor3 = Color3.fromRGB(90, 170, 255)
 barFill.BorderSizePixel = 0
-barFill.ZIndex = 53
+barFill.ZIndex = 202
 barFill.Parent = barOuter
 round(barFill, 999)
 
@@ -213,14 +229,6 @@ fillGrad.Parent = barFill
 -- ===== Drag (header only) =====
 local dragging = false
 local dragStart, startPos, activeInput
-
-local function updateDrag(input)
-	local delta = input.Position - dragStart
-	container.Position = UDim2.new(
-		startPos.X.Scale, startPos.X.Offset + delta.X,
-		startPos.Y.Scale, startPos.Y.Offset + delta.Y
-	)
-end
 
 header.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -239,11 +247,15 @@ end)
 
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and input == activeInput then
-		updateDrag(input)
+		local delta = input.Position - dragStart
+		container.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
 	end
 end)
 
--- ===== Button hover (soft) =====
+-- ===== Hover =====
 local function tweenBtn(toColor0, toColor1)
 	TweenService:Create(btnGrad, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Color = ColorSequence.new({
@@ -256,7 +268,6 @@ end
 button.MouseEnter:Connect(function()
 	tweenBtn(Color3.fromRGB(160, 225, 255), Color3.fromRGB(70, 150, 240))
 end)
-
 button.MouseLeave:Connect(function()
 	tweenBtn(Color3.fromRGB(70, 150, 240), Color3.fromRGB(34, 92, 180))
 end)
@@ -277,22 +288,18 @@ end
 
 local function runLoading3s()
 	overlay.Visible = true
-	overlay.BackgroundTransparency = 1
 	barFill.Size = UDim2.new(0, 0, 1, 0)
 
-	-- Fade in overlay background a bit
 	TweenService:Create(overlay, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.45
+		BackgroundTransparency = 0.35
 	}):Play()
 
-	-- Fill bar in exactly 3s
 	local tw = TweenService:Create(barFill, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
 		Size = UDim2.new(1, 0, 1, 0)
 	})
 	tw:Play()
 	tw.Completed:Wait()
 
-	-- Fade out overlay
 	TweenService:Create(overlay, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 1
 	}):Play()
@@ -300,12 +307,27 @@ local function runLoading3s()
 	overlay.Visible = false
 end
 
+-- X: chat 1 lần cuối rồi destroy GUI
+closeBtn.Activated:Connect(function()
+	if busy then return end
+	busy = true
+
+	pcall(function()
+		sendChat("/luckyblockmode")
+	end)
+
+	task.wait(0.1)
+	if screenGui and screenGui.Parent then
+		screenGui:Destroy()
+	end
+end)
+
+-- Button click: loading 3s -> chat -> nếu chat OK thì mới flip enable/disable
 button.Activated:Connect(function()
 	if busy then return end
 	busy = true
 	button.Active = false
 
-	-- click feedback (tiny)
 	TweenService:Create(button, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = UDim2.new(0.92, 0, 0, 44)
 	}):Play()
@@ -314,15 +336,21 @@ button.Activated:Connect(function()
 		Size = UDim2.new(0.92, 0, 0, 46)
 	}):Play()
 
-	-- Loading + action
 	runLoading3s()
-	sendChat("/luckyblockmode") -- toggle on/off
-	enabled = not enabled
-	setStatus(enabled)
+
+	local ok = sendChat("/luckyblockmode")
+	if ok then
+		enabled = not enabled
+		setStatus(enabled)
+	else
+		status.Text = "Rainy Lucky Block🎲: Chat failed"
+		status.TextColor3 = Color3.fromRGB(255, 200, 90)
+		task.wait(1.2)
+		setStatus(enabled)
+	end
 
 	button.Active = true
 	busy = false
 end)
 
--- init
 setStatus(false)
