@@ -390,7 +390,7 @@ local EVENT_LIST_EXECUTE_ALL = {
     "Matteo", "Phase 2: Galaxy Introduction", "Los Matteos", "4th of July",
     "Brazil", "Starfall", "La Vacca Saturno Saturnita", "Candy", "Rainbow"
 }
-
+local ddButton -- FIX: forward declare để refreshDropdownText bắt đúng ddButton
 local function refreshDropdownText()
     local selectedCount = 0
     for evName, isSelected in pairs(selectedEvents) do
@@ -437,7 +437,7 @@ round(ddWrap, 12)
 stroke(ddWrap, 1, 0.90)
 padding(ddWrap, 10, 10, 0, 0)
 
-local ddButton = Instance.new("TextButton")
+local ddButton = Instance.new("TextButton") -- FIX: bỏ local vì đã declare ở trên
 ddButton.AutoButtonColor = false
 ddButton.BackgroundTransparency = 1
 ddButton.Size = UDim2.new(1, 0, 1, 0)
