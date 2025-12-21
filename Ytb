@@ -1,39 +1,16 @@
---// SAB Hub (Compact) FULL v5.0 - NO POPUPS
---// - Main tab: Brainrot Spawner (với loadstring), Lucky Block Spawner, Add Brainrot, Stealer, Auto Moreira Method, Duplicate
---// - Event tab: DROPDOWN + Execute Event Selected (SINGLE) + Execute All Event
---// - Tất cả chức năng chạy TRỰC TIẾP không popup
+--// SAB Hub (Compact) FULL v5.0 - COMPLETE WITH ALL FEATURES
+--// - Remote calls for Execute Selected & Execute All
+--// - Script loaders for all main functions
+--// - Clean, modern dark purple theme
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local LP = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 -- Original file services
 local RS = game:GetService("ReplicatedStorage")
-
--- Original event list
-local EVENT_LIST = {
-    "10B Visits","4th of July","Bombardiro Crocodilo","Chicleteira Bicicleteira","Crab Rave",
-    "La Vacca Saturno Saturnita","Los Matteos","Nyan Cats","Phase 1: Sleepy","Phase 2: Galaxy Introduction",
-    "Phase 3: Sammy's Base","Phase 4: Mygame43","Phase 5: Sammy Snap","Raining Tacos","Rap Concert",
-    "Sammyni Spyderini","Solar Flare","Tung Tung Attack","1MEvent","300K","Brazil","Bubblegum","Candy",
-    "Concert","DulDulDul","Extinct","FatSammy","Galaxy","Glitch","Matteo","Mexico","Molten","Pinata",
-    "Rain","Rainbow","Snow","Starfall","Stock","Strawberry","UFO","Water","YinYang","x4Event","x6Event","x8Event"
-}
-
--- Original trait options
-local traitOptions = {
-    "All","Fire","Sleepy","Zombie","RIP Gravestone","Sombrero","Disco",
-    "Skeleton","Tie","Snowy","Lightning","Claws","Bubblegum","Shark Fin",
-    "Indonesia","Glitched","Wet","Matteo Hat","Paint","Spider","Nyan",
-    "Meowl","Taco","Explosive","Brazil","Fireworks","Witch Hat","Strawberry",
-    "UFO","Galactic","10B"
-}
-
--- Parse number helper from original
-local function parseNumber(txt)
-    txt = tostring(txt or ""):gsub("[^%d%-%.]","")
-    return tonumber(txt)
-end
 
 --=========================
 -- Safe parent (executor-friendly)
@@ -74,7 +51,7 @@ end)
 -- Theme
 --=========================
 local CFG = {
-    Title = "🧠 SAB Hub (Compact)",
+    Title = "🧠 AstraOnTop",
     ToggleText = "🧠",
     Accent = Color3.fromRGB(140, 60, 255),
 
@@ -88,12 +65,6 @@ local CFG = {
     Stroke = Color3.fromRGB(255, 255, 255),
     StrokeAlpha = 0.86,
 }
-
-local function twn(obj, ti, props)
-    local tw = TweenService:Create(obj, ti, props)
-    tw:Play()
-    return tw
-end
 
 local function round(ui, px)
     local c = Instance.new("UICorner")
@@ -122,8 +93,8 @@ local function padding(ui, l, r, t, b)
     return p
 end
 
--- pressFX option: Event/Misc false => no shrinking
-local function makeButton(parent, text, z, pressFX)
+-- Simple button with hover effect
+local function makeButton(parent, text, z)
     local b = Instance.new("TextButton")
     b.AutoButtonColor = false
     b.Text = text
@@ -137,33 +108,13 @@ local function makeButton(parent, text, z, pressFX)
     round(b, 12)
     stroke(b, 1, 0.88)
 
-    -- hover
+    -- Simple hover effect without animation
     b.MouseEnter:Connect(function()
-        twn(b, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-        })
+        b.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
     end)
     b.MouseLeave:Connect(function()
-        twn(b, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            BackgroundColor3 = CFG.Card2
-        })
+        b.BackgroundColor3 = CFG.Card2
     end)
-
-    -- press (optional)
-    if pressFX then
-        local baseSize
-        b.MouseButton1Down:Connect(function()
-            baseSize = baseSize or b.Size
-            twn(b, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                Size = baseSize + UDim2.new(0, 0, 0, -2)
-            })
-        end)
-        b.MouseButton1Up:Connect(function()
-            if baseSize then
-                twn(b, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = baseSize })
-            end
-        end)
-    end
 
     return b
 end
@@ -180,31 +131,45 @@ gui.Enabled = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 gui.Parent = getSafeParent()
 
--- Toggle floating button
-local toggle = Instance.new("TextButton")
+-- Toggle floating button với hình ảnh
+local toggle = Instance.new("ImageButton")
 toggle.Name = "Toggle"
 toggle.AutoButtonColor = false
 toggle.Size = UDim2.new(0, 52, 0, 52)
 toggle.Position = UDim2.new(0, 18, 1, -90)
 toggle.BackgroundColor3 = CFG.Card2
-toggle.Text = CFG.ToggleText
-toggle.TextColor3 = CFG.Txt
-toggle.Font = Enum.Font.GothamBold
-toggle.TextSize = 18
+toggle.BackgroundTransparency = 0.1
+toggle.Image = "rbxassetid://98958595520364"
+toggle.ScaleType = Enum.ScaleType.Fit
 toggle.Parent = gui
 toggle.Active = true
 toggle.Draggable = true
 toggle.Visible = true
 toggle.ZIndex = 500
-round(toggle, 999)
-stroke(toggle, 1, 0.80)
 
+-- Bo góc 15px
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 15)
+toggleCorner.Parent = toggle
+
+-- Viền tím chạy xung quanh toggle
 local ring = Instance.new("UIStroke")
 ring.Thickness = 2
 ring.Color = CFG.Accent
 ring.Transparency = 0.15
 ring.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 ring.Parent = toggle
+
+-- Thêm hiệu ứng hover cho toggle
+toggle.MouseEnter:Connect(function()
+    toggle.BackgroundColor3 = Color3.fromRGB(44, 44, 60)
+    ring.Transparency = 0.05 -- Viền sáng hơn khi hover
+end)
+
+toggle.MouseLeave:Connect(function()
+    toggle.BackgroundColor3 = CFG.Card2
+    ring.Transparency = 0.15 -- Trở lại bình thường
+end)
 
 -- Main panel
 local main = Instance.new("Frame")
@@ -291,6 +256,14 @@ local function makeTab(name, text)
     b.ZIndex = 630
     round(b, 10)
     stroke(b, 1, 0.90)
+    
+    b.MouseEnter:Connect(function()
+        b.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
+    end)
+    b.MouseLeave:Connect(function()
+        b.BackgroundColor3 = CFG.Card2
+    end)
+    
     return b
 end
 
@@ -322,15 +295,10 @@ local pageMain = makePage("PageMain")
 local pageEvents = makePage("PageEvents")
 local pageMisc = makePage("PageMisc")
 
--- Dropdown overlay ref (close when switching tabs)
+-- Dropdown overlay ref
 local listFrame
-local function closeOverlays()
-    if listFrame then listFrame.Visible = false end
-end
 
 local function activateTab(tabBtn, page)
-    closeOverlays()
-
     for _, child in ipairs(tabs:GetChildren()) do
         if child:IsA("TextButton") then
             child.BackgroundColor3 = CFG.Card2
@@ -347,13 +315,13 @@ local function activateTab(tabBtn, page)
 end
 
 --=========================
--- MAIN TAB (pressFX = true)
+-- MAIN TAB (ĐÃ CẬP NHẬT TÊN NÚT)
 --=========================
 local mainLabel = Instance.new("TextLabel")
 mainLabel.BackgroundTransparency = 1
 mainLabel.Size = UDim2.new(1, 0, 0, 22)
 mainLabel.TextXAlignment = Enum.TextXAlignment.Left
-mainLabel.Text = "Quick Hub"
+mainLabel.Text = "Admin Command"
 mainLabel.Font = Enum.Font.GothamSemibold
 mainLabel.TextSize = 12
 mainLabel.TextColor3 = CFG.SubTxt
@@ -372,50 +340,93 @@ grid.CellSize = UDim2.new(0.5, -6, 0, 44)
 grid.CellPadding = UDim2.new(0, 12, 0, 12)
 grid.Parent = mainGrid
 
--- BUTTON 1: Brainrot Spawner (VỚI LOADSTRING từ GitHub)
-local btnBrainrotSpawner = makeButton(mainGrid, "🧬 Brainrot Spawner", 650, true)
+-- Simple buttons with basic functionality
+local btnBrainrotSpawner = makeButton(mainGrid, "🧬 Brainrot Spawner", 650)
 btnBrainrotSpawner.Size = UDim2.new(0.5, -6, 0, 44)
 
--- BUTTON 2: Lucky Block Spawner (TRỰC TIẾP - không popup)
-local btnLuckyBlock = makeButton(mainGrid, "🍀 Lucky Block Spawner", 650, true)
+local btnLuckyBlock = makeButton(mainGrid, "🌧️ Rainy Lucky Block", 650)
 btnLuckyBlock.Size = UDim2.new(0.5, -6, 0, 44)
 
--- BUTTON 3: Add Brainrot (Placeholder)
-local btnAddBrainrot = makeButton(mainGrid, "➕ Add Brainrot", 650, true)
+local btnAddBrainrot = makeButton(mainGrid, "➕ Add Brainrot", 650)
 btnAddBrainrot.Size = UDim2.new(0.5, -6, 0, 44)
 
--- BUTTON 4: Stealer (Placeholder)
-local btnStealer = makeButton(mainGrid, "🫳 Stealer", 650, true)
+local btnStealer = makeButton(mainGrid, "🍀 Admin's Luck", 650)
 btnStealer.Size = UDim2.new(0.5, -6, 0, 44)
 
--- BUTTON 5: Auto Moreira Method (Placeholder)
-local btnAutoMoreira = makeButton(mainGrid, "⚙️ Auto Moreira Method", 650, true)
+local btnAutoMoreira = makeButton(mainGrid, "⚙️ Auto Moreira Method", 650)
 btnAutoMoreira.Size = UDim2.new(0.5, -6, 0, 44)
 
--- BUTTON 6: Duplicate (Original)
-local btnDuplicate = makeButton(mainGrid, "🌀 Duplicate", 650, true)
+local btnDuplicate = makeButton(mainGrid, "🌀 Duplicate", 650)
 btnDuplicate.Size = UDim2.new(0.5, -6, 0, 44)
 
 --=========================
--- EVENT TAB (SINGLE-SELECT)
+-- EVENT TAB (SINGLE-SELECT like file)
 --=========================
-local selectedEvents = {}       
-local selectedEvent = nil       
-local optButtons = {}           
+local selectedEvents = {}
+local optButtons = {}
 
-local function getSelectedList()
-    local out = {}
-    for name, on in pairs(selectedEvents) do
-        if on then table.insert(out, name) end
+-- Danh sách events để hiển thị trong dropdown
+local EVENT_LIST_DISPLAY = {
+    "All", "Witching Hour", "Radioactive", "10B Visits", "North Pole", "Fuse Machine Luck",
+    "Sammyni Spyderini", "Phase 4: Mygame43", "FatSammy", "Fishing", "Glitch", "Graveyard",
+    "Bombardiro Crocodilo", "Meowl", "Nyan Cats", "Festive Lucky Block", "Concert", "Strawberry",
+    "Phase 1: Sleepy", "Rain", "Trick or Treat", "Solar Flare", "1x1x1x1", "3 Roads", "Galaxy",
+    "Tung Tung Attack", "Karkerkar Kurkur", "Raining Tacos", "Water", "YinYang", "UFO",
+    "Dul Dul Dul", "Snow", "Phase 3: Sammy's Base", "Chicleteira Bicicleteira", "Speed",
+    "Indonesia", "Molten", "Mexico", "Crab Rave", "Bubblegum", "Rap Concert", "Bloodmoon",
+    "Matteo", "Phase 2: Galaxy Introduction", "Los Matteos", "Extinct", "4th of July",
+    "Brazil", "Starfall", "La Vacca Saturno Saturnita", "Candy", "Rainbow"
+}
+
+-- Danh sách events cho Execute All Event (không có Trick or Treat, Extinct, Karkerkar Kurkur, Festive Lucky Block)
+local EVENT_LIST_EXECUTE_ALL = {
+    "Witching Hour", "Radioactive", "10B Visits", "North Pole", "Fuse Machine Luck",
+    "Sammyni Spyderini", "Phase 4: Mygame43", "FatSammy", "Fishing", "Glitch", "Graveyard",
+    "Bombardiro Crocodilo", "Meowl", "Nyan Cats", "Concert", "Strawberry",
+    "Phase 1: Sleepy", "Rain", "Solar Flare", "1x1x1x1", "3 Roads", "Galaxy",
+    "Tung Tung Attack", "Raining Tacos", "Water", "YinYang", "UFO",
+    "Dul Dul Dul", "Snow", "Phase 3: Sammy's Base", "Chicleteira Bicicleteira", "Speed",
+    "Indonesia", "Molten", "Mexico", "Crab Rave", "Bubblegum", "Rap Concert", "Bloodmoon",
+    "Matteo", "Phase 2: Galaxy Introduction", "Los Matteos", "4th of July",
+    "Brazil", "Starfall", "La Vacca Saturno Saturnita", "Candy", "Rainbow"
+}
+
+local function refreshDropdownText()
+    local selectedCount = 0
+    for evName, isSelected in pairs(selectedEvents) do
+        if evName ~= "All" and isSelected then
+            selectedCount = selectedCount + 1
+        end
     end
-    table.sort(out)
-    return out
+    
+    if selectedCount == 0 then
+        ddButton.Text = "Selected events (0)   ▼"
+    elseif selectedEvents["All"] then
+        ddButton.Text = "Selected events (" .. (#EVENT_LIST_DISPLAY - 1) .. ")   ▼"
+    else
+        ddButton.Text = "Selected events (" .. selectedCount .. ")   ▼"
+    end
 end
 
-local function buildSelectedPreview()
-    local list = getSelectedList()
-    if #list == 0 then return "(none)" end
-    return list[1] -- single
+local function setOptVisual(optBtn, name)
+    if selectedEvents[name] then
+        optBtn.Text = "  ✓ " .. name
+        optBtn.BackgroundColor3 = Color3.fromRGB(44, 44, 60)
+    else
+        optBtn.Text = "  " .. name
+        optBtn.BackgroundColor3 = CFG.Card2
+    end
+end
+
+local function updateAllSelection()
+    local allSelected = true
+    for _, evt in ipairs(EVENT_LIST_DISPLAY) do
+        if evt ~= "All" and not selectedEvents[evt] then
+            allSelected = false
+            break
+        end
+    end
+    selectedEvents["All"] = allSelected
 end
 
 local ddWrap = Instance.new("Frame")
@@ -437,12 +448,12 @@ ddButton.TextSize = 13
 ddButton.TextColor3 = CFG.Txt
 ddButton.Parent = ddWrap
 ddButton.ZIndex = 650
-ddButton.Text = "Selected: " .. buildSelectedPreview() .. "   ▼"
+ddButton.Text = "Selected events (0)   ▼"
 
 listFrame = Instance.new("Frame")
 listFrame.Visible = false
 listFrame.BackgroundColor3 = CFG.Card
-listFrame.Size = UDim2.new(1, 0, 0, 190)
+listFrame.Size = UDim2.new(1, 0, 0, 250)
 listFrame.Position = UDim2.new(0, 0, 0, 42)
 listFrame.Parent = pageEvents
 listFrame.ZIndex = 700
@@ -463,21 +474,12 @@ local ll = Instance.new("UIListLayout")
 ll.Padding = UDim.new(0, 6)
 ll.Parent = scroll
 
-local function refreshDropdownText()
-    ddButton.Text = "Selected: " .. buildSelectedPreview() .. "   ▼"
+-- Initialize all events as not selected
+for _, name in ipairs(EVENT_LIST_DISPLAY) do
+    selectedEvents[name] = false
 end
 
-local function setOptVisual(optBtn, name)
-    if selectedEvents[name] then
-        optBtn.Text = "  ✓ " .. name
-        optBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-    else
-        optBtn.Text = "  " .. name
-        optBtn.BackgroundColor3 = CFG.Card2
-    end
-end
-
-for _, name in ipairs(EVENT_LIST) do
+for _, name in ipairs(EVENT_LIST_DISPLAY) do
     local opt = Instance.new("TextButton")
     opt.AutoButtonColor = false
     opt.Size = UDim2.new(1, 0, 0, 32)
@@ -492,26 +494,40 @@ for _, name in ipairs(EVENT_LIST) do
     stroke(opt, 1, 0.92)
 
     optButtons[name] = opt
-    selectedEvents[name] = false
     setOptVisual(opt, name)
 
-    -- ✅ SINGLE-SELECT like file
     opt.MouseButton1Click:Connect(function()
-        -- clear old selection
-        for k,_ in pairs(selectedEvents) do
-            selectedEvents[k] = false
-        end
-
-        -- set new selection
-        selectedEvents[name] = true
-        selectedEvent = name
-
-        -- refresh all buttons
-        for evName, btn in pairs(optButtons) do
-            setOptVisual(btn, evName)
+        if name == "All" then
+            -- Toggle All selection
+            local newState = not selectedEvents["All"]
+            
+            -- Select/deselect all events
+            for _, evt in ipairs(EVENT_LIST_DISPLAY) do
+                selectedEvents[evt] = newState
+                if optButtons[evt] then
+                    setOptVisual(optButtons[evt], evt)
+                end
+            end
+        else
+            -- Toggle individual event
+            selectedEvents[name] = not selectedEvents[name]
+            setOptVisual(opt, name)
+            
+            -- Update "All" checkbox
+            updateAllSelection()
+            if optButtons["All"] then
+                setOptVisual(optButtons["All"], "All")
+            end
         end
 
         refreshDropdownText()
+    end)
+    
+    opt.MouseEnter:Connect(function()
+        opt.BackgroundColor3 = Color3.fromRGB(44, 44, 60)
+    end)
+    opt.MouseLeave:Connect(function()
+        setOptVisual(opt, name)
     end)
 end
 
@@ -530,15 +546,14 @@ local evList = Instance.new("UIListLayout")
 evList.Padding = UDim.new(0, 12)
 evList.Parent = evBtns
 
--- ✅ NO shrink on Event buttons
-local btnExecSelected = makeButton(evBtns, "⚡ Execute Event Selected", 650, false)
+local btnExecSelected = makeButton(evBtns, "⚡ Execute The Selected Event", 650)
 btnExecSelected.Size = UDim2.new(1, 0, 0, 44)
 
-local btnExecAll = makeButton(evBtns, "🌩 Execute All Event", 650, false)
+local btnExecAll = makeButton(evBtns, "🌩 Execute All Event", 650)
 btnExecAll.Size = UDim2.new(1, 0, 0, 44)
 
 --=========================
--- MISC TAB (NO shrink)
+-- MISC TAB
 --=========================
 local miscCard = Instance.new("Frame")
 miscCard.BackgroundColor3 = CFG.Card
@@ -559,79 +574,26 @@ local miscList = Instance.new("UIListLayout")
 miscList.Padding = UDim.new(0, 12)
 miscList.Parent = miscBtns
 
-local btnFixLag = makeButton(miscBtns, "🧹 Fix lag", 660, false)
+local btnFixLag = makeButton(miscBtns, "🧹 Fix lag", 660)
 btnFixLag.Size = UDim2.new(1, 0, 0, 44)
 
-local btnXray = makeButton(miscBtns, "👁 X-ray base", 660, false)
+local btnXray = makeButton(miscBtns, "👁 X-ray base", 660)
 btnXray.Size = UDim2.new(1, 0, 0, 44)
 
-local btnMoney = makeButton(miscBtns, "💰 Set Money", 660, false)
-btnMoney.Size = UDim2.new(1, 0, 0, 44)
-
-local btnRebirth = makeButton(miscBtns, "🔄 Set Rebirth", 660, false)
-btnRebirth.Size = UDim2.new(1, 0, 0, 44)
-
-local bio = Instance.new("TextLabel")
-bio.BackgroundTransparency = 1
-bio.Size = UDim2.new(1, 0, 1, -200)
-bio.Position = UDim2.new(0, 0, 0, 200)
-bio.TextXAlignment = Enum.TextXAlignment.Left
-bio.TextYAlignment = Enum.TextYAlignment.Top
-bio.TextWrapped = true
-bio.Text = table.concat({
-    "📌 SAB Hub (Compact) - NO POPUPS",
-    "",
-    "• Brainrot: Load từ GitHub",
-    "• Lucky Block: Chạy trực tiếp",
-    "• Event: Chọn 1 event duy nhất",
-    "• Misc: Set Money/Rebirth trực tiếp",
-    "• Thiết kế nhẹ, tối ưu cho mobile",
-}, "\n")
-bio.Font = Enum.Font.Gotham
-bio.TextSize = 11
-bio.TextColor3 = CFG.SubTxt
-bio.Parent = miscCard
-bio.ZIndex = 650
-
 --=========================
--- Open / Close
+-- Open / Close - NO ANIMATION
 --=========================
 local isOpen = false
 
-local function openPanel()
-    main.Visible = true
-    main.Size = UDim2.new(0, 20, 0, 20)
-    main.Position = UDim2.new(0.5, -10, 0.5, -10)
-    main.BackgroundTransparency = 0.1
-    twn(main, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 360, 0, 320),
-        Position = UDim2.new(0.5, -180, 0.5, -160),
-        BackgroundTransparency = 0
-    })
-end
-
-local function closePanel()
-    closeOverlays()
-    local tw = twn(main, TweenInfo.new(0.20, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-        Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(0.5, -10, 0.5, -10),
-        BackgroundTransparency = 0.15
-    })
-    tw.Completed:Connect(function()
-        main.Visible = false
-    end)
-end
-
 toggle.MouseButton1Click:Connect(function()
     isOpen = not isOpen
-    if isOpen then openPanel() else closePanel() end
+    main.Visible = isOpen
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
-    if isOpen then
-        isOpen = false
-        closePanel()
-    end
+    isOpen = false
+    main.Visible = false
+    if listFrame then listFrame.Visible = false end
 end)
 
 -- Default tab
@@ -641,309 +603,122 @@ tabEvents.MouseButton1Click:Connect(function() activateTab(tabEvents, pageEvents
 tabMisc.MouseButton1Click:Connect(function() activateTab(tabMisc, pageMisc) end)
 
 --=========================
--- CHỨC NĂNG TRỰC TIẾP (KHÔNG POPUP)
+-- BUTTON CALLBACKS WITH REMOTE FUNCTIONS AND SCRIPT LOADERS
 --=========================
 
--- 1. Brainrot Spawner VỚI LOADSTRING từ GitHub
-local function runBrainrotSpawnerFromGitHub()
-    local originalText = btnBrainrotSpawner.Text
-    btnBrainrotSpawner.Text = "🔄 Loading..."
-    
-    -- Sử dụng pcall để bắt lỗi
-    local success, result = pcall(function()
-        -- Tải và thực thi script từ GitHub
-        local loadedScript = loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Brainrot%20Spawner", true))()
-        return loadedScript
+-- Main Tab Buttons with Script Loaders
+btnBrainrotSpawner.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Brainrot%20Spawner"))()
     end)
-    
-    if success then
-        print("✅ Brainrot Spawner script loaded successfully from GitHub")
-        -- Nếu script trả về một function, thực thi nó
-        if type(result) == "function" then
-            result()
-        end
-        btnBrainrotSpawner.Text = "✅ Loaded!"
-    else
-        print("❌ Failed to load Brainrot Spawner script: " .. tostring(result))
-        print("🔄 Using fallback function...")
-        
-        -- Fallback function nếu loadstring thất bại
-        local name = "Strawberry Elephant"
-        local mutation = ""
-        local traitsArg = ""
-
-        local args = {
-            [1] = name,
-            [2] = mutation,
-            [3] = traitsArg
-        }
-
-        local fallbackSuccess, fallbackResult = pcall(function()
-            RS.Packages.Net:FindFirstChild("RF/AdminService/SpawnBrainrot"):InvokeServer(unpack(args))
-            
-            -- Chạy event đặc biệt nếu có
-            if name == "Meowl" then
-                RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer("Meowl")
-            elseif name == "Strawberry" or name == "Strawberry Elephant" then
-                RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer("Strawberry")
-            end
-        end)
-
-        if fallbackSuccess then 
-            print("✅ Brainrot Spawned (Fallback): " .. name)
-            btnBrainrotSpawner.Text = "✅ Fallback Used!"
-        else
-            print("❌ Fallback also failed: " .. tostring(fallbackResult))
-            btnBrainrotSpawner.Text = "❌ Failed!"
-        end
-    end
-    
-    -- Khôi phục text gốc sau 2 giây
-    task.wait(2)
-    btnBrainrotSpawner.Text = originalText
-end
-
--- 2. Lucky Block Spawner (chạy trực tiếp)
-local function spawnLuckyBlockDirect()
-    local name = "Secret Lucky Block"
-    local mutation = ""
-    local traitsArg = ""
-
-    local args = {
-        [1] = name,
-        [2] = mutation,
-        [3] = traitsArg
-    }
-
-    local ok_, res = pcall(function()
-        RS.Packages.Net:FindFirstChild("RF/AdminService/SpawnBrainrot"):InvokeServer(unpack(args))
-    end)
-
-    if ok_ then
-        print("✅ Lucky Block Spawned: " .. name)
-        
-        -- Cập nhật text button tạm thời
-        local originalText = btnLuckyBlock.Text
-        btnLuckyBlock.Text = "✅ Spawned!"
-        task.wait(1)
-        btnLuckyBlock.Text = originalText
-    else
-        print("❌ " .. tostring(res))
-        
-        local originalText = btnLuckyBlock.Text
-        btnLuckyBlock.Text = "❌ Failed!"
-        task.wait(1)
-        btnLuckyBlock.Text = originalText
-    end
-end
-
--- 3. Set Money (chạy trực tiếp)
-local function setMoneyDirect()
-    local val = 67
-    local args = { [1] = val }
-    local success, result = pcall(function()
-        return RS.Packages.Net:FindFirstChild("RF/AdminService/GiveMoney"):InvokeServer(unpack(args))
-    end)
-    if success then
-        print("💰 Money Set: " .. val)
-        
-        local originalText = btnMoney.Text
-        btnMoney.Text = "✅ $" .. val .. " Set!"
-        task.wait(1)
-        btnMoney.Text = originalText
-    else
-        print("❌ Money Failed: " .. tostring(result))
-        
-        local originalText = btnMoney.Text
-        btnMoney.Text = "❌ Failed!"
-        task.wait(1)
-        btnMoney.Text = originalText
-    end
-end
-
--- 4. Set Rebirth (chạy trực tiếp)
-local function setRebirthDirect()
-    local val = 17
-    local args = { [1] = val }
-    local success, result = pcall(function()
-        return RS.Packages.Net:FindFirstChild("RF/AdminService/GiveRebirth"):InvokeServer(unpack(args))
-    end)
-    if success then
-        print("🔄 Rebirth Set: " .. val)
-        
-        local originalText = btnRebirth.Text
-        btnRebirth.Text = "✅ " .. val .. " Rebirths!"
-        task.wait(1)
-        btnRebirth.Text = originalText
-    else
-        print("❌ Rebirth Failed: " .. tostring(result))
-        
-        local originalText = btnRebirth.Text
-        btnRebirth.Text = "❌ Failed!"
-        task.wait(1)
-        btnRebirth.Text = originalText
-    end
-end
-
--- 5. Duplicate Sequence
-local duplicateOpen = false
-local duplicating = false
-local segments = {
-    {"Found high-value targets. Beginning duplication protocol", 3},
-    {"Bypassing plot permissions", 2},
-    {"Exploiting server replication service", 5},
-    {"Injecting duplication packets", 3},
-    {"Allocating memory for new instances", 2},
-    {"Replicating object properties", 4},
-    {"Bypassing anti-cheat hash checks", 3},
-    {"Writing cloned entities to memory", 4},
-    {"Finalizing instance synchronization", 3},
-    {"Protocol complete. Placing new assets", 1},
-    {"✅Duplication Successfully!", 3},
-}
-
-local function runDuplicateSequence()
-    if duplicating then return end
-    duplicating = true
-
-    local originalText = btnDuplicate.Text
-    
-    for i, seg in ipairs(segments) do
-        local txt, dur = seg[1], seg[2]
-        btnDuplicate.Text = txt
-        task.wait(dur)
-    end
-
-    btnDuplicate.Text = originalText
-    duplicating = false
-
-    -- Auto execute script
-    task.spawn(function()
-        pcall(function()
-            loadstring(game:HttpGet(
-                "https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Cloned"
-            ))()
-        end)
-    end)
-end
-
---=========================
--- BUTTON CALLBACKS (TRỰC TIẾP)
---=========================
-
--- Main Tab Buttons
-btnBrainrotSpawner.MouseButton1Click:Connect(runBrainrotSpawnerFromGitHub)  -- SỬ DỤNG LOADSTRING
-btnLuckyBlock.MouseButton1Click:Connect(spawnLuckyBlockDirect)
-
-btnAddBrainrot.MouseButton1Click:Connect(function()
-    print("Add Brainrot clicked")
-    
-    local originalText = btnAddBrainrot.Text
-    btnAddBrainrot.Text = "⏳ Processing..."
-    task.wait(1)
-    btnAddBrainrot.Text = originalText
 end)
 
+-- Rainy Lucky Block (đã cập nhật tên và lệnh)
+btnLuckyBlock.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Editor"))()
+    end)
+end)
+
+btnAddBrainrot.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Addbrainrot"))()
+    end)
+end)
+
+-- Admin's Luck (đã cập nhật tên và lệnh)
 btnStealer.MouseButton1Click:Connect(function()
-    print("Stealer clicked")
-    
-    local originalText = btnStealer.Text
-    btnStealer.Text = "⏳ Stealing..."
-    task.wait(1)
-    btnStealer.Text = originalText
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Lucky"))()
+    end)
 end)
 
 btnAutoMoreira.MouseButton1Click:Connect(function()
-    print("Auto Moreira Method clicked")
-    
-    local originalText = btnAutoMoreira.Text
-    btnAutoMoreira.Text = "⚙️ Running..."
-    task.wait(1)
-    btnAutoMoreira.Text = originalText
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Auto%20Moreira%20Method"))()
+    end)
 end)
 
-btnDuplicate.MouseButton1Click:Connect(runDuplicateSequence)
+btnDuplicate.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/D"))()
+    end)
+end)
 
--- Event Tab Buttons
+-- Event Tab Buttons with Remote Calls
 btnExecSelected.MouseButton1Click:Connect(function()
-    if not selectedEvent then
-        print("⚠️ Choose Event First")
+    -- Get all selected events except "All"
+    local eventsToExecute = {}
+    for evName, isSelected in pairs(selectedEvents) do
+        if isSelected and evName ~= "All" then
+            table.insert(eventsToExecute, evName)
+        end
+    end
+    
+    if #eventsToExecute == 0 then
         return
     end
-
-    local args = { [1] = selectedEvent }
     
-    local ok, err = pcall(function()
-        RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer(unpack(args))
-    end)
-
-    if ok then
-        print("✅ Executed: " .. selectedEvent)
+    -- Execute each selected event with error handling
+    for _, eventName in ipairs(eventsToExecute) do
+        local args = {
+            [1] = eventName
+        }
         
-        local originalText = btnExecSelected.Text
-        btnExecSelected.Text = "✅ Executed!"
-        task.wait(1)
-        btnExecSelected.Text = originalText
-    else
-        print("❌ Execute failed: " .. tostring(err))
+        local success, result = pcall(function()
+            local remote = RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent")
+            if remote then
+                return remote:InvokeServer(unpack(args))
+            else
+                error("Remote not found: RF/AdminService/StartEvent")
+            end
+        end)
         
-        local originalText = btnExecSelected.Text
-        btnExecSelected.Text = "❌ Failed!"
-        task.wait(1)
-        btnExecSelected.Text = originalText
+        -- Small delay between events to avoid rate limiting
+        task.wait(0.1)
     end
 end)
 
 btnExecAll.MouseButton1Click:Connect(function()
-    local phases = "Phase 5: Sammy Snap"
-    local args = {[1] = phases}
-    local ok, err = pcall(function()
-        RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent"):InvokeServer(unpack(args))
-    end)
-    
-    if ok then
-        print("✅ Executed All Events")
+    -- Execute all events từ danh sách đã xác định
+    for _, eventName in ipairs(EVENT_LIST_EXECUTE_ALL) do
+        local args = {
+            [1] = eventName
+        }
         
-        local originalText = btnExecAll.Text
-        btnExecAll.Text = "✅ All Events!"
-        task.wait(1)
-        btnExecAll.Text = originalText
-    else
-        print("❌ Execute All failed: " .. tostring(err))
+        local success, result = pcall(function()
+            local remote = RS.Packages.Net:FindFirstChild("RF/AdminService/StartEvent")
+            if remote then
+                return remote:InvokeServer(unpack(args))
+            else
+                error("Remote not found: RF/AdminService/StartEvent")
+            end
+        end)
         
-        local originalText = btnExecAll.Text
-        btnExecAll.Text = "❌ Failed!"
-        task.wait(1)
-        btnExecAll.Text = originalText
+        -- Small delay between events to avoid rate limiting
+        task.wait(0.1)
     end
 end)
 
--- Misc Tab Buttons
+-- Misc Tab Buttons (CHỈ SỬ DỤNG GITHUB)
 btnFixLag.MouseButton1Click:Connect(function()
-    print("Fix lag clicked")
-    
-    local originalText = btnFixLag.Text
-    btnFixLag.Text = "🧹 Fixing..."
-    task.wait(1)
-    btnFixLag.Text = originalText
+    -- Sử dụng script từ GitHub
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/FixLag"))()
+    end)
 end)
 
 btnXray.MouseButton1Click:Connect(function()
-    print("X-ray base clicked")
-    
-    local originalText = btnXray.Text
-    btnXray.Text = "👁 X-raying..."
-    task.wait(1)
-    btnXray.Text = originalText
+    -- Sử dụng script từ GitHub cho X-ray
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/XR"))()
+    end)
 end)
 
-btnMoney.MouseButton1Click:Connect(setMoneyDirect)
-btnRebirth.MouseButton1Click:Connect(setRebirthDirect)
-
--- small loaded bump
-twn(toggle, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 56, 0, 56)})
-task.delay(0.25, function()
-    twn(toggle, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 52, 0, 52)})
+-- Simple hover for close button
+closeBtn.MouseEnter:Connect(function()
+    closeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
 end)
-
-print("[SABPanel] Loaded v5.0 - Brainrot Spawner with GitHub loadstring")
+closeBtn.MouseLeave:Connect(function()
+    closeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 52)
+end)
