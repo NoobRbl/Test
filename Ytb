@@ -398,19 +398,6 @@ local function refreshDropdownText()
             selectedCount = selectedCount + 1
         end
     end
-    
-    if selectedCount == 0 then
-        -- 1) Đổi text khởi tạo của ddButton
-ddButton.Text = "Selected event (0)   ▼"
-
--- 2) Đổi trong hàm refreshDropdownText()
-local function refreshDropdownText()
-    local selectedCount = 0
-    for evName, isSelected in pairs(selectedEvents) do
-        if evName ~= "All" and isSelected then
-            selectedCount = selectedCount + 1
-        end
-    end
 
     if selectedCount == 0 then
         ddButton.Text = "Selected event (0)   ▼"
@@ -420,7 +407,6 @@ local function refreshDropdownText()
         ddButton.Text = "Selected event (" .. selectedCount .. ")   ▼"
     end
 end
-
 local function setOptVisual(optBtn, name)
     if selectedEvents[name] then
         optBtn.Text = "  ✓ " .. name
