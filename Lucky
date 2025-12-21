@@ -1,90 +1,159 @@
--- LocalScript (dán vào StarterPlayerScripts hoặc StarterGui)
+-- Admin's Luck (SAMMY'S LUCK)
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ===== TẠO PANEL =====
+-- ===== THEME =====
+local BG_DARK   = Color3.fromRGB(22, 24, 28)
+local BG_DARK_2 = Color3.fromRGB(28, 30, 35)
+local ACCENT    = Color3.fromRGB(105, 255, 160)
+local TXT_MAIN  = Color3.fromRGB(245, 245, 245)
+local STROKE_COL= Color3.fromRGB(255, 255, 255)
+
+local function tween(o, ti, props)
+	local t = TweenService:Create(o, ti, props)
+	t:Play()
+	return t
+end
+
+-- ===== MAIN GUI =====
 local panelGui = Instance.new("ScreenGui")
-panelGui.Name = "LuckyPanelGui"
+panelGui.Name = "AdminsLuckGui"
 panelGui.ResetOnSpawn = false
+panelGui.IgnoreGuiInset = true
+panelGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 panelGui.Parent = playerGui
 
+-- Panel Frame (không shadow)
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "Panel"
-panelFrame.Size = UDim2.new(0, 220, 0, 60)
-panelFrame.Position = UDim2.new(0, 20, 1, -80) -- góc trái dưới, cách mép 20px
-panelFrame.AnchorPoint = Vector2.new(0, 0)
-panelFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+panelFrame.Size = UDim2.new(0, 240, 0, 56)
+panelFrame.Position = UDim2.new(0, 14, 1, -70) -- góc trái dưới
+panelFrame.BackgroundColor3 = BG_DARK
 panelFrame.BorderSizePixel = 0
+panelFrame.ZIndex = 2
 panelFrame.Parent = panelGui
 
--- Bo góc 20px
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 20)
+corner.CornerRadius = UDim.new(0, 16)
 corner.Parent = panelFrame
-
--- Nút Lucky x10
-local btn = Instance.new("TextButton")
-btn.Name = "LuckyButton"
-btn.Size = UDim2.new(1, -10, 1, -10)
-btn.Position = UDim2.new(0, 5, 0, 5)
-btn.BackgroundTransparency = 1
-btn.Text = "Lucky x10"
-btn.Font = Enum.Font.SourceSansBold
-btn.TextSize = 24
-btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn.Parent = panelFrame
 
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 1
-stroke.Transparency = 0.6
+stroke.Color = STROKE_COL
+stroke.Transparency = 0.82
 stroke.Parent = panelFrame
+
+local grad = Instance.new("UIGradient")
+grad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, BG_DARK_2),
+	ColorSequenceKeypoint.new(1, BG_DARK),
+})
+grad.Rotation = 90
+grad.Parent = panelFrame
+
+local scale = Instance.new("UIScale")
+scale.Scale = 1
+scale.Parent = panelFrame
+
+-- Button overlay (click toàn panel)
+local btn = Instance.new("TextButton")
+btn.Name = "AdminsLuckButton"
+btn.Size = UDim2.new(1, 0, 1, 0)
+btn.BackgroundTransparency = 1
+btn.Text = ""
+btn.AutoButtonColor = false
+btn.ZIndex = 3
+btn.Parent = panelFrame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -24, 1, 0)
+title.Position = UDim2.new(0, 12, 0, 0)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = TXT_MAIN
+title.Text = "🍀 Admin's Luck"
+title.ZIndex = 4
+title.Parent = panelFrame
 
 -- ===== GUI PHẦN TRĂM =====
 local percentGui = Instance.new("ScreenGui")
 percentGui.Name = "PercentCounterGui"
 percentGui.ResetOnSpawn = false
+percentGui.IgnoreGuiInset = true
 percentGui.Parent = playerGui
-percentGui.Enabled = false -- ẩn mặc định
+percentGui.Enabled = false
 
 local percentLabel = Instance.new("TextLabel")
 percentLabel.Name = "PercentLabel"
-percentLabel.Size = UDim2.new(0, 300, 0, 100)
+percentLabel.Size = UDim2.new(0, 320, 0, 110)
 percentLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
 percentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-percentLabel.BackgroundTransparency = 1 -- không có nền đen
+percentLabel.BackgroundTransparency = 1
 percentLabel.Text = "0%"
-percentLabel.Font = Enum.Font.GothamBold
-percentLabel.TextSize = 48
-percentLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+percentLabel.Font = Enum.Font.GothamBlack
+percentLabel.TextSize = 56
+percentLabel.TextColor3 = ACCENT
+percentLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+percentLabel.TextStrokeTransparency = 0.55
+percentLabel.TextTransparency = 0
+percentLabel.ZIndex = 50
 percentLabel.Parent = percentGui
-percentLabel.ZIndex = 10
 
--- ===== HÀM HIỂN THỊ ĐẾM % =====
+local percentScale = Instance.new("UIScale")
+percentScale.Scale = 0.92
+percentScale.Parent = percentLabel
+
+-- ===== SEND KEY P (chỉ gọi sau khi xong 100%) =====
+local ignoreVirtualP = false
+local function sendKeyP()
+	ignoreVirtualP = true
+	pcall(function()
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.P, false, game)
+		task.wait()
+		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.P, false, game)
+	end)
+	task.delay(0.15, function()
+		ignoreVirtualP = false
+	end)
+end
+
+-- ===== HÀM HIỂN THỊ ĐẾM % (giữ logic cũ) =====
 local function showPercent(durationSeconds)
 	if percentGui.Enabled then return end
+
 	percentGui.Enabled = true
-	percentLabel.TextTransparency = 0
 	percentLabel.Text = "0%"
-	
+	percentLabel.TextTransparency = 0
+	percentScale.Scale = 0.92
+
+	tween(percentScale, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1})
+
 	local startTime = tick()
-	local endTime = startTime + durationSeconds
-	
+
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local now = tick()
 		local t = (now - startTime) / durationSeconds
+
 		if t >= 1 then
 			percentLabel.Text = "100%"
 			conn:Disconnect()
-			
-			-- Nhấp nháy sau khi hoàn thành
+
+			-- Blink (giữ như cũ)
 			local blinkCount = 3
 			local blinkTime = 0.18
-			for i = 1, blinkCount do
+			for _ = 1, blinkCount do
 				local tweenOut = TweenService:Create(percentLabel, TweenInfo.new(blinkTime), {TextTransparency = 1})
 				local tweenIn  = TweenService:Create(percentLabel, TweenInfo.new(blinkTime), {TextTransparency = 0})
 				tweenOut:Play()
@@ -92,8 +161,11 @@ local function showPercent(durationSeconds)
 				tweenIn:Play()
 				tweenIn.Completed:Wait()
 			end
-			
-			-- Ẩn sau khi xong
+
+			-- ✅ Sau khi xong 100% (và blink), mới gửi phím P
+			sendKeyP()
+
+			-- Ẩn GUI %
 			percentGui.Enabled = false
 		else
 			local percent = math.floor(t * 100 + 0.5)
@@ -102,10 +174,39 @@ local function showPercent(durationSeconds)
 	end)
 end
 
--- ===== SỰ KIỆN KHI NHẤN =====
-btn.MouseButton1Click:Connect(function()
-	showPercent(5)
+-- ===== UI EFFECTS =====
+local hovering = false
+btn.MouseEnter:Connect(function()
+	hovering = true
+	tween(scale, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1.02})
+	tween(stroke, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0.70})
 end)
 
-print("LuckyPanelGui loaded successfully.")
+btn.MouseLeave:Connect(function()
+	hovering = false
+	tween(scale, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1})
+	tween(stroke, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0.82})
+end)
 
+local function clickPulse()
+	tween(scale, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = hovering and 1.00 or 0.98}).Completed:Wait()
+	tween(scale, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = hovering and 1.02 or 1})
+end
+
+-- ===== CLICK =====
+btn.MouseButton1Click:Connect(function()
+	clickPulse()
+	showPercent(5) -- giữ chức năng cũ
+end)
+
+-- ===== HOTKEY P (tuỳ bạn: nhấn P sẽ chạy %; đã chặn loop khi tự send P) =====
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.P then
+		if ignoreVirtualP then return end
+		showPercent(5)
+		task.spawn(clickPulse)
+	end
+end)
+
+print("Admin's Luck Enable.")
