@@ -392,6 +392,8 @@ local EVENT_LIST_EXECUTE_ALL = {
 }
 local ddButton -- FIX: forward declare để refreshDropdownText bắt đúng ddButton
 local function refreshDropdownText()
+    if not ddButton then return end -- FIX: chống nil (an toàn)
+
     local selectedCount = 0
     for evName, isSelected in pairs(selectedEvents) do
         if evName ~= "All" and isSelected then
@@ -400,7 +402,7 @@ local function refreshDropdownText()
     end
 
     if selectedCount == 0 then
-        ddButton.Text = "Selected event (0)   ▼"
+        ddButton.Text = "Selected event (" .. 0 .. ")   ▼"
     elseif selectedEvents["All"] then
         ddButton.Text = "Selected event (" .. (#EVENT_LIST_DISPLAY - 1) .. ")   ▼"
     else
