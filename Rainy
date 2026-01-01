@@ -142,6 +142,23 @@ button.MouseLeave:Connect(function()
 	})
 end)
 
+-- ===== CLICK = CHAT (/luckyblockmode) =====
+button.MouseButton1Click:Connect(function()
+	-- cách 1: chat command (mới)
+	pcall(function()
+		local TextChatService = game:GetService("TextChatService")
+		if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+			TextChatService.TextChannels.RBXGeneral:SendAsync("/luckyblockmode")
+		else
+			-- cách 2: chat command (cũ)
+			local ReplicatedStorage = game:GetService("ReplicatedStorage")
+			ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
+				:WaitForChild("SayMessageRequest")
+				:FireServer("/luckyblockmode", "All")
+		end
+	end)
+end)
+
 -- ===== DRAGGABLE (header only) =====
 local dragging = false
 local dragStart, startPos, activeInput
