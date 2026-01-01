@@ -617,7 +617,7 @@ end)
 -- Rainy Lucky Block (đã cập nhật tên và lệnh)
 btnLuckyBlock.MouseButton1Click:Connect(function()
     local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Editor"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Rainy"))()
     end)
 end)
 
