@@ -1,0 +1,206 @@
+local player = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ZeroFruitDuper"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = player.PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundTransparency = 1
+mainFrame.Parent = gui
+
+local bg = Instance.new("Frame")
+bg.Name = "Background"
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.Position = UDim2.new(0, 0, 0, 0)
+bg.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+bg.BorderSizePixel = 0
+bg.Parent = mainFrame
+
+local bgCorner = Instance.new("UICorner")
+bgCorner.CornerRadius = UDim.new(0, 18)
+bgCorner.Parent = bg
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 150, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 100, 220))
+}
+gradient.Rotation = 135
+gradient.Parent = bg
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(80, 180, 255)
+stroke.Thickness = 2
+stroke.Transparency = 0.3
+stroke.Parent = bg
+
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 55)
+topBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+topBar.BackgroundTransparency = 0.92
+topBar.BorderSizePixel = 0
+topBar.Parent = bg
+
+local topBarCorner = Instance.new("UICorner")
+topBarCorner.CornerRadius = UDim.new(0, 18)
+topBarCorner.Parent = topBar
+
+local topBarBottom = Instance.new("Frame")
+topBarBottom.Size = UDim2.new(1, 0, 0, 18)
+topBarBottom.Position = UDim2.new(0, 0, 1, -18)
+topBarBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+topBarBottom.BackgroundTransparency = 0.92
+topBarBottom.BorderSizePixel = 0
+topBarBottom.Parent = topBar
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -20, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "NoobScript's Fruit Duper"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextStrokeTransparency = 0.5
+title.Parent = topBar
+
+local btn = Instance.new("TextButton")
+btn.Name = "DupeButton"
+btn.Size = UDim2.new(0, 220, 0, 50)
+btn.Position = UDim2.new(0.5, -110, 0, 75)
+btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+btn.BorderSizePixel = 0
+btn.Text = "Dupe Fruit"
+btn.TextColor3 = Color3.fromRGB(30, 100, 220)
+btn.TextSize = 18
+btn.Font = Enum.Font.GothamBold
+btn.AutoButtonColor = false
+btn.Parent = bg
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = btn
+
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = Color3.fromRGB(120, 200, 255)
+btnStroke.Thickness = 2
+btnStroke.Transparency = 0
+btnStroke.Parent = btn
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, -20, 0, 25)
+statusLabel.Position = UDim2.new(0, 10, 0, 135)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = ""
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.TextSize = 14
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.TextStrokeTransparency = 0.5
+statusLabel.Parent = bg
+
+local creditLabel = Instance.new("TextLabel")
+creditLabel.Name = "CreditLabel"
+creditLabel.Size = UDim2.new(1, -20, 0, 18)
+creditLabel.Position = UDim2.new(0, 10, 1, -26)
+creditLabel.BackgroundTransparency = 1
+creditLabel.Text = "Made By Noob | Tiktok: NoobScriptsOnTop"
+creditLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+creditLabel.TextSize = 12
+creditLabel.Font = Enum.Font.GothamMedium
+creditLabel.TextXAlignment = Enum.TextXAlignment.Center
+creditLabel.TextTransparency = 0.2
+creditLabel.Parent = bg
+
+btn.MouseEnter:Connect(function()
+    TweenService:Create(btn, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(120, 200, 255),
+        TextColor3 = Color3.fromRGB(255, 255, 255)
+    }):Play()
+end)
+
+btn.MouseLeave:Connect(function()
+    TweenService:Create(btn, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        TextColor3 = Color3.fromRGB(30, 100, 220)
+    }):Play()
+end)
+
+btn.MouseButton1Click:Connect(function()
+    local char = player.Character
+    if not char then 
+        statusLabel.Text = "Character not found"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+        return 
+    end
+    
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool then 
+        statusLabel.Text = "No Fruit Held"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+        return 
+    end
+    
+    tool.Archivable = true
+    local clone = tool:Clone()
+    clone.Parent = player.Backpack
+    
+    statusLabel.Text = "✓ Duped: " .. tool.Name
+    statusLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+    
+    TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 46)}):Play()
+    wait(0.1)
+    TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 220, 0, 50)}):Play()
+    
+    wait(2.5)
+    statusLabel.Text = ""
+end)
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+topBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
