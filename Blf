@@ -1,54 +1,67 @@
---// Trade Scam UI - UI ONLY
---// Clean, Compact, Professional Layout
+--// Trade Scam UI (FIXED & CLEAN)
+--// UI ONLY - Professional Layout
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- GUI
+-- ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Name = "TradeScamUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Main Frame
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(320, 220)
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.fromOffset(330, 240)
 main.Position = UDim2.fromScale(0.5, 0.5)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
-main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
 main.BorderSizePixel = 0
-main.Name = "Main"
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+-- Shadow (fake)
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 1
+stroke.Color = Color3.fromRGB(60, 60, 60)
 
 -- Title
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 40)
+local title = Instance.new("TextLabel")
+title.Parent = main
+title.Size = UDim2.new(1, 0, 0, 42)
 title.BackgroundTransparency = 1
 title.Text = "Trade Scam"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(255, 80, 80)
+title.TextColor3 = Color3.fromRGB(255, 90, 90)
 
--- Layout
-local layout = Instance.new("UIListLayout", main)
+-- Container
+local container = Instance.new("Frame")
+container.Parent = main
+container.Position = UDim2.fromOffset(0, 42)
+container.Size = UDim2.new(1, 0, 1, -42)
+container.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", container)
 layout.Padding = UDim.new(0, 10)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.VerticalAlignment = Enum.VerticalAlignment.Top
+layout.HorizontalAlignment = Center
+layout.VerticalAlignment = Top
 
-local pad = Instance.new("UIPadding", main)
-pad.PaddingTop = UDim.new(0, 10)
+local padding = Instance.new("UIPadding", container)
+padding.PaddingTop = UDim.new(0, 10)
 
 -- Toggle creator
 local function createToggle(text)
-	local toggleFrame = Instance.new("Frame")
-	toggleFrame.Size = UDim2.fromOffset(280, 40)
-	toggleFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	toggleFrame.BorderSizePixel = 0
-	Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 8)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.fromOffset(290, 42)
+	frame.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
+	frame.BorderSizePixel = 0
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
-	local label = Instance.new("TextLabel", toggleFrame)
-	label.Size = UDim2.new(0.7, 0, 1, 0)
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, -90, 1, 0)
+	label.Position = UDim2.fromOffset(14, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.Font = Enum.Font.Gotham
@@ -56,14 +69,14 @@ local function createToggle(text)
 	label.TextColor3 = Color3.fromRGB(220, 220, 220)
 	label.TextXAlignment = Left
 
-	local button = Instance.new("TextButton", toggleFrame)
+	local button = Instance.new("TextButton", frame)
 	button.Size = UDim2.fromOffset(60, 26)
-	button.Position = UDim2.new(1, -70, 0.5, -13)
+	button.Position = UDim2.new(1, -72, 0.5, -13)
 	button.Text = "OFF"
 	button.Font = Enum.Font.GothamBold
 	button.TextSize = 12
-	button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 	button.TextColor3 = Color3.new(1,1,1)
+	button.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	button.BorderSizePixel = 0
 	Instance.new("UICorner", button).CornerRadius = UDim.new(1, 0)
 
@@ -72,40 +85,44 @@ local function createToggle(text)
 		state = not state
 		button.Text = state and "ON" or "OFF"
 		button.BackgroundColor3 = state
-			and Color3.fromRGB(60, 180, 110)
-			or Color3.fromRGB(70, 70, 70)
+			and Color3.fromRGB(70, 190, 120)
+			or Color3.fromRGB(90, 90, 90)
 	end)
 
-	return toggleFrame
+	return frame
 end
 
--- Toggles
-createToggle("Freeze Trade").Parent = main
-createToggle("Auto Accept").Parent = main
+-- Toggles (ĐÚNG YÊU CẦU)
+createToggle("Freeze Trade").Parent = container
+createToggle("Auto Accept").Parent = container
 
 -- Hop Server Row
-local row = Instance.new("Frame", main)
-row.Size = UDim2.fromOffset(280, 40)
+local row = Instance.new("Frame")
+row.Parent = container
+row.Size = UDim2.fromOffset(290, 42)
 row.BackgroundTransparency = 1
 
-local hopBtn = Instance.new("TextButton", row)
-hopBtn.Size = UDim2.fromOffset(120, 36)
-hopBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-hopBtn.Text = "Hop Server"
-hopBtn.Font = Enum.Font.GothamBold
-hopBtn.TextSize = 13
-hopBtn.TextColor3 = Color3.new(1,1,1)
-hopBtn.BorderSizePixel = 0
-Instance.new("UICorner", hopBtn).CornerRadius = UDim.new(0, 8)
+local hop = Instance.new("TextButton", row)
+hop.Size = UDim2.fromOffset(120, 38)
+hop.Position = UDim2.fromOffset(0, 2)
+hop.Text = "Hop Server"
+hop.Font = Enum.Font.GothamBold
+hop.TextSize = 13
+hop.TextColor3 = Color3.new(1,1,1)
+hop.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+hop.BorderSizePixel = 0
+Instance.new("UICorner", hop).CornerRadius = UDim.new(0, 10)
 
 local box = Instance.new("TextBox", row)
-box.Size = UDim2.fromOffset(140, 36)
-box.Position = UDim2.fromOffset(140, 0)
+box.Size = UDim2.fromOffset(155, 38)
+box.Position = UDim2.fromOffset(135, 2)
 box.PlaceholderText = "Finding Fruit"
 box.Text = ""
+box.ClearTextOnFocus = false
 box.Font = Enum.Font.Gotham
 box.TextSize = 13
-box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 box.TextColor3 = Color3.new(1,1,1)
+box.PlaceholderColor3 = Color3.fromRGB(150,150,150)
+box.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
 box.BorderSizePixel = 0
-Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", box).CornerRadius = UDim.new(0, 10)
