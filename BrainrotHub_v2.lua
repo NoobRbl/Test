@@ -1,879 +1,378 @@
--- ╔══════════════════════════════════════════╗
--- ║       BRAINROT HUB v2.0 - Modern GUI     ║
--- ║   Duplicate Brainrot | Infinite Tokens   ║
--- ╚══════════════════════════════════════════╝
+-- 🧠 Brainrot Hub v2 | Dark Theme + Glow + Toast Pro
+-- Stable | Clean | No Error
 
-local Players        = game:GetService("Players")
+-- ===== SERVICES =====
+local Players          = game:GetService("Players")
+local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService   = game:GetService("TweenService")
-local RunService     = game:GetService("RunService")
-local LocalPlayer    = Players.LocalPlayer
+
+local LocalPlayer = Players.LocalPlayer
+
+-- ===== SCREEN GUI =====
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name         = "BrainrotHubV2"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent       = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ══════════════════════════════
---  THEME / CONSTANTS
+--        TOAST SYSTEM PRO
+--  ⚠ NO UIListLayout — UIListLayout overrides .Position every frame
+--    which breaks ALL slide tweens. We manage the stack manually.
 -- ══════════════════════════════
-local THEME = {
-    BG_DEEP    = Color3.fromRGB(10,  12,  20),
-    BG_PANEL   = Color3.fromRGB(18,  20,  32),
-    BG_CARD    = Color3.fromRGB(24,  27,  42),
-    BORDER     = Color3.fromRGB(50,  55,  90),
-    ACCENT1    = Color3.fromRGB(110, 70,  255),   -- purple
-    ACCENT2    = Color3.fromRGB(50,  200, 255),   -- cyan
-    ACCENT_ON  = Color3.fromRGB(50,  230, 130),   -- green  (active)
-    ACCENT_OFF = Color3.fromRGB(60,  65,  90),    -- muted  (inactive)
-    TEXT_PRI   = Color3.fromRGB(235, 235, 255),
-    TEXT_SEC   = Color3.fromRGB(140, 145, 180),
-    TEXT_DIM   = Color3.fromRGB(80,  85,  120),
-    WHITE      = Color3.fromRGB(255, 255, 255),
-    RED        = Color3.fromRGB(255, 70,  90),
+local TOAST_W   = 280   -- card width (px)
+local TOAST_H   = 48    -- card height (px)
+local TOAST_GAP = 8     -- gap between stacked toasts
+local TOAST_R   = 14    -- margin from right edge
+local TOAST_B   = 14    -- margin from bottom edge
+local MAX_TOAST = 5
+
+local toastStack = {}   -- list of live toast Frames (index 1 = bottom-most)
+
+local ToastConfig = {
+    success = { bar = Color3.fromRGB(90,  200, 120), icon = "✔" },
+    error   = { bar = Color3.fromRGB(255,  90,  90), icon = "✖" },
+    info    = { bar = Color3.fromRGB(80,  160, 255), icon = "ℹ" },
+    warn    = { bar = Color3.fromRGB(255, 180,  70), icon = "⚠" },
 }
 
-local EASE_OUT  = TweenInfo.new(0.25, Enum.EasingStyle.Quint,  Enum.EasingDirection.Out)
-local EASE_IN   = TweenInfo.new(0.18, Enum.EasingStyle.Quint,  Enum.EasingDirection.In)
-local SPRING    = TweenInfo.new(0.45, Enum.EasingStyle.Back,   Enum.EasingDirection.Out)
-local FAST      = TweenInfo.new(0.12, Enum.EasingStyle.Quad,   Enum.EasingDirection.Out)
-local FLICKER   = TweenInfo.new(0.8,  Enum.EasingStyle.Sine,   Enum.EasingDirection.InOut, -1, true)
-
--- ══════════════════════════════
---  HELPER FUNCTIONS
--- ══════════════════════════════
-local function corner(parent, radius)
-    local c = Instance.new("UICorner")
-    c.CornerRadius  = UDim.new(0, radius or 8)
-    c.Parent        = parent
-    return c
+-- Y offset (from bottom of screen) for a given stack slot
+local function slotY(slot)
+    return -(TOAST_B + (slot - 1) * (TOAST_H + TOAST_GAP) + TOAST_H)
 end
 
-local function stroke(parent, color, thickness, transparency)
-    local s = Instance.new("UIStroke")
-    s.Color         = color or THEME.BORDER
-    s.Thickness     = thickness or 1
-    s.Transparency  = transparency or 0
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    s.Parent        = parent
-    return s
+-- Smoothly slide all live toasts to their correct slot
+local function reshiftStack()
+    for i, card in ipairs(toastStack) do
+        if card and card.Parent then
+            TweenService:Create(card,
+                TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+                { Position = UDim2.new(1, -(TOAST_W + TOAST_R), 1, slotY(i)) }
+            ):Play()
+        end
+    end
 end
 
-local function gradient(parent, c1, c2, rotation)
-    local g = Instance.new("UIGradient")
-    g.Color    = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, c1),
-        ColorSequenceKeypoint.new(1, c2)
-    }
-    g.Rotation = rotation or 90
-    g.Parent   = parent
-    return g
-end
+local function toast(text, ttype, duration)
+    ttype    = ttype    or "info"
+    duration = duration or 3
+    local cfg = ToastConfig[ttype] or ToastConfig.info
 
-local function new(class, props, parent)
-    local obj = Instance.new(class)
-    for k, v in pairs(props) do obj[k] = v end
-    if parent then obj.Parent = parent end
-    return obj
-end
+    -- Evict oldest if stack is full
+    if #toastStack >= MAX_TOAST then
+        local oldest = toastStack[1]
+        table.remove(toastStack, 1)
+        if oldest and oldest.Parent then oldest:Destroy() end
+        reshiftStack()
+    end
 
-local function tween(obj, info, props)
-    local t = TweenService:Create(obj, info, props)
-    t:Play()
-    return t
-end
+    -- Slot this card will land in
+    local slot   = #toastStack + 1
+    local finalY = slotY(slot)
 
--- ══════════════════════════════
---  ROOT GUI
--- ══════════════════════════════
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name            = "BrainrotHub"
-screenGui.ResetOnSpawn    = false
-screenGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-screenGui.DisplayOrder    = 999
-screenGui.Parent          = LocalPlayer:WaitForChild("PlayerGui")
+    -- ── BUILD CARD ────────────────────────────────────────────────
+    -- Parent: ScreenGui directly (NOT a frame with UIListLayout!)
+    -- Start position: fully off-screen to the RIGHT
+    local card = Instance.new("Frame")
+    card.Size                   = UDim2.new(0, TOAST_W, 0, TOAST_H)
+    card.Position               = UDim2.new(1, TOAST_W + 40, 1, finalY)  -- off-screen right
+    card.BackgroundColor3       = Color3.fromRGB(32, 36, 45)
+    card.BackgroundTransparency = 0
+    card.ClipsDescendants       = false   -- never clip text children
+    card.ZIndex                 = 200
+    card.Parent                 = ScreenGui                              -- ← key fix
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
 
--- ══════════════════════════════
---  NOTIFICATION SYSTEM
--- ══════════════════════════════
-local notifHolder = new("Frame", {
-    Size                = UDim2.new(0, 260, 1, 0),
-    Position            = UDim2.new(1, -270, 0, 0),
-    BackgroundTransparency = 1,
-    ZIndex              = 100,
-}, screenGui)
-
-local notifLayout = new("UIListLayout", {
-    SortOrder           = Enum.SortOrder.LayoutOrder,
-    VerticalAlignment   = Enum.VerticalAlignment.Bottom,
-    Padding             = UDim.new(0, 6),
-}, notifHolder)
-
-local notifPadding = new("UIPadding", {
-    PaddingBottom = UDim.new(0, 16),
-    PaddingRight  = UDim.new(0, 0),
-}, notifHolder)
-
-local function notify(message, nType)
-    nType = nType or "info"   -- "info" | "success" | "error"
-    local accentCol = nType == "success" and THEME.ACCENT_ON
-                   or nType == "error"   and THEME.RED
-                   or THEME.ACCENT2
-
-    local card = new("Frame", {
-        Size                = UDim2.new(1, 0, 0, 52),
-        BackgroundColor3    = THEME.BG_CARD,
-        BackgroundTransparency = 0.15,
-        ClipsDescendants    = true,
-        ZIndex              = 100,
-        Position            = UDim2.new(1.2, 0, 0, 0),  -- start off-screen
-    }, notifHolder)
-    corner(card, 10)
-    stroke(card, accentCol, 1, 0.4)
-
-    -- Left accent bar
-    local bar = new("Frame", {
-        Size                = UDim2.new(0, 3, 1, 0),
-        BackgroundColor3    = accentCol,
-        BorderSizePixel     = 0,
-        ZIndex              = 101,
-    }, card)
-    corner(bar, 2)
+    -- Border glow
+    local glow = Instance.new("UIStroke")
+    glow.Thickness    = 1.5
+    glow.Color        = cfg.bar
+    glow.Transparency = 0.35
+    glow.Parent       = card
 
     -- Icon
-    local icons = {success = "✓", error = "✕", info = "●"}
-    new("TextLabel", {
-        Size                = UDim2.new(0, 30, 1, 0),
-        Position            = UDim2.new(0, 12, 0, 0),
-        BackgroundTransparency = 1,
-        Text                = icons[nType],
-        TextColor3          = accentCol,
-        Font                = Enum.Font.GothamBold,
-        TextSize            = 18,
-        ZIndex              = 101,
-    }, card)
+    local icon = Instance.new("TextLabel")
+    icon.Size                   = UDim2.new(0, 36, 1, -8)
+    icon.Position               = UDim2.new(0, 8, 0, 4)
+    icon.BackgroundTransparency = 1
+    icon.Text                   = cfg.icon
+    icon.Font                   = Enum.Font.GothamBold
+    icon.TextSize               = 22
+    icon.TextColor3             = cfg.bar
+    icon.ZIndex                 = 201
+    icon.Parent                 = card
 
-    -- Text
-    new("TextLabel", {
-        Size                = UDim2.new(1, -55, 1, 0),
-        Position            = UDim2.new(0, 45, 0, 0),
-        BackgroundTransparency = 1,
-        Text                = message,
-        TextColor3          = THEME.TEXT_PRI,
-        Font                = Enum.Font.Gotham,
-        TextSize            = 13,
-        TextXAlignment      = Enum.TextXAlignment.Left,
-        TextWrapped         = true,
-        ZIndex              = 101,
-    }, card)
+    -- Message
+    local label = Instance.new("TextLabel")
+    label.Size                  = UDim2.new(1, -54, 1, -8)
+    label.Position              = UDim2.new(0, 48, 0, 4)
+    label.BackgroundTransparency = 1
+    label.Text                  = text
+    label.Font                  = Enum.Font.GothamBold
+    label.TextSize              = 14
+    label.TextWrapped           = true
+    label.TextXAlignment        = Enum.TextXAlignment.Left
+    label.TextColor3            = Color3.fromRGB(230, 230, 230)
+    label.ZIndex                = 201
+    label.Parent                = card
 
-    -- Progress bar
-    local progress = new("Frame", {
-        Size                = UDim2.new(1, 0, 0, 2),
-        Position            = UDim2.new(0, 0, 1, -2),
-        BackgroundColor3    = accentCol,
-        BorderSizePixel     = 0,
-        ZIndex              = 102,
-    }, card)
+    -- Progress bar background
+    local barBg = Instance.new("Frame")
+    barBg.Size                  = UDim2.new(1, -16, 0, 3)
+    barBg.Position              = UDim2.new(0, 8, 1, -5)
+    barBg.BackgroundColor3      = Color3.fromRGB(0, 0, 0)
+    barBg.BackgroundTransparency = 0.6
+    barBg.BorderSizePixel       = 0
+    barBg.ZIndex                = 201
+    barBg.Parent                = card
+    Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 2)
 
-    -- Animate in
-    tween(card, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        {Position = UDim2.new(0, 0, 0, 0)})
+    -- Progress bar fill
+    local bar = Instance.new("Frame")
+    bar.Size             = UDim2.new(1, 0, 1, 0)
+    bar.BackgroundColor3 = cfg.bar
+    bar.BorderSizePixel  = 0
+    bar.ZIndex           = 202
+    bar.Parent           = barBg
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 2)
 
-    -- Progress bar countdown
-    tween(progress, TweenInfo.new(2.8, Enum.EasingStyle.Linear),
-        {Size = UDim2.new(0, 0, 0, 2)})
+    -- ── REGISTER ─────────────────────────────────────────────────
+    table.insert(toastStack, card)
 
-    -- Animate out
-    task.delay(3, function()
-        tween(card, EASE_IN, {Position = UDim2.new(1.2, 0, 0, 0)})
-        task.delay(0.3, function() card:Destroy() end)
-    end)
-end
+    -- ── ANIMATE IN ───────────────────────────────────────────────
+    -- Slide from off-screen right → final position  (Back = slight overshoot)
+    local finalPos = UDim2.new(1, -(TOAST_W + TOAST_R), 1, finalY)
+    TweenService:Create(card,
+        TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Position = finalPos }
+    ):Play()
 
--- ══════════════════════════════
---  MAIN FRAME (Glassmorphism)
--- ══════════════════════════════
-local mainFrame = new("Frame", {
-    Name                    = "MainFrame",
-    Size                    = UDim2.new(0, 300, 0, 0),   -- starts at 0 height for open anim
-    Position                = UDim2.new(0.5, -150, 0.5, -100),
-    BackgroundColor3        = THEME.BG_DEEP,
-    BackgroundTransparency  = 0.06,
-    ClipsDescendants        = true,
-    Active                  = true,
-}, screenGui)
-corner(mainFrame, 14)
-
--- Outer glow stroke
-local outerStroke = stroke(mainFrame, THEME.ACCENT1, 1, 0.5)
--- Animate outer stroke glow
-tween(outerStroke, FLICKER, {Transparency = 0.75})
-
--- Subtle inner grid texture simulation via Frame
-new("Frame", {
-    Size                    = UDim2.new(1, 0, 1, 0),
-    BackgroundColor3        = THEME.ACCENT1,
-    BackgroundTransparency  = 0.97,
-    BorderSizePixel         = 0,
-}, mainFrame)
-
--- ══════════════════════════════
---  HEADER BAR
--- ══════════════════════════════
-local header = new("Frame", {
-    Name                    = "Header",
-    Size                    = UDim2.new(1, 0, 0, 44),
-    BackgroundColor3        = THEME.BG_PANEL,
-    BorderSizePixel         = 0,
-}, mainFrame)
-corner(header, 14)
-
--- Header bottom square corners fix
-new("Frame", {
-    Size                    = UDim2.new(1, 0, 0.5, 0),
-    Position                = UDim2.new(0, 0, 0.5, 0),
-    BackgroundColor3        = THEME.BG_PANEL,
-    BorderSizePixel         = 0,
-}, header)
-
--- Header accent line
-local headerLine = new("Frame", {
-    Size                    = UDim2.new(0, 0, 0, 1),  -- animates width
-    Position                = UDim2.new(0, 0, 1, -1),
-    BackgroundColor3        = THEME.ACCENT1,
-    BorderSizePixel         = 0,
-    ZIndex                  = 5,
-}, header)
-gradient(headerLine, THEME.ACCENT1, THEME.ACCENT2, 0)
-
--- Dot indicators (decorative)
-local function makeDot(xOffset, color)
-    local d = new("Frame", {
-        Size                = UDim2.new(0, 8, 0, 8),
-        Position            = UDim2.new(0, xOffset, 0.5, -4),
-        BackgroundColor3    = color,
-        BorderSizePixel     = 0,
-        ZIndex              = 6,
-    }, header)
-    corner(d, 4)
-    return d
-end
-makeDot(12, Color3.fromRGB(255, 90, 90))   -- red
-makeDot(26, Color3.fromRGB(255, 190, 50))  -- yellow
-makeDot(40, Color3.fromRGB(50, 210, 110))  -- green
-
--- Title
-new("TextLabel", {
-    Size                    = UDim2.new(1, -120, 1, 0),
-    Position                = UDim2.new(0, 58, 0, 0),
-    BackgroundTransparency  = 1,
-    Text                    = "BRAINROT HUB",
-    TextColor3              = THEME.TEXT_PRI,
-    Font                    = Enum.Font.GothamBold,
-    TextSize                = 14,
-    TextXAlignment          = Enum.TextXAlignment.Left,
-    LetterSpacing           = 2,
-    ZIndex                  = 6,
-}, header)
-
--- Version badge
-local vBadge = new("Frame", {
-    Size                    = UDim2.new(0, 34, 0, 18),
-    Position                = UDim2.new(0, 185, 0.5, -9),
-    BackgroundColor3        = THEME.ACCENT1,
-    BackgroundTransparency  = 0.5,
-    ZIndex                  = 6,
-}, header)
-corner(vBadge, 4)
-new("TextLabel", {
-    Size                    = UDim2.new(1, 0, 1, 0),
-    BackgroundTransparency  = 1,
-    Text                    = "v2.0",
-    TextColor3              = THEME.TEXT_PRI,
-    Font                    = Enum.Font.GothamBold,
-    TextSize                = 10,
-    ZIndex                  = 7,
-}, vBadge)
-
--- Minimize button
-local minBtn = new("TextButton", {
-    Size                    = UDim2.new(0, 28, 0, 28),
-    Position                = UDim2.new(1, -65, 0.5, -14),
-    BackgroundColor3        = THEME.BG_CARD,
-    Text                    = "—",
-    TextColor3              = THEME.TEXT_SEC,
-    Font                    = Enum.Font.GothamBold,
-    TextSize                = 14,
-    ZIndex                  = 6,
-}, header)
-corner(minBtn, 6)
-stroke(minBtn, THEME.BORDER, 1, 0)
-
--- Close button
-local closeBtn = new("TextButton", {
-    Size                    = UDim2.new(0, 28, 0, 28),
-    Position                = UDim2.new(1, -32, 0.5, -14),
-    BackgroundColor3        = Color3.fromRGB(80, 25, 35),
-    Text                    = "✕",
-    TextColor3              = THEME.RED,
-    Font                    = Enum.Font.GothamBold,
-    TextSize                = 13,
-    ZIndex                  = 6,
-}, header)
-corner(closeBtn, 6)
-stroke(closeBtn, THEME.RED, 1, 0.4)
-
--- ══════════════════════════════
---  BODY CONTAINER
--- ══════════════════════════════
-local body = new("Frame", {
-    Name                    = "Body",
-    Size                    = UDim2.new(1, -24, 1, -60),
-    Position                = UDim2.new(0, 12, 0, 50),
-    BackgroundTransparency  = 1,
-    ClipsDescendants        = false,
-}, mainFrame)
-
-local bodyLayout = new("UIListLayout", {
-    SortOrder               = Enum.SortOrder.LayoutOrder,
-    Padding                 = UDim.new(0, 8),
-}, body)
-
--- ══════════════════════════════
---  TOGGLE BUTTON FACTORY
--- ══════════════════════════════
-local toggleStates = {}
-
-local function createToggleCard(order, icon, label, sublabel, accentColor, callback)
-    local card = new("Frame", {
-        Name                    = label,
-        Size                    = UDim2.new(1, 0, 0, 68),
-        BackgroundColor3        = THEME.BG_CARD,
-        BorderSizePixel         = 0,
-        LayoutOrder             = order,
-        ZIndex                  = 5,
-    }, body)
-    corner(card, 10)
-    local cardStroke = stroke(card, THEME.BORDER, 1, 0)
-
-    -- Glow overlay (shows when active)
-    local glow = new("Frame", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 1,   -- starts invisible
-        BorderSizePixel         = 0,
-        ZIndex                  = 4,
-    }, card)
-    corner(glow, 10)
-
-    -- Left accent stripe
-    local stripe = new("Frame", {
-        Size                    = UDim2.new(0, 3, 0.7, 0),
-        Position                = UDim2.new(0, 0, 0.15, 0),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 0.5,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(stripe, 2)
-
-    -- Icon box
-    local iconBox = new("Frame", {
-        Size                    = UDim2.new(0, 38, 0, 38),
-        Position                = UDim2.new(0, 14, 0.5, -19),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 0.75,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(iconBox, 8)
-
-    new("TextLabel", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        Text                    = icon,
-        TextSize                = 20,
-        Font                    = Enum.Font.GothamBold,
-        ZIndex                  = 7,
-    }, iconBox)
-
-    -- Labels
-    new("TextLabel", {
-        Size                    = UDim2.new(1, -130, 0, 20),
-        Position                = UDim2.new(0, 62, 0.5, -20),
-        BackgroundTransparency  = 1,
-        Text                    = label:upper(),
-        TextColor3              = THEME.TEXT_PRI,
-        Font                    = Enum.Font.GothamBold,
-        TextSize                = 13,
-        TextXAlignment          = Enum.TextXAlignment.Left,
-        ZIndex                  = 6,
-    }, card)
-
-    new("TextLabel", {
-        Size                    = UDim2.new(1, -130, 0, 15),
-        Position                = UDim2.new(0, 62, 0.5, 3),
-        BackgroundTransparency  = 1,
-        Text                    = sublabel,
-        TextColor3              = THEME.TEXT_DIM,
-        Font                    = Enum.Font.Gotham,
-        TextSize                = 11,
-        TextXAlignment          = Enum.TextXAlignment.Left,
-        ZIndex                  = 6,
-    }, card)
-
-    -- Toggle pill
-    local pillBG = new("Frame", {
-        Size                    = UDim2.new(0, 44, 0, 24),
-        Position                = UDim2.new(1, -56, 0.5, -12),
-        BackgroundColor3        = THEME.ACCENT_OFF,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(pillBG, 12)
-
-    local pillKnob = new("Frame", {
-        Size                    = UDim2.new(0, 18, 0, 18),
-        Position                = UDim2.new(0, 3, 0.5, -9),  -- OFF pos
-        BackgroundColor3        = THEME.TEXT_PRI,
-        BorderSizePixel         = 0,
-        ZIndex                  = 7,
-    }, pillBG)
-    corner(pillKnob, 9)
-
-    -- Ripple effect layer
-    local rippleFrame = new("Frame", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        ClipsDescendants        = true,
-        ZIndex                  = 8,
-    }, card)
-    corner(rippleFrame, 10)
-
-    -- Invisible click button
-    local btn = new("TextButton", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        Text                    = "",
-        ZIndex                  = 9,
-    }, card)
-
-    local active = false
-    toggleStates[label] = false
-
-    local function setActive(state)
-        active = state
-        toggleStates[label] = state
-
-        if state then
-            -- Toggle ON
-            tween(pillBG,   EASE_OUT,  {BackgroundColor3 = accentColor})
-            tween(pillKnob, EASE_OUT,  {Position = UDim2.new(0, 23, 0.5, -9)})
-            tween(cardStroke, EASE_OUT, {Color = accentColor, Transparency = 0.3})
-            tween(glow,     EASE_OUT,  {BackgroundTransparency = 0.94})
-            tween(stripe,   EASE_OUT,  {BackgroundTransparency = 0})
-        else
-            -- Toggle OFF
-            tween(pillBG,   EASE_OUT,  {BackgroundColor3 = THEME.ACCENT_OFF})
-            tween(pillKnob, EASE_OUT,  {Position = UDim2.new(0, 3, 0.5, -9)})
-            tween(cardStroke, EASE_OUT, {Color = THEME.BORDER, Transparency = 0})
-            tween(glow,     EASE_OUT,  {BackgroundTransparency = 1})
-            tween(stripe,   EASE_OUT,  {BackgroundTransparency = 0.5})
-        end
-
-        if callback then callback(state) end
-    end
-
-    -- Ripple on click
-    local function spawnRipple(inputPos)
-        local relX = inputPos.X - card.AbsolutePosition.X
-        local relY = inputPos.Y - card.AbsolutePosition.Y
-        local ripple = new("Frame", {
-            Size                = UDim2.new(0, 10, 0, 10),
-            Position            = UDim2.new(0, relX - 5, 0, relY - 5),
-            BackgroundColor3    = accentColor,
-            BackgroundTransparency = 0.5,
-            BorderSizePixel     = 0,
-            ZIndex              = 8,
-        }, rippleFrame)
-        corner(ripple, 40)
-        tween(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0, relX - 100, 0, relY - 100), BackgroundTransparency = 1})
-        task.delay(0.55, function() ripple:Destroy() end)
-    end
-
-    btn.MouseButton1Click:Connect(function()
-        local mousePos = UserInputService:GetMouseLocation()
-        spawnRipple(mousePos)
-
-        -- Scale press animation
-        tween(card, FAST, {Size = UDim2.new(1, -4, 0, 65)})
-        task.delay(0.12, function()
-            tween(card, SPRING, {Size = UDim2.new(1, 0, 0, 68)})
-        end)
-
-        setActive(not active)
-    end)
-
-    -- Hover
-    btn.MouseEnter:Connect(function()
-        if not active then
-            tween(card, EASE_OUT, {BackgroundColor3 = Color3.fromRGB(30, 34, 52)})
+    -- Progress drain starts just after the card lands
+    task.delay(0.4, function()
+        if card and card.Parent then
+            TweenService:Create(bar,
+                TweenInfo.new(duration - 0.1, Enum.EasingStyle.Linear),
+                { Size = UDim2.new(0, 0, 1, 0) }
+            ):Play()
         end
     end)
-    btn.MouseLeave:Connect(function()
-        tween(card, EASE_OUT, {BackgroundColor3 = THEME.BG_CARD})
-    end)
 
-    return card, setActive
+    -- ── ANIMATE OUT ──────────────────────────────────────────────
+    task.delay(duration + 0.35, function()
+        -- Remove from stack
+        for i, c in ipairs(toastStack) do
+            if c == card then
+                table.remove(toastStack, i)
+                break
+            end
+        end
+        reshiftStack()  -- slide remaining cards down
+
+        if card and card.Parent then
+            -- Slide out to right + fade border simultaneously
+            TweenService:Create(glow,
+                TweenInfo.new(0.12, Enum.EasingStyle.Linear),
+                { Transparency = 1 }
+            ):Play()
+            TweenService:Create(card,
+                TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In),
+                {
+                    Position               = UDim2.new(1, TOAST_W + 40, 1, card.Position.Y.Offset),
+                    BackgroundTransparency = 0.85,
+                }
+            ):Play()
+            task.delay(0.35, function()
+                if card and card.Parent then card:Destroy() end
+            end)
+        end
+    end)
 end
 
 -- ══════════════════════════════
---  ACTION BUTTON FACTORY
+--            HUB UI
 -- ══════════════════════════════
-local function createActionCard(order, icon, label, sublabel, accentColor, callback)
-    local card = new("Frame", {
-        Name                    = label,
-        Size                    = UDim2.new(1, 0, 0, 68),
-        BackgroundColor3        = THEME.BG_CARD,
-        BorderSizePixel         = 0,
-        LayoutOrder             = order,
-        ZIndex                  = 5,
-    }, body)
-    corner(card, 10)
-    stroke(card, THEME.BORDER, 1, 0)
+local Main = Instance.new("Frame")
+Main.Size             = UDim2.new(0, 360, 0, 230)
+Main.Position         = UDim2.new(0.5, -180, 0.5, -115)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Main.BorderSizePixel  = 0
+Main.Active           = true
+Main.Parent           = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
-    -- Left accent stripe
-    local stripe = new("Frame", {
-        Size                    = UDim2.new(0, 3, 0.7, 0),
-        Position                = UDim2.new(0, 0, 0.15, 0),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 0.5,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(stripe, 2)
+-- Glow HUB
+local hubStroke = Instance.new("UIStroke")
+hubStroke.Thickness    = 2
+hubStroke.Color        = Color3.fromRGB(120, 160, 255)
+hubStroke.Transparency = 0.35
+hubStroke.Parent       = Main
 
-    -- Icon box
-    local iconBox = new("Frame", {
-        Size                    = UDim2.new(0, 38, 0, 38),
-        Position                = UDim2.new(0, 14, 0.5, -19),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 0.75,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(iconBox, 8)
+-- HEADER
+local Header = Instance.new("Frame")
+Header.Name           = "Header"
+Header.Size           = UDim2.new(1, 0, 0, 48)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+Header.BorderSizePixel = 0
+Header.Parent         = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
-    new("TextLabel", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        Text                    = icon,
-        TextSize                = 20,
-        Font                    = Enum.Font.GothamBold,
-        ZIndex                  = 7,
-    }, iconBox)
+local Title = Instance.new("TextLabel")
+Title.Size                  = UDim2.new(1, -60, 1, 0)
+Title.Position              = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text                  = "🧠 Brainrot Hub"
+Title.Font                  = Enum.Font.GothamBold
+Title.TextSize              = 20
+Title.TextColor3            = Color3.new(1, 1, 1)
+Title.TextXAlignment        = Enum.TextXAlignment.Left
+Title.Parent                = Header
 
-    new("TextLabel", {
-        Size                    = UDim2.new(1, -130, 0, 20),
-        Position                = UDim2.new(0, 62, 0.5, -20),
-        BackgroundTransparency  = 1,
-        Text                    = label:upper(),
-        TextColor3              = THEME.TEXT_PRI,
-        Font                    = Enum.Font.GothamBold,
-        TextSize                = 13,
-        TextXAlignment          = Enum.TextXAlignment.Left,
-        ZIndex                  = 6,
-    }, card)
+local Close = Instance.new("TextButton")
+Close.Size            = UDim2.new(0, 34, 0, 34)
+Close.Position        = UDim2.new(1, -42, 0, 7)
+Close.Text            = "✕"
+Close.Font            = Enum.Font.GothamBold
+Close.TextSize        = 18
+Close.TextColor3      = Color3.new(1, 1, 1)
+Close.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+Close.Parent          = Header
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 8)
 
-    new("TextLabel", {
-        Size                    = UDim2.new(1, -130, 0, 15),
-        Position                = UDim2.new(0, 62, 0.5, 3),
-        BackgroundTransparency  = 1,
-        Text                    = sublabel,
-        TextColor3              = THEME.TEXT_DIM,
-        Font                    = Enum.Font.Gotham,
-        TextSize                = 11,
-        TextXAlignment          = Enum.TextXAlignment.Left,
-        ZIndex                  = 6,
-    }, card)
-
-    -- Execute badge
-    local execBadge = new("Frame", {
-        Size                    = UDim2.new(0, 52, 0, 24),
-        Position                = UDim2.new(1, -62, 0.5, -12),
-        BackgroundColor3        = accentColor,
-        BackgroundTransparency  = 0.7,
-        BorderSizePixel         = 0,
-        ZIndex                  = 6,
-    }, card)
-    corner(execBadge, 6)
-    new("TextLabel", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        Text                    = "RUN ▶",
-        TextColor3              = accentColor,
-        Font                    = Enum.Font.GothamBold,
-        TextSize                = 10,
-        ZIndex                  = 7,
-    }, execBadge)
-
-    -- Ripple
-    local rippleFrame = new("Frame", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        ClipsDescendants        = true,
-        ZIndex                  = 8,
-    }, card)
-    corner(rippleFrame, 10)
-
-    local btn = new("TextButton", {
-        Size                    = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency  = 1,
-        Text                    = "",
-        ZIndex                  = 9,
-    }, card)
-
-    btn.MouseButton1Click:Connect(function()
-        local mousePos = UserInputService:GetMouseLocation()
-        local relX = mousePos.X - card.AbsolutePosition.X
-        local relY = mousePos.Y - card.AbsolutePosition.Y
-        local ripple = new("Frame", {
-            Size                = UDim2.new(0, 10, 0, 10),
-            Position            = UDim2.new(0, relX - 5, 0, relY - 5),
-            BackgroundColor3    = accentColor,
-            BackgroundTransparency = 0.4,
-            BorderSizePixel     = 0,
-            ZIndex              = 8,
-        }, rippleFrame)
-        corner(ripple, 40)
-        tween(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0, relX-100, 0, relY-100), BackgroundTransparency = 1})
-        task.delay(0.55, function() ripple:Destroy() end)
-
-        -- Flash badge
-        tween(execBadge, FAST,     {BackgroundTransparency = 0.1})
-        task.delay(0.15, function()
-            tween(execBadge, EASE_OUT, {BackgroundTransparency = 0.7})
-        end)
-
-        -- Press scale
-        tween(card, FAST,  {Size = UDim2.new(1, -4, 0, 65)})
-        task.delay(0.12, function()
-            tween(card, SPRING, {Size = UDim2.new(1, 0, 0, 68)})
-        end)
-
-        if callback then callback() end
-    end)
-
-    btn.MouseEnter:Connect(function()
-        tween(card, EASE_OUT, {BackgroundColor3 = Color3.fromRGB(30, 34, 52)})
-    end)
-    btn.MouseLeave:Connect(function()
-        tween(card, EASE_OUT, {BackgroundColor3 = THEME.BG_CARD})
-    end)
-
-    return card
+-- BUTTON MAKER
+local function createButton(text, y)
+    local b = Instance.new("TextButton")
+    b.Size            = UDim2.new(1, -30, 0, 54)
+    b.Position        = UDim2.new(0, 15, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(70, 110, 220)
+    b.Text            = text
+    b.Font            = Enum.Font.GothamBold
+    b.TextSize        = 15
+    b.TextColor3      = Color3.new(1, 1, 1)
+    b.Parent          = Main
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+    return b
 end
 
--- ══════════════════════════════
---  FEATURE LOGIC
--- ══════════════════════════════
+local DupBtn   = createButton("Duplicate Brainrot",   70)
+local TokenBtn = createButton("Infinite Tokens : OFF", 135)
 
--- Duplicate Brainrot logic
-local function doDuplicate()
-    local character = LocalPlayer.Character
-    if not character then
-        notify("No character found!", "error")
-        return
-    end
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool then
-        local clone = tool:Clone()
-        clone.Parent = LocalPlayer.Backpack
-        notify("Duplicated: " .. tool.Name, "success")
-    else
-        notify("No tool equipped!", "error")
-    end
-end
-
--- Inf Token logic
+-- STATES
 local infTokenActive = false
+local tokenCons      = {}
 
-local function activateInfToken(state)
-    infTokenActive = state
-    if not state then
-        notify("Infinite Tokens disabled", "info")
+-- DUPLICATE
+local function duplicateBrainrot()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool then
+        toast("No tool equipped", "error")
         return
     end
-    notify("Infinite Tokens activated!", "success")
+    tool:Clone().Parent = LocalPlayer.Backpack
+    toast("Duplicated: " .. tool.Name, "success")
+end
 
-    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-    local hud = playerGui:FindFirstChild("HUD")
+-- INFINITE TOKEN
+local function lockInfinity(lbl)
+    lbl.Text       = "∞"
+    lbl.TextScaled = true
+    local c = lbl:GetPropertyChangedSignal("Text"):Connect(function()
+        if infTokenActive and lbl.Text ~= "∞" then
+            lbl.Text = "∞"
+        end
+    end)
+    table.insert(tokenCons, c)
+end
+
+local function enableInfToken()
+    local gui = LocalPlayer.PlayerGui
+    local hud = gui:FindFirstChild("HUD")
     if not hud then
-        notify("HUD not found — retrying…", "info")
-        task.delay(3, function() if infTokenActive then activateInfToken(true) end end)
+        toast("HUD not found", "error")
         return
     end
-
-    local function hookLabel(element)
-        element.Text = "∞"
-        element:GetPropertyChangedSignal("Text"):Connect(function()
-            if infTokenActive and element.Text ~= "∞" then
-                element.Text = "∞"
-            end
-        end)
+    local bl = hud:FindFirstChild("BottomLeft")
+    local tt = bl and bl:FindFirstChild("TradeTokens")
+    if not tt then
+        toast("TradeTokens not found", "error")
+        return
     end
-
-    local function searchFor(parent)
-        for _, child in ipairs(parent:GetDescendants()) do
-            if (child:IsA("TextLabel") or child:IsA("TextButton")) and
-               (string.find(child.Name:lower(), "token") or string.find(child.Name:lower(), "trade")) then
-                hookLabel(child)
-            end
+    for _, v in ipairs(tt:GetDescendants()) do
+        if v:IsA("TextLabel") or v:IsA("TextButton") then
+            lockInfinity(v)
         end
     end
-
-    searchFor(hud)
+    toast("Infinite Tokens Enabled", "info")
 end
 
--- ══════════════════════════════
---  BUILD CARDS
--- ══════════════════════════════
-createActionCard(1, "⧉", "Duplicate Brainrot", "Clone equipped tool to backpack",
-    Color3.fromRGB(110, 70, 255), doDuplicate)
+local function disableInfToken()
+    for _, c in ipairs(tokenCons) do
+        pcall(function() c:Disconnect() end)
+    end
+    table.clear(tokenCons)
+    toast("Infinite Tokens Disabled", "warn")
+end
 
-createToggleCard(2, "◆", "Infinite Tokens", "Lock token display to ∞",
-    Color3.fromRGB(50, 200, 255), activateInfToken)
+-- EVENTS
+DupBtn.MouseButton1Click:Connect(duplicateBrainrot)
 
--- ══════════════════════════════
---  FOOTER
--- ══════════════════════════════
-local footer = new("Frame", {
-    Size                    = UDim2.new(1, -24, 0, 22),
-    Position                = UDim2.new(0, 12, 1, -28),
-    BackgroundTransparency  = 1,
-    ZIndex                  = 5,
-}, mainFrame)
-
-new("TextLabel", {
-    Size                    = UDim2.new(0.5, 0, 1, 0),
-    BackgroundTransparency  = 1,
-    Text                    = "BRAINROT HUB",
-    TextColor3              = THEME.TEXT_DIM,
-    Font                    = Enum.Font.GothamBold,
-    TextSize                = 10,
-    TextXAlignment          = Enum.TextXAlignment.Left,
-    ZIndex                  = 6,
-}, footer)
-
-new("TextLabel", {
-    Size                    = UDim2.new(0.5, 0, 1, 0),
-    Position                = UDim2.new(0.5, 0, 0, 0),
-    BackgroundTransparency  = 1,
-    Text                    = "2 features loaded",
-    TextColor3              = THEME.ACCENT_ON,
-    Font                    = Enum.Font.Gotham,
-    TextSize                = 10,
-    TextXAlignment          = Enum.TextXAlignment.Right,
-    ZIndex                  = 6,
-}, footer)
-
--- ══════════════════════════════
---  OPEN ANIMATION
--- ══════════════════════════════
--- Target height = 44 header + 8 padding + 68 + 8 + 68 cards + 12 padding bottom + 28 footer pad = ~244
-local FULL_HEIGHT = 244
-mainFrame.Size = UDim2.new(0, 300, 0, 0)
-mainFrame.BackgroundTransparency = 1
-
-task.delay(0.1, function()
-    tween(mainFrame, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        {Size = UDim2.new(0, 300, 0, FULL_HEIGHT), BackgroundTransparency = 0.06})
-    tween(headerLine, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-        {Size = UDim2.new(1, 0, 0, 1)})
-    notify("Brainrot Hub loaded!", "success")
-end)
-
--- ══════════════════════════════
---  MINIMIZE / CLOSE
--- ══════════════════════════════
-local isMinimized = false
-
-minBtn.MouseButton1Click:Connect(function()
-    tween(minBtn, FAST, {BackgroundColor3 = Color3.fromRGB(50, 55, 80)})
-    task.delay(0.12, function()
-        tween(minBtn, EASE_OUT, {BackgroundColor3 = THEME.BG_CARD})
-    end)
-
-    isMinimized = not isMinimized
-    if isMinimized then
-        tween(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-            {Size = UDim2.new(0, 300, 0, 44)})
-        minBtn.Text = "□"
+TokenBtn.MouseButton1Click:Connect(function()
+    infTokenActive = not infTokenActive
+    TokenBtn.Text  = "Infinite Tokens : " .. (infTokenActive and "ON" or "OFF")
+    if infTokenActive then
+        enableInfToken()
     else
-        tween(mainFrame, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-            {Size = UDim2.new(0, 300, 0, FULL_HEIGHT)})
-        minBtn.Text = "—"
+        disableInfToken()
     end
 end)
 
-closeBtn.MouseButton1Click:Connect(function()
-    tween(closeBtn, FAST, {BackgroundColor3 = THEME.RED})
-    tween(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In),
-        {Size = UDim2.new(0, 300, 0, 0), BackgroundTransparency = 1})
-    task.delay(0.35, function() screenGui:Destroy() end)
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
--- Hover effects on header buttons
-for _, btn in ipairs({minBtn, closeBtn}) do
-    local origColor = btn.BackgroundColor3
-    btn.MouseEnter:Connect(function()
-        tween(btn, FAST, {BackgroundTransparency = 0})
-    end)
-    btn.MouseLeave:Connect(function()
-        tween(btn, EASE_OUT, {BackgroundTransparency = 0})
-    end)
-end
-
 -- ══════════════════════════════
---  DRAGGING (smooth)
+--      DRAG  (fixed & smooth)
 -- ══════════════════════════════
-local dragging, dragStart, startPos, dragInput
+--  Fix: track drag entirely inside InputBegan + UserInputService.
+--  No intermediate dragInput variable needed — avoids the "miss first move" bug.
+--  Position is set directly (no tween) for zero-latency feel.
 
-local function updateDrag(input)
-    local delta = input.Position - dragStart
-    tween(mainFrame, TweenInfo.new(0.05, Enum.EasingStyle.Linear),
-        {Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )})
-end
+local isDragging   = false
+local dragOffset   = Vector2.new(0, 0)   -- mouse offset relative to frame top-left
 
-header.InputBegan:Connect(function(input)
+-- When mouse is pressed on the header → record offset from frame corner
+Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos  = mainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+        isDragging = true
+        -- Offset = mouse pos minus the frame's absolute top-left corner
+        dragOffset = Vector2.new(
+            input.Position.X - Main.AbsolutePosition.X,
+            input.Position.Y - Main.AbsolutePosition.Y
+        )
     end
 end)
 
-header.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement
+-- Release drag on mouse up (global, so we never get stuck)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+        isDragging = false
     end
 end)
 
+-- Move frame every mouse move
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        updateDrag(input)
-    end
+    if not isDragging then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+    -- New top-left = mouse position minus the recorded offset
+    local newX = input.Position.X - dragOffset.X
+    local newY = input.Position.Y - dragOffset.Y
+    Main.Position = UDim2.fromOffset(newX, newY)
 end)
 
 -- ══════════════════════════════
-print("✓ Brainrot Hub v2.0 loaded")
+toast("Brainrot Hub Loaded", "info")
+print("🧠 Brainrot Hub loaded successfully")
