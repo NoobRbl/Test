@@ -1,0 +1,512 @@
+-- ╔══════════════════════════════════════════╗
+-- ║        SERVER HOP HUB - LocalScript      ║
+-- ║     Dark Theme | Modern UI | Draggable   ║
+-- ╚══════════════════════════════════════════╝
+
+-- ┌─────────────────────────────────────────┐
+-- │              CONFIGURATION              │
+-- └─────────────────────────────────────────┘
+local CONFIG = {
+    MAX_JOB_IDS     = 500,          -- Giới hạn lưu JobId (dễ chỉnh)
+    HUB_TITLE       = "SERVER HOP", -- Tiêu đề hub
+    ACCENT_COLOR    = Color3.fromRGB(0, 170, 255),   -- Màu accent (xanh neon)
+    BG_DARK         = Color3.fromRGB(15, 15, 20),    -- Nền chính
+    BG_PANEL        = Color3.fromRGB(22, 22, 30),    -- Nền panel
+    BG_BUTTON       = Color3.fromRGB(28, 28, 38),    -- Nền nút
+    TEXT_PRIMARY    = Color3.fromRGB(230, 230, 240), -- Chữ chính
+    TEXT_SECONDARY  = Color3.fromRGB(120, 120, 145), -- Chữ phụ
+    TEXT_SUCCESS    = Color3.fromRGB(80, 220, 140),  -- Màu thành công
+    TEXT_ERROR      = Color3.fromRGB(255, 90, 90),   -- Màu lỗi
+    TEXT_WARN       = Color3.fromRGB(255, 200, 60),  -- Màu cảnh báo
+}
+
+-- ┌─────────────────────────────────────────┐
+-- │           SERVICES & VARIABLES          │
+-- └─────────────────────────────────────────┘
+local Players           = game:GetService("Players")
+local TweenService      = game:GetService("TweenService")
+local HttpService       = game:GetService("HttpService")
+local TeleportService   = game:GetService("TeleportService")
+local RunService        = game:GetService("RunService")
+
+local LocalPlayer   = Players.LocalPlayer
+local PlayerGui     = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Bảng lưu các JobId đã hop
+local visitedJobIds = {}
+local isHopping     = false -- Tránh spam nút
+
+-- ┌─────────────────────────────────────────┐
+-- │           UTILITY FUNCTIONS             │
+-- └─────────────────────────────────────────┘
+
+-- Tạo UICorner nhanh
+local function makeCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = parent
+    return corner
+end
+
+-- Tạo UIStroke nhanh
+local function makeStroke(parent, color, thickness, transparency)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color         = color or CONFIG.ACCENT_COLOR
+    stroke.Thickness     = thickness or 1
+    stroke.Transparency  = transparency or 0.7
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent        = parent
+    return stroke
+end
+
+-- Tween nhanh
+local function tween(obj, props, duration, style, direction)
+    local info = TweenInfo.new(
+        duration   or 0.25,
+        style      or Enum.EasingStyle.Quart,
+        direction  or Enum.EasingDirection.Out
+    )
+    TweenService:Create(obj, info, props):Play()
+end
+
+-- ┌─────────────────────────────────────────┐
+-- │           SERVER HOP LOGIC              │
+-- └─────────────────────────────────────────┘
+
+-- Lấy danh sách server công khai qua API
+local function getPublicServers(placeId, cursor)
+    local url = string.format(
+        "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100",
+        placeId
+    )
+    if cursor and cursor ~= "" then
+        url = url .. "&cursor=" .. cursor
+    end
+
+    local success, response = pcall(function()
+        return HttpService:GetAsync(url)
+    end)
+
+    if not success then
+        return nil, nil
+    end
+
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
+
+    if not ok or not data then
+        return nil, nil
+    end
+
+    return data.data, data.nextPageCursor
+end
+
+-- Chọn server ngẫu nhiên chưa từng hop
+local function pickRandomServer(servers)
+    -- Lọc các server còn chỗ và chưa hop
+    local valid = {}
+    for _, server in ipairs(servers) do
+        local notCurrent  = server.id ~= game.JobId
+        local notVisited  = not visitedJobIds[server.id]
+        local hasSpace    = (server.playing or 0) < (server.maxPlayers or 1)
+        if notCurrent and notVisited and hasSpace then
+            table.insert(valid, server)
+        end
+    end
+
+    if #valid == 0 then
+        return nil
+    end
+
+    return valid[math.random(1, #valid)]
+end
+
+-- Thêm JobId vào bảng đã thăm, reset nếu quá giới hạn
+local function recordJobId(jobId)
+    local count = 0
+    for _ in pairs(visitedJobIds) do count = count + 1 end
+
+    if count >= CONFIG.MAX_JOB_IDS then
+        -- Xoá toàn bộ và reset
+        visitedJobIds = {}
+    end
+
+    visitedJobIds[jobId] = true
+end
+
+-- Hàm hop server chính
+local function hopServer(setStatus)
+    if isHopping then return end
+    isHopping = true
+
+    local placeId = game.PlaceId
+    setStatus("🔍 Đang tìm server...", CONFIG.TEXT_WARN)
+
+    -- Thu thập nhiều trang server nếu cần
+    local allServers = {}
+    local cursor     = nil
+    local pagesFetched = 0
+
+    repeat
+        local servers, nextCursor = getPublicServers(placeId, cursor)
+
+        if not servers then
+            setStatus("❌ Không lấy được danh sách server!", CONFIG.TEXT_ERROR)
+            isHopping = false
+            return
+        end
+
+        for _, s in ipairs(servers) do
+            table.insert(allServers, s)
+        end
+
+        cursor      = nextCursor
+        pagesFetched = pagesFetched + 1
+
+        -- Giới hạn 3 trang để tránh chờ lâu
+    until (not cursor or cursor == "" or pagesFetched >= 3)
+
+    if #allServers == 0 then
+        setStatus("❌ Không có server nào!", CONFIG.TEXT_ERROR)
+        isHopping = false
+        return
+    end
+
+    local chosen = pickRandomServer(allServers)
+
+    if not chosen then
+        setStatus("⚠️ Hết server mới! Thử lại sau.", CONFIG.TEXT_WARN)
+        isHopping = false
+        return
+    end
+
+    -- Ghi lại server hiện tại trước khi rời
+    recordJobId(game.JobId)
+
+    setStatus("🚀 Đang hop...", CONFIG.ACCENT_COLOR)
+
+    -- Teleport sang server được chọn
+    local ok, err = pcall(function()
+        TeleportService:TeleportToPlaceInstance(placeId, chosen.id, LocalPlayer)
+    end)
+
+    if not ok then
+        setStatus("❌ Lỗi teleport: " .. tostring(err), CONFIG.TEXT_ERROR)
+        isHopping = false
+    end
+    -- Nếu teleport thành công client sẽ rời game, không cần reset isHopping
+end
+
+-- ┌─────────────────────────────────────────┐
+-- │               BUILD UI                  │
+-- └─────────────────────────────────────────┘
+
+-- ScreenGui gốc
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name              = "ServerHopHub"
+ScreenGui.ResetOnSpawn      = false
+ScreenGui.ZIndexBehavior    = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder      = 999
+ScreenGui.Parent            = PlayerGui
+
+-- ── Main Frame ──────────────────────────────
+local MainFrame = Instance.new("Frame")
+MainFrame.Name              = "MainFrame"
+MainFrame.Size              = UDim2.new(0, 220, 0, 130)
+MainFrame.Position          = UDim2.new(0, 20, 0.5, -65)
+MainFrame.BackgroundColor3  = CONFIG.BG_DARK
+MainFrame.BorderSizePixel   = 0
+MainFrame.ClipsDescendants  = true
+MainFrame.Parent            = ScreenGui
+makeCorner(MainFrame, 12)
+makeStroke(MainFrame, CONFIG.ACCENT_COLOR, 1, 0.5)
+
+-- Đổ bóng giả bằng frame phía sau
+local Shadow = Instance.new("Frame")
+Shadow.Name             = "Shadow"
+Shadow.Size             = UDim2.new(1, 14, 1, 14)
+Shadow.Position         = UDim2.new(0, -7, 0, 7)
+Shadow.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+Shadow.BackgroundTransparency = 0.88
+Shadow.BorderSizePixel  = 0
+Shadow.ZIndex           = MainFrame.ZIndex - 1
+Shadow.Parent           = MainFrame
+makeCorner(Shadow, 16)
+
+-- ── Title Bar ────────────────────────────────
+local TitleBar = Instance.new("Frame")
+TitleBar.Name               = "TitleBar"
+TitleBar.Size               = UDim2.new(1, 0, 0, 38)
+TitleBar.Position           = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3   = CONFIG.BG_PANEL
+TitleBar.BorderSizePixel    = 0
+TitleBar.ZIndex             = 2
+TitleBar.Parent             = MainFrame
+
+-- Accent line bên trái title
+local AccentLine = Instance.new("Frame")
+AccentLine.Size             = UDim2.new(0, 3, 0, 18)
+AccentLine.Position         = UDim2.new(0, 10, 0.5, -9)
+AccentLine.BackgroundColor3 = CONFIG.ACCENT_COLOR
+AccentLine.BorderSizePixel  = 0
+AccentLine.ZIndex           = 3
+AccentLine.Parent           = TitleBar
+makeCorner(AccentLine, 2)
+
+-- Title Label
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name             = "Title"
+TitleLabel.Size             = UDim2.new(1, -70, 1, 0)
+TitleLabel.Position         = UDim2.new(0, 20, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text             = CONFIG.HUB_TITLE
+TitleLabel.TextColor3       = CONFIG.TEXT_PRIMARY
+TitleLabel.Font             = Enum.Font.GothamBold
+TitleLabel.TextSize         = 13
+TitleLabel.TextXAlignment   = Enum.TextXAlignment.Left
+TitleLabel.ZIndex           = 3
+TitleLabel.Parent           = TitleBar
+
+-- Nút đóng [X]
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name            = "CloseBtn"
+CloseButton.Size            = UDim2.new(0, 22, 0, 22)
+CloseButton.Position        = UDim2.new(1, -30, 0.5, -11)
+CloseButton.BackgroundColor3= Color3.fromRGB(50, 25, 30)
+CloseButton.Text            = "✕"
+CloseButton.TextColor3      = Color3.fromRGB(255, 80, 80)
+CloseButton.Font            = Enum.Font.GothamBold
+CloseButton.TextSize        = 11
+CloseButton.BorderSizePixel = 0
+CloseButton.ZIndex          = 4
+CloseButton.Parent          = TitleBar
+makeCorner(CloseButton, 6)
+
+-- ── Body ─────────────────────────────────────
+local Body = Instance.new("Frame")
+Body.Name               = "Body"
+Body.Size               = UDim2.new(1, 0, 1, -38)
+Body.Position           = UDim2.new(0, 0, 0, 38)
+Body.BackgroundTransparency = 1
+Body.BorderSizePixel    = 0
+Body.ZIndex             = 2
+Body.Parent             = MainFrame
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name            = "Status"
+StatusLabel.Size            = UDim2.new(1, -20, 0, 20)
+StatusLabel.Position        = UDim2.new(0, 10, 0, 8)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text            = "Sẵn sàng hop server"
+StatusLabel.TextColor3      = CONFIG.TEXT_SECONDARY
+StatusLabel.Font            = Enum.Font.Gotham
+StatusLabel.TextSize        = 11
+StatusLabel.TextTruncate    = Enum.TextTruncate.AtEnd
+StatusLabel.ZIndex          = 3
+StatusLabel.Parent          = Body
+
+-- ── Hop Button ───────────────────────────────
+local HopButton = Instance.new("TextButton")
+HopButton.Name              = "HopButton"
+HopButton.Size              = UDim2.new(1, -20, 0, 40)
+HopButton.Position          = UDim2.new(0, 10, 0, 34)
+HopButton.BackgroundColor3  = CONFIG.ACCENT_COLOR
+HopButton.Text              = ""
+HopButton.BorderSizePixel   = 0
+HopButton.AutoButtonColor   = false
+HopButton.ZIndex            = 3
+HopButton.Parent            = Body
+makeCorner(HopButton, 8)
+
+-- Icon + Text bên trong nút
+local HopInner = Instance.new("Frame")
+HopInner.Size               = UDim2.new(1, 0, 1, 0)
+HopInner.BackgroundTransparency = 1
+HopInner.ZIndex             = 4
+HopInner.Parent             = HopButton
+
+local HopIcon = Instance.new("TextLabel")
+HopIcon.Size                = UDim2.new(0, 24, 1, 0)
+HopIcon.Position            = UDim2.new(0.5, -40, 0, 0)
+HopIcon.BackgroundTransparency = 1
+HopIcon.Text                = "🔁"
+HopIcon.TextSize            = 18
+HopIcon.Font                = Enum.Font.Gotham
+HopIcon.ZIndex              = 5
+HopIcon.Parent              = HopInner
+
+local HopText = Instance.new("TextLabel")
+HopText.Size                = UDim2.new(0, 90, 1, 0)
+HopText.Position            = UDim2.new(0.5, -22, 0, 0)
+HopText.BackgroundTransparency = 1
+HopText.Text                = "Hop Server"
+HopText.TextColor3          = Color3.fromRGB(255, 255, 255)
+HopText.Font                = Enum.Font.GothamBold
+HopText.TextSize            = 13
+HopText.ZIndex              = 5
+HopText.Parent              = HopInner
+
+-- ┌─────────────────────────────────────────┐
+-- │         TOGGLE BUTTON (khi đóng)        │
+-- └─────────────────────────────────────────┘
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name           = "ToggleBtn"
+ToggleButton.Size           = UDim2.new(0, 42, 0, 42)
+ToggleButton.Position       = UDim2.new(0, 20, 0.5, -65) -- cùng vị trí
+ToggleButton.BackgroundColor3 = CONFIG.BG_DARK
+ToggleButton.Text           = "🔁"
+ToggleButton.TextSize       = 20
+ToggleButton.Font           = Enum.Font.Gotham
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Visible        = false
+ToggleButton.ZIndex         = 10
+ToggleButton.Parent         = ScreenGui
+makeCorner(ToggleButton, 10)
+makeStroke(ToggleButton, CONFIG.ACCENT_COLOR, 1.5, 0.3)
+
+-- ┌─────────────────────────────────────────┐
+-- │           DRAGGABLE LOGIC               │
+-- └─────────────────────────────────────────┘
+local function makeDraggable(frame, handle)
+    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging  = true
+            dragStart = input.Position
+            startPos  = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+makeDraggable(MainFrame, TitleBar)
+
+-- ┌─────────────────────────────────────────┐
+-- │           STATUS UPDATE HELPER          │
+-- └─────────────────────────────────────────┘
+local function setStatus(text, color)
+    StatusLabel.Text        = text
+    StatusLabel.TextColor3  = color or CONFIG.TEXT_SECONDARY
+end
+
+-- ┌─────────────────────────────────────────┐
+-- │          BUTTON INTERACTIONS            │
+-- └─────────────────────────────────────────┘
+
+-- Hover effect cho HopButton
+HopButton.MouseEnter:Connect(function()
+    if not isHopping then
+        tween(HopButton, {BackgroundColor3 = Color3.fromRGB(30, 190, 255)}, 0.15)
+    end
+end)
+
+HopButton.MouseLeave:Connect(function()
+    if not isHopping then
+        tween(HopButton, {BackgroundColor3 = CONFIG.ACCENT_COLOR}, 0.15)
+    end
+end)
+
+-- Click HopButton
+HopButton.MouseButton1Click:Connect(function()
+    if isHopping then return end
+
+    -- Hiệu ứng nhấn
+    tween(HopButton, {BackgroundColor3 = Color3.fromRGB(0, 130, 210)}, 0.1)
+    task.wait(0.1)
+    tween(HopButton, {BackgroundColor3 = CONFIG.ACCENT_COLOR}, 0.15)
+
+    -- Đổi text nút sang loading
+    HopText.Text = "Đang tìm..."
+    HopButton.Active = false
+
+    hopServer(setStatus)
+
+    -- Reset nút nếu không teleport thành công
+    task.delay(5, function()
+        if not isHopping then return end
+        isHopping   = false
+        HopText.Text = "Hop Server"
+        HopButton.Active = true
+        tween(HopButton, {BackgroundColor3 = CONFIG.ACCENT_COLOR}, 0.2)
+    end)
+end)
+
+-- ── Đóng / Mở Hub ───────────────────────────
+local hubOpen = true
+
+local function closeHub()
+    hubOpen = false
+    tween(MainFrame, {Size = UDim2.new(0, 220, 0, 0), BackgroundTransparency = 1}, 0.3)
+    task.delay(0.3, function()
+        MainFrame.Visible   = false
+        ToggleButton.Visible = true
+        tween(ToggleButton, {BackgroundTransparency = 0}, 0.2)
+    end)
+end
+
+local function openHub()
+    hubOpen           = true
+    MainFrame.Visible = true
+    MainFrame.Size    = UDim2.new(0, 220, 0, 0)
+    MainFrame.BackgroundTransparency = 1
+    tween(MainFrame, {Size = UDim2.new(0, 220, 0, 130), BackgroundTransparency = 0}, 0.3)
+    ToggleButton.Visible = false
+end
+
+CloseButton.MouseButton1Click:Connect(closeHub)
+ToggleButton.MouseButton1Click:Connect(openHub)
+
+-- Hover CloseButton
+CloseButton.MouseEnter:Connect(function()
+    tween(CloseButton, {BackgroundColor3 = Color3.fromRGB(80, 30, 35)}, 0.12)
+end)
+CloseButton.MouseLeave:Connect(function()
+    tween(CloseButton, {BackgroundColor3 = Color3.fromRGB(50, 25, 30)}, 0.12)
+end)
+
+-- ┌─────────────────────────────────────────┐
+-- │         OPEN ANIMATION KHI START        │
+-- └─────────────────────────────────────────┘
+MainFrame.Size              = UDim2.new(0, 220, 0, 0)
+MainFrame.BackgroundTransparency = 1
+task.delay(0.3, function()
+    tween(MainFrame, {Size = UDim2.new(0, 220, 0, 130), BackgroundTransparency = 0}, 0.4)
+end)
+
+-- ┌─────────────────────────────────────────┐
+-- │              STARTUP LOG                │
+-- └─────────────────────────────────────────┘
+print("[ServerHopHub] Đã khởi động thành công!")
+print("[ServerHopHub] Giới hạn JobId:", CONFIG.MAX_JOB_IDS)
+setStatus("Sẵn sàng hop server ✓", CONFIG.TEXT_SUCCESS)
+task.delay(2.5, function()
+    setStatus("Nhấn nút để hop ngẫu nhiên", CONFIG.TEXT_SECONDARY)
+end)
