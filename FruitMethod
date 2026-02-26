@@ -553,7 +553,7 @@ local function showFilter(onDone)
     grid.FillDirection = Enum.FillDirection.Horizontal
     grid.SortOrder = Enum.SortOrder.LayoutOrder
 
-    local filters = {"Dough", "T-Rex", "Yeti", "Control, "Tiger", "Kitsune", "Dragon(West)", "Dragon(East)"}
+    local filters = {"Dough", "T-Rex", "Yeti", "Control", "Tiger", "Kitsune", "Dragon(West)", "Dragon(East)"}
 
     for _, text in ipairs(filters) do
         local btn = Instance.new("TextButton")
