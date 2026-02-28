@@ -1,13 +1,173 @@
--- Auto Moreira Method v7 (UI Improved - No Miranda Tab - No Toggle)
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+-- Auto Moreira Method v8 (ESP + Bot Label Support)
+-- =========================================================
+-- ESP SIGNAL SYSTEM:
+--   Script khác muốn kích hoạt ESP cho 1 player thì làm như sau:
+--
+--   local signal = game:GetService("ReplicatedStorage"):WaitForChild("BotESPSignal")
+--   signal:Fire(targetPlayer)          -- Bật ESP viền + label "bot"
+--   signal:Fire(targetPlayer, true)    -- Tắt ESP của player đó
+-- =========================================================
 
-local player = Players.LocalPlayer
+local Players          = game:GetService("Players")
+local TweenService     = game:GetService("TweenService")
+local RunService       = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player    = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ========== PHẦN CỦA AUTO MOREIRA METHOD ==========
+-- =========================================================
+-- ESP SYSTEM (Highlight + BillboardGui "bot" label)
+-- =========================================================
+
+-- Tạo hoặc lấy BindableEvent để nhận tín hiệu từ script khác
+local botESPSignal = ReplicatedStorage:FindFirstChild("BotESPSignal")
+if not botESPSignal then
+    botESPSignal = Instance.new("BindableEvent")
+    botESPSignal.Name = "BotESPSignal"
+    botESPSignal.Parent = ReplicatedStorage
+end
+
+-- Bảng lưu các connection/instance ESP đang hoạt động theo UserId
+local activeESPs = {}
+
+local function removeESP(targetPlayer)
+    local uid = targetPlayer.UserId
+    if activeESPs[uid] then
+        local data = activeESPs[uid]
+        if data.highlight and data.highlight.Parent then
+            data.highlight:Destroy()
+        end
+        if data.billboard and data.billboard.Parent then
+            data.billboard:Destroy()
+        end
+        if data.charConn then
+            data.charConn:Disconnect()
+        end
+        activeESPs[uid] = nil
+    end
+end
+
+local function applyESPToCharacter(targetPlayer, character)
+    if not character then return end
+    local uid = targetPlayer.UserId
+
+    -- Xóa ESP cũ nếu có (respawn)
+    if activeESPs[uid] then
+        if activeESPs[uid].highlight and activeESPs[uid].highlight.Parent then
+            activeESPs[uid].highlight:Destroy()
+        end
+        if activeESPs[uid].billboard and activeESPs[uid].billboard.Parent then
+            activeESPs[uid].billboard:Destroy()
+        end
+    end
+
+    -- ---- Highlight (ESP viền) ----
+    local highlight = Instance.new("Highlight")
+    highlight.Name          = "BotESP_Highlight"
+    highlight.FillColor     = Color3.fromRGB(255, 50, 50)
+    highlight.OutlineColor  = Color3.fromRGB(255, 80, 80)
+    highlight.FillTransparency    = 0.6
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode   = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Adornee     = character
+    highlight.Parent      = character
+
+    -- Hiệu ứng nhấp nháy viền
+    task.spawn(function()
+        while highlight and highlight.Parent do
+            TweenService:Create(highlight, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {OutlineTransparency = 0.65}):Play()
+            task.wait(0.7)
+            TweenService:Create(highlight, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                {OutlineTransparency = 0}):Play()
+            task.wait(0.7)
+        end
+    end)
+
+    -- ---- BillboardGui "bot" label trên đầu ----
+    local head = character:FindFirstChild("Head") or character:FindFirstChildWhichIsA("BasePart")
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name          = "BotESP_Label"
+    billboard.Size          = UDim2.new(0, 80, 0, 28)
+    billboard.StudsOffset   = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop   = true
+    billboard.ResetOnSpawn  = false
+    billboard.Adornee       = head
+    billboard.Parent        = character
+
+    local bg = Instance.new("Frame")
+    bg.Size                  = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3      = Color3.fromRGB(180, 30, 30)
+    bg.BackgroundTransparency = 0.3
+    bg.BorderSizePixel       = 0
+    bg.Parent                = billboard
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = bg
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color        = Color3.fromRGB(255, 100, 100)
+    stroke.Thickness    = 1.5
+    stroke.Transparency = 0.1
+    stroke.Parent       = bg
+
+    local label = Instance.new("TextLabel")
+    label.Size               = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Font               = Enum.Font.GothamBold
+    label.TextSize           = 13
+    label.TextColor3         = Color3.fromRGB(255, 255, 255)
+    label.Text               = "🤖 bot"
+    label.TextStrokeColor3   = Color3.fromRGB(0, 0, 0)
+    label.TextStrokeTransparency = 0.4
+    label.Parent             = bg
+
+    -- Lưu data ESP
+    if not activeESPs[uid] then activeESPs[uid] = {} end
+    activeESPs[uid].highlight = highlight
+    activeESPs[uid].billboard = billboard
+end
+
+local function enableESP(targetPlayer)
+    local uid = targetPlayer.UserId
+
+    -- Áp dụng ngay nếu đã có character
+    local char = targetPlayer.Character
+    if char then
+        applyESPToCharacter(targetPlayer, char)
+    end
+
+    -- Tự động áp dụng lại khi respawn
+    local conn = targetPlayer.CharacterAdded:Connect(function(newChar)
+        task.wait(0.1)
+        applyESPToCharacter(targetPlayer, newChar)
+    end)
+
+    if not activeESPs[uid] then activeESPs[uid] = {} end
+    activeESPs[uid].charConn = conn
+end
+
+-- Lắng nghe tín hiệu từ script khác
+botESPSignal.Event:Connect(function(targetPlayer, shouldRemove)
+    if not targetPlayer or not targetPlayer:IsA("Player") then return end
+    if shouldRemove then
+        removeESP(targetPlayer)
+    else
+        enableESP(targetPlayer)
+    end
+end)
+
+-- Tự dọn ESP khi player rời game
+Players.PlayerRemoving:Connect(function(plr)
+    removeESP(plr)
+end)
+
+-- =========================================================
+-- PHẦN GỐC: Auto Moreira Method UI
+-- =========================================================
 
 local function getUserTitle()
     local name = "User"
@@ -126,7 +286,6 @@ addCorner(topBar, 16)
 addStroke(topBar, 1, Color3.fromRGB(130, 145, 220), 0.15)
 addGradient(topBar, Color3.fromRGB(60, 88, 240), Color3.fromRGB(26, 36, 110), 0)
 
--- Fix bottom corner overlap
 local topBarFix = Instance.new("Frame")
 topBarFix.Size = UDim2.new(1, 0, 0, 16)
 topBarFix.Position = UDim2.new(0, 0, 1, -16)
@@ -193,23 +352,17 @@ addCorner(closeBtn, 8)
 addStroke(closeBtn, 1, Color3.fromRGB(255, 120, 140), 0.4)
 
 closeBtn.MouseEnter:Connect(function()
-    tween(closeBtn, 0.15, {
-        BackgroundTransparency = 0.2,
-        TextColor3 = Color3.fromRGB(255, 255, 255)
-    }):Play()
+    tween(closeBtn, 0.15, {BackgroundTransparency = 0.2, TextColor3 = Color3.fromRGB(255,255,255)}):Play()
 end)
 closeBtn.MouseLeave:Connect(function()
-    tween(closeBtn, 0.15, {
-        BackgroundTransparency = 0.75,
-        TextColor3 = Color3.fromRGB(200, 210, 255)
-    }):Play()
+    tween(closeBtn, 0.15, {BackgroundTransparency = 0.75, TextColor3 = Color3.fromRGB(200,210,255)}):Play()
 end)
 closeBtn.MouseButton1Click:Connect(function()
     setUIVisible(false)
 end)
 
 ---------------------------------------------------------------------
--- Content area (below top bar)
+-- Content area
 ---------------------------------------------------------------------
 local contentArea = Instance.new("Frame")
 contentArea.Parent = frame
@@ -319,7 +472,6 @@ logCard.BorderSizePixel = 0
 addCorner(logCard, 10)
 addStroke(logCard, 1, Color3.fromRGB(80, 95, 165), 0.35)
 
--- Log header
 local logHeader = Instance.new("Frame")
 logHeader.Parent = logCard
 logHeader.Size = UDim2.new(1, -16, 0, 26)
@@ -360,7 +512,6 @@ clearBtn.MouseLeave:Connect(function()
     tween(clearBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(185, 60, 75)}):Play()
 end)
 
--- Divider
 local logDivider = Instance.new("Frame")
 logDivider.Parent = logCard
 logDivider.Size = UDim2.new(1, -16, 0, 1)
@@ -445,7 +596,6 @@ progressFill.BackgroundTransparency = 1
 addCorner(progressFill, 999)
 addGradient(progressFill, Color3.fromRGB(150, 172, 255), Color3.fromRGB(75, 100, 240), 0)
 
--- Version tag
 local versionTag = Instance.new("TextLabel")
 versionTag.Parent = bottomArea
 versionTag.BackgroundTransparency = 1
@@ -454,7 +604,7 @@ versionTag.Position = UDim2.new(0, 0, 0, 14)
 versionTag.Font = Enum.Font.Gotham
 versionTag.TextSize = 9
 versionTag.TextColor3 = Color3.fromRGB(100, 110, 160)
-versionTag.Text = "v1.0 • Fruit Stealing Method"
+versionTag.Text = "v8.0 • Fruit Stealing Method + ESP"
 
 local startBtn = Instance.new("TextButton")
 startBtn.Parent = bottomArea
@@ -500,8 +650,6 @@ local function showFilter(onDone)
     panel.Parent = overlay
     addCorner(panel, 14)
     addStroke(panel, 1.2, Color3.fromRGB(100, 125, 215), 0.25)
-
-    -- Panel gradient
     addGradient(panel, Color3.fromRGB(18, 22, 36), Color3.fromRGB(10, 12, 20), 90)
 
     local panelTitle = Instance.new("TextLabel")
@@ -611,6 +759,7 @@ local function chooseIcon(text)
     elseif string.find(text, "Scanned") then return "🧠"
     elseif string.find(text, "sending webhook") then return "🌐"
     elseif string.find(text, "Waiting for players") then return "⏳"
+    elseif string.find(text, "ESP") then return "🎯"
     end
     return "•"
 end
@@ -674,6 +823,8 @@ local function pushLogLine(text, iconOverride)
         textLabel.TextColor3 = Color3.fromRGB(175, 255, 195)
     elseif string.find(text, "joined the server") then
         textLabel.TextColor3 = Color3.fromRGB(255, 222, 115)
+    elseif string.find(text, "ESP") then
+        textLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
     end
 
     clearBtn.Visible = true
@@ -699,27 +850,22 @@ end
 
 local function animateDots(label, duration)
     if not label then return end
-
     local original = label.Text or ""
     local prefix = ""
     local content = original
-
     local bracketPos = string.find(original, "] ")
     if bracketPos then
         prefix = string.sub(original, 1, bracketPos + 1)
         content = string.sub(original, bracketPos + 2)
     end
-
     local base = content:gsub("%.+$", "")
     local startTime = tick()
     local dotCount = 0
-
     while tick() - startTime < duration and label.Parent do
         dotCount = (dotCount % 3) + 1
         label.Text = prefix .. base .. string.rep(".", dotCount)
         task.wait(0.35)
     end
-
     if label.Parent then
         label.Text = prefix .. base .. "..."
     end
@@ -783,6 +929,18 @@ Players.PlayerRemoving:Connect(function(plr)
         status.Text = "Status: ✅ Ready"
         brainrotActive = false
     end
+    -- Dọn ESP khi player rời
+    removeESP(plr)
+end)
+
+-- Log khi ESP được kích hoạt
+local _originalSignalHandler = botESPSignal.Event:Connect(function(targetPlayer, shouldRemove)
+    if not targetPlayer or not targetPlayer:IsA("Player") then return end
+    if shouldRemove then
+        pushLogLine("ESP removed: " .. targetPlayer.Name)
+    else
+        pushLogLine("ESP activated on bot: " .. targetPlayer.Name)
+    end
 end)
 
 ---------------------------------------------------------------------
@@ -799,8 +957,6 @@ local function startProcess(selectedFilter)
     end
 
     status.Text = "Status: 🟡 Sending..."
-
-    -- Animate status dot to yellow
     tween(statusDot, 0.2, {BackgroundColor3 = Color3.fromRGB(255, 200, 60)}):Play()
 
     local hideTween = tween(startBtn, 0.3, {BackgroundTransparency = 1, TextTransparency = 1})
