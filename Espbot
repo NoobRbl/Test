@@ -1,0 +1,407 @@
+-- =========================================================
+-- BotESP Sender v1.0
+-- Script gửi tín hiệu ESP tới FruitMethod_ESP.lua
+-- =========================================================
+-- CÁCH DÙNG:
+--   Script này tạo 1 UI nhỏ để chọn player và bật/tắt ESP.
+--   Cả 2 script phải chạy cùng lúc trên cùng 1 client.
+-- =========================================================
+
+local Players          = game:GetService("Players")
+local TweenService     = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local localPlayer = Players.LocalPlayer
+local playerGui   = localPlayer:WaitForChild("PlayerGui")
+
+-- Lấy hoặc chờ BindableEvent từ script chính
+local botESPSignal = ReplicatedStorage:WaitForChild("BotESPSignal", 10)
+if not botESPSignal then
+    warn("[BotESP Sender] Không tìm thấy BotESPSignal! Hãy chạy FruitMethod_ESP.lua trước.")
+    return
+end
+
+-- Bảng theo dõi player nào đang bật ESP
+local espActive = {}
+
+-- =========================================================
+-- HÀM GỬI TÍN HIỆU
+-- =========================================================
+local function sendESP(targetPlayer)
+    if espActive[targetPlayer.UserId] then
+        -- Đang bật → tắt
+        botESPSignal:Fire(targetPlayer, true)
+        espActive[targetPlayer.UserId] = false
+    else
+        -- Đang tắt → bật
+        botESPSignal:Fire(targetPlayer)
+        espActive[targetPlayer.UserId] = true
+    end
+end
+
+local function sendESPAll(enable)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer then
+            if enable and not espActive[plr.UserId] then
+                botESPSignal:Fire(plr)
+                espActive[plr.UserId] = true
+            elseif not enable and espActive[plr.UserId] then
+                botESPSignal:Fire(plr, true)
+                espActive[plr.UserId] = false
+            end
+        end
+    end
+end
+
+-- =========================================================
+-- UI HELPER
+-- =========================================================
+local function mk(class, props, parent)
+    local obj = Instance.new(class)
+    for k, v in pairs(props) do obj[k] = v end
+    if parent then obj.Parent = parent end
+    return obj
+end
+
+local function addCorner(obj, r)
+    return mk("UICorner", {CornerRadius = UDim.new(0, r or 8)}, obj)
+end
+
+local function addStroke(obj, thick, color, trans)
+    return mk("UIStroke", {
+        Thickness = thick or 1,
+        Color = color or Color3.fromRGB(255,255,255),
+        Transparency = trans or 0.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    }, obj)
+end
+
+local function tw(obj, t, props)
+    TweenService:Create(obj, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+end
+
+-- =========================================================
+-- BUILD UI
+-- =========================================================
+-- Xóa UI cũ nếu có
+local oldGui = playerGui:FindFirstChild("BotESPSender_GUI")
+if oldGui then oldGui:Destroy() end
+
+local screenGui = mk("ScreenGui", {
+    Name = "BotESPSender_GUI",
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+}, playerGui)
+
+-- ---- Main Panel ----
+local panel = mk("Frame", {
+    Size = UDim2.new(0, 240, 0, 320),
+    Position = UDim2.new(0, 20, 0.5, -160),
+    BackgroundColor3 = Color3.fromRGB(10, 12, 20),
+    Active = true,
+    Draggable = true,
+}, screenGui)
+addCorner(panel, 14)
+addStroke(panel, 1.2, Color3.fromRGB(255, 80, 80), 0.3)
+
+mk("UIGradient", {
+    Color = ColorSequence.new(Color3.fromRGB(18, 8, 8), Color3.fromRGB(8, 8, 18)),
+    Rotation = 135,
+}, panel)
+
+-- Scale cho animation
+local panelScale = mk("UIScale", {Scale = 0.9}, panel)
+tw(panelScale, 0.25, {Scale = 1})
+
+-- ---- Header ----
+local header = mk("Frame", {
+    Size = UDim2.new(1, 0, 0, 46),
+    BackgroundColor3 = Color3.fromRGB(160, 30, 30),
+    BorderSizePixel = 0,
+}, panel)
+addCorner(header, 14)
+addStroke(header, 1, Color3.fromRGB(255, 100, 100), 0.2)
+
+mk("UIGradient", {
+    Color = ColorSequence.new(Color3.fromRGB(220, 50, 50), Color3.fromRGB(140, 20, 20)),
+    Rotation = 0,
+}, header)
+
+-- Fix bottom round overlap
+mk("Frame", {
+    Size = UDim2.new(1, 0, 0, 14),
+    Position = UDim2.new(0, 0, 1, -14),
+    BackgroundColor3 = Color3.fromRGB(160, 25, 25),
+    BorderSizePixel = 0,
+}, header)
+
+mk("TextLabel", {
+    Size = UDim2.new(1, -70, 1, 0),
+    Position = UDim2.new(0, 12, 0, 0),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Text = "🎯 Bot ESP Sender",
+}, header)
+
+-- Close button
+local closeBtn = mk("TextButton", {
+    Size = UDim2.new(0, 24, 0, 24),
+    Position = UDim2.new(1, -32, 0.5, -12),
+    Text = "✕",
+    Font = Enum.Font.GothamBold,
+    TextSize = 12,
+    TextColor3 = Color3.fromRGB(255, 220, 220),
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundTransparency = 0.85,
+    AutoButtonColor = false,
+}, header)
+addCorner(closeBtn, 6)
+
+closeBtn.MouseButton1Click:Connect(function()
+    tw(panelScale, 0.18, {Scale = 0.88})
+    tw(panel, 0.18, {BackgroundTransparency = 1})
+    task.wait(0.2)
+    screenGui:Destroy()
+end)
+
+-- ---- Content ----
+local content = mk("Frame", {
+    Size = UDim2.new(1, -16, 1, -56),
+    Position = UDim2.new(0, 8, 0, 52),
+    BackgroundTransparency = 1,
+}, panel)
+
+-- Label "Players"
+mk("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 16),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamSemibold,
+    TextSize = 10,
+    TextColor3 = Color3.fromRGB(200, 180, 180),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Text = "PLAYERS IN SERVER",
+}, content)
+
+-- Player list scroll
+local scrollFrame = mk("ScrollingFrame", {
+    Size = UDim2.new(1, 0, 0, 178),
+    Position = UDim2.new(0, 0, 0, 22),
+    BackgroundColor3 = Color3.fromRGB(8, 8, 14),
+    BackgroundTransparency = 0,
+    ScrollBarThickness = 2,
+    ScrollBarImageColor3 = Color3.fromRGB(255, 100, 100),
+    BorderSizePixel = 0,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+}, content)
+addCorner(scrollFrame, 8)
+addStroke(scrollFrame, 1, Color3.fromRGB(200, 60, 60), 0.5)
+
+local listLayout = mk("UIListLayout", {
+    Parent = scrollFrame,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Padding = UDim.new(0, 4),
+})
+
+mk("UIPadding", {
+    PaddingTop = UDim.new(0, 6),
+    PaddingLeft = UDim.new(0, 6),
+    PaddingRight = UDim.new(0, 6),
+    PaddingBottom = UDim.new(0, 6),
+}, scrollFrame)
+
+listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    local h = listLayout.AbsoluteContentSize.Y + 12
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, h)
+end)
+
+-- Bảng lưu các row button theo UserId
+local playerRows = {}
+
+local function makePlayerRow(plr)
+    if playerRows[plr.UserId] then return end
+
+    local row = mk("Frame", {
+        Name = "Row_" .. plr.UserId,
+        Size = UDim2.new(1, 0, 0, 36),
+        BackgroundColor3 = Color3.fromRGB(18, 10, 10),
+        BorderSizePixel = 0,
+    }, scrollFrame)
+    addCorner(row, 7)
+    addStroke(row, 1, Color3.fromRGB(120, 40, 40), 0.5)
+
+    -- Avatar icon placeholder
+    local iconFrame = mk("Frame", {
+        Size = UDim2.new(0, 26, 0, 26),
+        Position = UDim2.new(0, 5, 0.5, -13),
+        BackgroundColor3 = Color3.fromRGB(180, 40, 40),
+        BorderSizePixel = 0,
+    }, row)
+    addCorner(iconFrame, 5)
+
+    mk("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Text = string.upper(string.sub(plr.Name, 1, 1)),
+    }, iconFrame)
+
+    -- Player name
+    mk("TextLabel", {
+        Size = UDim2.new(1, -100, 1, 0),
+        Position = UDim2.new(0, 38, 0, 0),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamSemibold,
+        TextSize = 11,
+        TextColor3 = Color3.fromRGB(235, 215, 215),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Text = plr.Name,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+    }, row)
+
+    -- Toggle ESP button
+    local toggleBtn = mk("TextButton", {
+        Size = UDim2.new(0, 52, 0, 22),
+        Position = UDim2.new(1, -58, 0.5, -11),
+        Text = "ESP OFF",
+        Font = Enum.Font.GothamBold,
+        TextSize = 9,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 80),
+        AutoButtonColor = false,
+    }, row)
+    addCorner(toggleBtn, 5)
+    addStroke(toggleBtn, 1, Color3.fromRGB(120, 120, 160), 0.4)
+
+    local function refreshBtn()
+        if espActive[plr.UserId] then
+            toggleBtn.Text = "ESP ON"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+            addStroke(toggleBtn, 1, Color3.fromRGB(255, 80, 80), 0.2)
+        else
+            toggleBtn.Text = "ESP OFF"
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+            addStroke(toggleBtn, 1, Color3.fromRGB(120, 120, 160), 0.4)
+        end
+    end
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        sendESP(plr)
+        refreshBtn()
+        tw(toggleBtn, 0.08, {Size = UDim2.new(0, 48, 0, 20)})
+        task.wait(0.08)
+        tw(toggleBtn, 0.08, {Size = UDim2.new(0, 52, 0, 22)})
+    end)
+
+    playerRows[plr.UserId] = {row = row, refreshBtn = refreshBtn}
+end
+
+local function removePlayerRow(plr)
+    if playerRows[plr.UserId] then
+        playerRows[plr.UserId].row:Destroy()
+        playerRows[plr.UserId] = nil
+        espActive[plr.UserId] = nil
+    end
+end
+
+-- Thêm các player hiện tại
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= localPlayer then
+        makePlayerRow(plr)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= localPlayer then
+        task.wait(0.1)
+        makePlayerRow(plr)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    removePlayerRow(plr)
+end)
+
+-- ---- Bottom buttons: ESP ALL / CLEAR ALL ----
+local espAllBtn = mk("TextButton", {
+    Size = UDim2.new(0.48, 0, 0, 30),
+    Position = UDim2.new(0, 0, 0, 210),
+    Text = "🔴 ESP ALL",
+    Font = Enum.Font.GothamBold,
+    TextSize = 11,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundColor3 = Color3.fromRGB(180, 30, 30),
+    AutoButtonColor = false,
+}, content)
+addCorner(espAllBtn, 8)
+addStroke(espAllBtn, 1, Color3.fromRGB(255, 80, 80), 0.2)
+mk("UIGradient", {
+    Color = ColorSequence.new(Color3.fromRGB(220, 50, 50), Color3.fromRGB(150, 20, 20)),
+    Rotation = 135,
+}, espAllBtn)
+
+espAllBtn.MouseEnter:Connect(function() tw(espAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(210, 45, 45)}) end)
+espAllBtn.MouseLeave:Connect(function() tw(espAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(180, 30, 30)}) end)
+espAllBtn.MouseButton1Click:Connect(function()
+    sendESPAll(true)
+    for _, data in pairs(playerRows) do data.refreshBtn() end
+end)
+
+local clearAllBtn = mk("TextButton", {
+    Size = UDim2.new(0.48, 0, 0, 30),
+    Position = UDim2.new(0.52, 0, 0, 210),
+    Text = "🔕 Clear ALL",
+    Font = Enum.Font.GothamBold,
+    TextSize = 11,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundColor3 = Color3.fromRGB(45, 45, 65),
+    AutoButtonColor = false,
+}, content)
+addCorner(clearAllBtn, 8)
+addStroke(clearAllBtn, 1, Color3.fromRGB(120, 120, 180), 0.4)
+
+clearAllBtn.MouseEnter:Connect(function() tw(clearAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(65, 65, 90)}) end)
+clearAllBtn.MouseLeave:Connect(function() tw(clearAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(45, 45, 65)}) end)
+clearAllBtn.MouseButton1Click:Connect(function()
+    sendESPAll(false)
+    for _, data in pairs(playerRows) do data.refreshBtn() end
+end)
+
+-- ---- Footer ----
+mk("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 12),
+    Position = UDim2.new(0, 0, 0, 248),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.Gotham,
+    TextSize = 9,
+    TextColor3 = Color3.fromRGB(100, 80, 80),
+    Text = "Signals to FruitMethod_ESP • BotESPSignal",
+}, content)
+
+-- =========================================================
+-- KEYBIND: RightAlt để ẩn/hiện panel
+-- =========================================================
+local guiVisible = true
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.RightAlt then
+        guiVisible = not guiVisible
+        if guiVisible then
+            panel.Visible = true
+            tw(panelScale, 0.18, {Scale = 1})
+        else
+            tw(panelScale, 0.15, {Scale = 0.88})
+            task.wait(0.15)
+            panel.Visible = false
+        end
+    end
+end)
+
+print("[BotESP Sender] Loaded! Nhấn RightAlt để ẩn/hiện panel.")
