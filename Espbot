@@ -1,41 +1,52 @@
+-- BotESP Sender v2.0 [FIXED - dùng _G bridge]
 -- =========================================================
--- BotESP Sender v1.0
--- Script gửi tín hiệu ESP tới FruitMethod_ESP.lua
--- =========================================================
--- CÁCH DÙNG:
---   Script này tạo 1 UI nhỏ để chọn player và bật/tắt ESP.
---   Cả 2 script phải chạy cùng lúc trên cùng 1 client.
+-- Gửi tín hiệu ESP tới FruitMethod_ESP.lua qua _G.BotESPFire
+-- Không cần BindableEvent, không cần chạy theo thứ tự cụ thể.
+--
+-- Nếu FruitMethod_ESP chưa chạy → _G.BotESPFire = nil
+-- Script sẽ chờ tối đa 15 giây rồi tiếp tục (không crash).
 -- =========================================================
 
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui   = localPlayer:WaitForChild("PlayerGui")
 
--- Lấy hoặc chờ BindableEvent từ script chính
-local botESPSignal = ReplicatedStorage:WaitForChild("BotESPSignal", 10)
-if not botESPSignal then
-    warn("[BotESP Sender] Không tìm thấy BotESPSignal! Hãy chạy FruitMethod_ESP.lua trước.")
-    return
+-- =========================================================
+-- CHỜ _G.BotESPFire (tối đa 15 giây)
+-- =========================================================
+local waited = 0
+while not _G.BotESPFire and waited < 15 do
+    task.wait(0.5)
+    waited += 0.5
 end
 
--- Bảng theo dõi player nào đang bật ESP
-local espActive = {}
+if not _G.BotESPFire then
+    warn("[BotESP Sender] _G.BotESPFire không tìm thấy sau 15s. Hãy chạy FruitMethod_ESP.lua trước!")
+    -- Không return - vẫn tạo UI, chỉ cần đợi hàm xuất hiện sau
+end
 
 -- =========================================================
--- HÀM GỬI TÍN HIỆU
+-- HÀM GỬI TÍN HIỆU AN TOÀN
 -- =========================================================
+local espActive = {}
+
+local function fireESP(targetPlayer, remove)
+    if _G.BotESPFire then
+        _G.BotESPFire(targetPlayer, remove)
+    else
+        warn("[BotESP Sender] FruitMethod_ESP chưa chạy! Không thể gửi tín hiệu.")
+    end
+end
+
 local function sendESP(targetPlayer)
     if espActive[targetPlayer.UserId] then
-        -- Đang bật → tắt
-        botESPSignal:Fire(targetPlayer, true)
+        fireESP(targetPlayer, true)
         espActive[targetPlayer.UserId] = false
     else
-        -- Đang tắt → bật
-        botESPSignal:Fire(targetPlayer)
+        fireESP(targetPlayer, nil)
         espActive[targetPlayer.UserId] = true
     end
 end
@@ -44,10 +55,10 @@ local function sendESPAll(enable)
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer then
             if enable and not espActive[plr.UserId] then
-                botESPSignal:Fire(plr)
+                fireESP(plr, nil)
                 espActive[plr.UserId] = true
             elseif not enable and espActive[plr.UserId] then
-                botESPSignal:Fire(plr, true)
+                fireESP(plr, true)
                 espActive[plr.UserId] = false
             end
         end
@@ -55,7 +66,7 @@ local function sendESPAll(enable)
 end
 
 -- =========================================================
--- UI HELPER
+-- UI HELPERS
 -- =========================================================
 local function mk(class, props, parent)
     local obj = Instance.new(class)
@@ -69,6 +80,9 @@ local function addCorner(obj, r)
 end
 
 local function addStroke(obj, thick, color, trans)
+    -- Xóa stroke cũ nếu có để tránh duplicate
+    local old = obj:FindFirstChildOfClass("UIStroke")
+    if old then old:Destroy() end
     return mk("UIStroke", {
         Thickness = thick or 1,
         Color = color or Color3.fromRGB(255,255,255),
@@ -84,7 +98,6 @@ end
 -- =========================================================
 -- BUILD UI
 -- =========================================================
--- Xóa UI cũ nếu có
 local oldGui = playerGui:FindFirstChild("BotESPSender_GUI")
 if oldGui then oldGui:Destroy() end
 
@@ -97,22 +110,20 @@ local screenGui = mk("ScreenGui", {
 
 -- ---- Main Panel ----
 local panel = mk("Frame", {
-    Size = UDim2.new(0, 240, 0, 320),
-    Position = UDim2.new(0, 20, 0.5, -160),
+    Size = UDim2.new(0, 240, 0, 330),
+    Position = UDim2.new(0, 20, 0.5, -165),
     BackgroundColor3 = Color3.fromRGB(10, 12, 20),
     Active = true,
     Draggable = true,
 }, screenGui)
 addCorner(panel, 14)
 addStroke(panel, 1.2, Color3.fromRGB(255, 80, 80), 0.3)
-
 mk("UIGradient", {
-    Color = ColorSequence.new(Color3.fromRGB(18, 8, 8), Color3.fromRGB(8, 8, 18)),
+    Color = ColorSequence.new(Color3.fromRGB(20, 8, 8), Color3.fromRGB(8, 8, 20)),
     Rotation = 135,
 }, panel)
 
--- Scale cho animation
-local panelScale = mk("UIScale", {Scale = 0.9}, panel)
+local panelScale = mk("UIScale", {Scale = 0.88}, panel)
 tw(panelScale, 0.25, {Scale = 1})
 
 -- ---- Header ----
@@ -123,35 +134,62 @@ local header = mk("Frame", {
 }, panel)
 addCorner(header, 14)
 addStroke(header, 1, Color3.fromRGB(255, 100, 100), 0.2)
-
 mk("UIGradient", {
     Color = ColorSequence.new(Color3.fromRGB(220, 50, 50), Color3.fromRGB(140, 20, 20)),
     Rotation = 0,
 }, header)
-
--- Fix bottom round overlap
 mk("Frame", {
     Size = UDim2.new(1, 0, 0, 14),
     Position = UDim2.new(0, 0, 1, -14),
-    BackgroundColor3 = Color3.fromRGB(160, 25, 25),
+    BackgroundColor3 = Color3.fromRGB(150, 22, 22),
     BorderSizePixel = 0,
 }, header)
 
 mk("TextLabel", {
-    Size = UDim2.new(1, -70, 1, 0),
+    Size = UDim2.new(1, -56, 1, 0),
     Position = UDim2.new(0, 12, 0, 0),
     BackgroundTransparency = 1,
     Font = Enum.Font.GothamBold,
-    TextSize = 14,
+    TextSize = 13,
     TextColor3 = Color3.fromRGB(255, 255, 255),
     TextXAlignment = Enum.TextXAlignment.Left,
     Text = "🎯 Bot ESP Sender",
 }, header)
 
+-- Status chip (connected / waiting)
+local statusChip = mk("Frame", {
+    Size = UDim2.new(0, 80, 0, 18),
+    Position = UDim2.new(1, -92, 0.5, -9),
+    BackgroundColor3 = _G.BotESPFire and Color3.fromRGB(30, 140, 60) or Color3.fromRGB(140, 100, 30),
+    BorderSizePixel = 0,
+}, header)
+addCorner(statusChip, 999)
+local statusChipText = mk("TextLabel", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    TextSize = 9,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    Text = _G.BotESPFire and "✓ linked" or "⏳ wait...",
+}, statusChip)
+
+-- Cập nhật chip liên tục cho tới khi kết nối
+if not _G.BotESPFire then
+    task.spawn(function()
+        while not _G.BotESPFire and statusChip.Parent do
+            task.wait(0.5)
+        end
+        if statusChip.Parent then
+            tw(statusChip, 0.3, {BackgroundColor3 = Color3.fromRGB(30, 140, 60)})
+            statusChipText.Text = "✓ linked"
+        end
+    end)
+end
+
 -- Close button
 local closeBtn = mk("TextButton", {
     Size = UDim2.new(0, 24, 0, 24),
-    Position = UDim2.new(1, -32, 0.5, -12),
+    Position = UDim2.new(1, -30, 0.5, -12),
     Text = "✕",
     Font = Enum.Font.GothamBold,
     TextSize = 12,
@@ -161,11 +199,9 @@ local closeBtn = mk("TextButton", {
     AutoButtonColor = false,
 }, header)
 addCorner(closeBtn, 6)
-
 closeBtn.MouseButton1Click:Connect(function()
-    tw(panelScale, 0.18, {Scale = 0.88})
-    tw(panel, 0.18, {BackgroundTransparency = 1})
-    task.wait(0.2)
+    tw(panelScale, 0.15, {Scale = 0.88})
+    task.wait(0.15)
     screenGui:Destroy()
 end)
 
@@ -176,38 +212,34 @@ local content = mk("Frame", {
     BackgroundTransparency = 1,
 }, panel)
 
--- Label "Players"
 mk("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 16),
-    Position = UDim2.new(0, 0, 0, 0),
+    Size = UDim2.new(1, 0, 0, 14),
     BackgroundTransparency = 1,
     Font = Enum.Font.GothamSemibold,
-    TextSize = 10,
-    TextColor3 = Color3.fromRGB(200, 180, 180),
+    TextSize = 9,
+    TextColor3 = Color3.fromRGB(190, 160, 160),
     TextXAlignment = Enum.TextXAlignment.Left,
     Text = "PLAYERS IN SERVER",
 }, content)
 
 -- Player list scroll
 local scrollFrame = mk("ScrollingFrame", {
-    Size = UDim2.new(1, 0, 0, 178),
-    Position = UDim2.new(0, 0, 0, 22),
+    Size = UDim2.new(1, 0, 0, 188),
+    Position = UDim2.new(0, 0, 0, 20),
     BackgroundColor3 = Color3.fromRGB(8, 8, 14),
-    BackgroundTransparency = 0,
     ScrollBarThickness = 2,
     ScrollBarImageColor3 = Color3.fromRGB(255, 100, 100),
     BorderSizePixel = 0,
     CanvasSize = UDim2.new(0, 0, 0, 0),
 }, content)
 addCorner(scrollFrame, 8)
-addStroke(scrollFrame, 1, Color3.fromRGB(200, 60, 60), 0.5)
+addStroke(scrollFrame, 1, Color3.fromRGB(200, 60, 60), 0.55)
 
 local listLayout = mk("UIListLayout", {
     Parent = scrollFrame,
     SortOrder = Enum.SortOrder.LayoutOrder,
     Padding = UDim.new(0, 4),
 })
-
 mk("UIPadding", {
     PaddingTop = UDim.new(0, 6),
     PaddingLeft = UDim.new(0, 6),
@@ -216,26 +248,24 @@ mk("UIPadding", {
 }, scrollFrame)
 
 listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    local h = listLayout.AbsoluteContentSize.Y + 12
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, h)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 12)
 end)
 
--- Bảng lưu các row button theo UserId
 local playerRows = {}
 
 local function makePlayerRow(plr)
     if playerRows[plr.UserId] then return end
 
     local row = mk("Frame", {
-        Name = "Row_" .. plr.UserId,
+        Name = "Row_"..plr.UserId,
         Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = Color3.fromRGB(18, 10, 10),
         BorderSizePixel = 0,
     }, scrollFrame)
     addCorner(row, 7)
-    addStroke(row, 1, Color3.fromRGB(120, 40, 40), 0.5)
+    addStroke(row, 1, Color3.fromRGB(120, 40, 40), 0.55)
 
-    -- Avatar icon placeholder
+    -- Avatar letter
     local iconFrame = mk("Frame", {
         Size = UDim2.new(0, 26, 0, 26),
         Position = UDim2.new(0, 5, 0.5, -13),
@@ -243,7 +273,6 @@ local function makePlayerRow(plr)
         BorderSizePixel = 0,
     }, row)
     addCorner(iconFrame, 5)
-
     mk("TextLabel", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
@@ -253,7 +282,7 @@ local function makePlayerRow(plr)
         Text = string.upper(string.sub(plr.Name, 1, 1)),
     }, iconFrame)
 
-    -- Player name
+    -- Name
     mk("TextLabel", {
         Size = UDim2.new(1, -100, 1, 0),
         Position = UDim2.new(0, 38, 0, 0),
@@ -266,15 +295,15 @@ local function makePlayerRow(plr)
         TextTruncate = Enum.TextTruncate.AtEnd,
     }, row)
 
-    -- Toggle ESP button
+    -- Toggle button
     local toggleBtn = mk("TextButton", {
-        Size = UDim2.new(0, 52, 0, 22),
-        Position = UDim2.new(1, -58, 0.5, -11),
+        Size = UDim2.new(0, 56, 0, 22),
+        Position = UDim2.new(1, -62, 0.5, -11),
         Text = "ESP OFF",
         Font = Enum.Font.GothamBold,
         TextSize = 9,
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        BackgroundColor3 = Color3.fromRGB(60, 60, 80),
+        BackgroundColor3 = Color3.fromRGB(55, 55, 75),
         AutoButtonColor = false,
     }, row)
     addCorner(toggleBtn, 5)
@@ -283,11 +312,11 @@ local function makePlayerRow(plr)
     local function refreshBtn()
         if espActive[plr.UserId] then
             toggleBtn.Text = "ESP ON"
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+            tw(toggleBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(180, 30, 30)})
             addStroke(toggleBtn, 1, Color3.fromRGB(255, 80, 80), 0.2)
         else
             toggleBtn.Text = "ESP OFF"
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+            tw(toggleBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(55, 55, 75)})
             addStroke(toggleBtn, 1, Color3.fromRGB(120, 120, 160), 0.4)
         end
     end
@@ -295,9 +324,10 @@ local function makePlayerRow(plr)
     toggleBtn.MouseButton1Click:Connect(function()
         sendESP(plr)
         refreshBtn()
-        tw(toggleBtn, 0.08, {Size = UDim2.new(0, 48, 0, 20)})
-        task.wait(0.08)
-        tw(toggleBtn, 0.08, {Size = UDim2.new(0, 52, 0, 22)})
+        -- Animasi klik
+        tw(toggleBtn, 0.07, {Size = UDim2.new(0, 50, 0, 20)})
+        task.wait(0.07)
+        tw(toggleBtn, 0.1, {Size = UDim2.new(0, 56, 0, 22)})
     end)
 
     playerRows[plr.UserId] = {row = row, refreshBtn = refreshBtn}
@@ -311,28 +341,20 @@ local function removePlayerRow(plr)
     end
 end
 
--- Thêm các player hiện tại
+-- Populate existing players
 for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= localPlayer then
-        makePlayerRow(plr)
-    end
+    if plr ~= localPlayer then makePlayerRow(plr) end
 end
 
 Players.PlayerAdded:Connect(function(plr)
-    if plr ~= localPlayer then
-        task.wait(0.1)
-        makePlayerRow(plr)
-    end
+    if plr ~= localPlayer then task.wait(0.1); makePlayerRow(plr) end
 end)
+Players.PlayerRemoving:Connect(removePlayerRow)
 
-Players.PlayerRemoving:Connect(function(plr)
-    removePlayerRow(plr)
-end)
-
--- ---- Bottom buttons: ESP ALL / CLEAR ALL ----
+-- ---- ESP ALL / CLEAR ALL ----
 local espAllBtn = mk("TextButton", {
-    Size = UDim2.new(0.48, 0, 0, 30),
-    Position = UDim2.new(0, 0, 0, 210),
+    Size = UDim2.new(0.48, 0, 0, 32),
+    Position = UDim2.new(0, 0, 0, 218),
     Text = "🔴 ESP ALL",
     Font = Enum.Font.GothamBold,
     TextSize = 11,
@@ -346,7 +368,6 @@ mk("UIGradient", {
     Color = ColorSequence.new(Color3.fromRGB(220, 50, 50), Color3.fromRGB(150, 20, 20)),
     Rotation = 135,
 }, espAllBtn)
-
 espAllBtn.MouseEnter:Connect(function() tw(espAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(210, 45, 45)}) end)
 espAllBtn.MouseLeave:Connect(function() tw(espAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(180, 30, 30)}) end)
 espAllBtn.MouseButton1Click:Connect(function()
@@ -355,8 +376,8 @@ espAllBtn.MouseButton1Click:Connect(function()
 end)
 
 local clearAllBtn = mk("TextButton", {
-    Size = UDim2.new(0.48, 0, 0, 30),
-    Position = UDim2.new(0.52, 0, 0, 210),
+    Size = UDim2.new(0.48, 0, 0, 32),
+    Position = UDim2.new(0.52, 0, 0, 218),
     Text = "🔕 Clear ALL",
     Font = Enum.Font.GothamBold,
     TextSize = 11,
@@ -366,7 +387,6 @@ local clearAllBtn = mk("TextButton", {
 }, content)
 addCorner(clearAllBtn, 8)
 addStroke(clearAllBtn, 1, Color3.fromRGB(120, 120, 180), 0.4)
-
 clearAllBtn.MouseEnter:Connect(function() tw(clearAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(65, 65, 90)}) end)
 clearAllBtn.MouseLeave:Connect(function() tw(clearAllBtn, 0.12, {BackgroundColor3 = Color3.fromRGB(45, 45, 65)}) end)
 clearAllBtn.MouseButton1Click:Connect(function()
@@ -374,19 +394,19 @@ clearAllBtn.MouseButton1Click:Connect(function()
     for _, data in pairs(playerRows) do data.refreshBtn() end
 end)
 
--- ---- Footer ----
+-- Footer
 mk("TextLabel", {
     Size = UDim2.new(1, 0, 0, 12),
-    Position = UDim2.new(0, 0, 0, 248),
+    Position = UDim2.new(0, 0, 0, 258),
     BackgroundTransparency = 1,
     Font = Enum.Font.Gotham,
     TextSize = 9,
-    TextColor3 = Color3.fromRGB(100, 80, 80),
-    Text = "Signals to FruitMethod_ESP • BotESPSignal",
+    TextColor3 = Color3.fromRGB(90, 70, 70),
+    Text = "Bridge: _G.BotESPFire  •  RightAlt = ẩn/hiện",
 }, content)
 
 -- =========================================================
--- KEYBIND: RightAlt để ẩn/hiện panel
+-- KEYBIND: RightAlt ẩn/hiện
 -- =========================================================
 local guiVisible = true
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -404,4 +424,4 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 end)
 
-print("[BotESP Sender] Loaded! Nhấn RightAlt để ẩn/hiện panel.")
+print("[BotESP Sender v2.0] Loaded! Dùng _G.BotESPFire để giao tiếp.")
