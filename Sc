@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOOB SCRIPT – Uy Tín Làm Nên Thương Hiệu</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00ffff;
+    --green: #00ff88;
+    --red: #ff003c;
+    --dark: #020408;
+    --darker: #010204;
+    --grid-color: rgba(0,255,255,0.04);
+    --glow-cyan: 0 0 10px #00ffff, 0 0 30px #00ffff88, 0 0 60px #00ffff44;
+    --glow-green: 0 0 10px #00ff88, 0 0 30px #00ff8888;
+    --glow-red: 0 0 8px #ff003c, 0 0 20px #ff003c88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--dark);
+    color: #e0f7ff;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BG ── */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── GRID OVERLAY ── */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* ── SCANLINES ── */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.12) 2px,
+      rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove {
+    from { background-position: 0 0; }
+    to   { background-position: 0 200px; }
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+
+  /* ── CORNER DECORATIONS ── */
+  .corner {
+    position: fixed;
+    width: 80px;
+    height: 80px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .corner::before, .corner::after {
+    content: '';
+    position: absolute;
+    background: var(--cyan);
+    box-shadow: var(--glow-cyan);
+  }
+  .corner::before { width: 100%; height: 2px; top: 0; left: 0; }
+  .corner::after  { width: 2px; height: 100%; top: 0; left: 0; }
+  .corner.tl { top: 16px; left: 16px; }
+  .corner.tr { top: 16px; right: 16px; transform: scaleX(-1); }
+  .corner.bl { bottom: 16px; left: 16px; transform: scaleY(-1); }
+  .corner.br { bottom: 16px; right: 16px; transform: scale(-1); }
+
+  /* ── BRAND NAME ── */
+  .brand-wrap {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .brand {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: clamp(2.8rem, 8vw, 6rem);
+    letter-spacing: 0.12em;
+    color: #fff;
+    text-transform: uppercase;
+    text-shadow: var(--glow-cyan);
+    animation: glitch 4s infinite;
+    position: relative;
+  }
+
+  .brand::before, .brand::after {
+    content: 'NOOB SCRIPT';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+  }
+  .brand::before {
+    color: var(--red);
+    text-shadow: var(--glow-red);
+    animation: glitch-r 4s infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+  .brand::after {
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    animation: glitch-l 4s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+  }
+
+  @keyframes glitch {
+    0%, 92%, 100% { transform: none; }
+    94% { transform: translate(-3px, 1px) skewX(-1deg); }
+    96% { transform: translate(3px,-1px) skewX(1deg); }
+    98% { transform: translate(-1px, 2px); }
+  }
+  @keyframes glitch-r {
+    0%, 90%, 100% { opacity: 0; transform: none; }
+    92% { opacity: 0.8; transform: translate(4px, 0); }
+    95% { opacity: 0; }
+  }
+  @keyframes glitch-l {
+    0%, 88%, 100% { opacity: 0; transform: none; }
+    90% { opacity: 0.7; transform: translate(-4px, 0); }
+    94% { opacity: 0; }
+  }
+
+  /* ── FLICKER LINE UNDER BRAND ── */
+  .brand-underline {
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--green), transparent);
+    box-shadow: var(--glow-cyan);
+    margin-top: 6px;
+    animation: flicker 3s infinite;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+    52% { opacity: 1; }
+    54% { opacity: 0.3; }
+    56% { opacity: 1; }
+  }
+
+  /* ── SLOGAN ── */
+  .slogan {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(0.8rem, 2.2vw, 1.1rem);
+    color: var(--green);
+    letter-spacing: 0.08em;
+    text-shadow: var(--glow-green);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+  .divider-line {
+    flex: 1;
+    max-width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan));
+  }
+  .divider-line.right { background: linear-gradient(90deg, var(--cyan), transparent); }
+  .divider-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  /* ── MAIN TEXT ── */
+  .main-headline {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: #c0eeff;
+    letter-spacing: 0.06em;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+    text-shadow: 0 0 20px rgba(0,255,255,0.3);
+  }
+
+  /* ── BADGES ── */
+  .badges {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 52px;
+  }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(0,255,255,0.03);
+    border: 1px solid rgba(0,255,255,0.15);
+    border-left: 3px solid var(--cyan);
+    padding: 14px 28px;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #e0faff;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+  .badge:nth-child(1) { animation: fadeUp 0.7s 1.0s forwards; }
+  .badge:nth-child(2) { animation: fadeUp 0.7s 1.2s forwards; }
+  .badge:nth-child(3) { animation: fadeUp 0.7s 1.4s forwards; }
+
+  .badge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,255,255,0.06), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .badge:hover { border-color: var(--cyan); box-shadow: inset 0 0 20px rgba(0,255,255,0.08), 0 0 20px rgba(0,255,255,0.1); }
+  .badge:hover::before { opacity: 1; }
+
+  .badge-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,0,60,0.1);
+    border: 1px solid rgba(255,0,60,0.3);
+    border-radius: 4px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .badge-label {
+    color: var(--red);
+    font-weight: 700;
+    text-shadow: var(--glow-red);
+    font-size: 1.05em;
+  }
+
+  /* ── CTA BUTTON ── */
+  .cta-wrap {
+    opacity: 0;
+    animation: fadeUp 0.8s 1.6s forwards;
+  }
+
+  .cta-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 48px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: clamp(0.95rem, 2.5vw, 1.2rem);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--dark);
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.15);
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #fff2, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .cta-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    animation: sweep 2.5s infinite;
+  }
+
+  @keyframes sweep {
+    0%   { left: -100%; }
+    60%  { left: 150%; }
+    100% { left: 150%; }
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 0 30px rgba(0,255,255,0.7), 0 0 80px rgba(0,255,255,0.3), 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .cta-btn:hover::before { opacity: 1; }
+  .cta-btn:active { transform: translateY(-1px) scale(1.01); }
+
+  .cta-arrow {
+    font-size: 1.3em;
+    transition: transform 0.3s;
+  }
+  .cta-btn:hover .cta-arrow { transform: translateX(5px); }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    margin-top: 36px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: rgba(0,255,255,0.5);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    animation: fadeUp 0.8s 1.8s forwards;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: var(--glow-green);
+    animation: pulse-dot 1.5s infinite;
+    margin-right: 6px;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  /* ── SHARED ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .badge { padding: 12px 18px; }
+    .cta-btn { padding: 16px 32px; }
+    .status-bar { flex-direction: column; gap: 10px; }
+    .corner { width: 50px; height: 50px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grid-overlay"></div>
+<div class="scanlines"></div>
+
+<!-- Corner decorations -->
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<section class="hero">
+
+  <!-- Brand -->
+  <div class="brand-wrap">
+    <h1 class="brand">NOOB SCRIPT</h1>
+    <span class="brand-underline"></span>
+  </div>
+
+  <!-- Slogan -->
+  <p class="slogan">// Uy tín làm nên thương hiệu của Noob Script</p>
+
+  <!-- Divider -->
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-dot"></div>
+    <div class="divider-line right"></div>
+  </div>
+
+  <!-- Headline -->
+  <h2 class="main-headline">Tất cả script bên Noob Script đầy đủ 3 KHÔNG</h2>
+
+  <!-- Badges -->
+  <div class="badges">
+    <div class="badge">
+      <div class="badge-icon">❌</div>
+      <span>Không &nbsp;<strong class="badge-label">SCAM</strong></span>
+    </div>
+    <div class="badge">
+      <div class="badge-icon">❌</div>
+      <span>Không &nbsp;<strong class="badge-label">MẤT PET</strong></span>
+    </div>
+    <div class="badge">
+      <div class="badge-icon">❌</div>
+      <span>Không &nbsp;<strong class="badge-label">MẤT TRÁI</strong></span>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-wrap">
+    <a class="cta-btn" href="https://anotepad.com/note/read/expke5yx" target="_blank" rel="noopener">
+      TRUY CẬP SCRIPT
+      <span class="cta-arrow">▶</span>
+    </a>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span><span class="status-dot"></span>HỆ THỐNG ONLINE</span>
+    <span>|</span>
+    <span>BẢO MẬT CAO</span>
+    <span>|</span>
+    <span>UY TÍN 100%</span>
+  </div>
+
+</section>
+
+<script>
+// ── Particle / Beam Canvas ──
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles, beams;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function initParticles() {
+    particles = Array.from({ length: 120 }, () => ({
+      x: randomBetween(0, W),
+      y: randomBetween(0, H),
+      r: randomBetween(0.5, 2),
+      vx: randomBetween(-0.2, 0.2),
+      vy: randomBetween(-0.4, -0.1),
+      alpha: randomBetween(0.2, 0.8),
+      color: Math.random() > 0.5 ? '0,255,255' : '0,255,136'
+    }));
+  }
+
+  function initBeams() {
+    beams = Array.from({ length: 8 }, () => ({
+      x: randomBetween(0, W),
+      y: randomBetween(0, H),
+      angle: randomBetween(-0.3, 0.3),
+      speed: randomBetween(0.5, 1.5),
+      len: randomBetween(80, 220),
+      alpha: randomBetween(0.04, 0.12),
+      color: Math.random() > 0.5 ? '0,255,255' : '0,255,136'
+    }));
+  }
+
+  function drawParticles() {
+    particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = `rgba(${p.color},1)`;
+      ctx.shadowColor = `rgb(${p.color})`;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -5)  { p.y = H + 5; p.x = randomBetween(0, W); }
+      if (p.x < -5)  p.x = W + 5;
+      if (p.x > W+5) p.x = -5;
+    });
+  }
+
+  function drawBeams() {
+    beams.forEach(b => {
+      const x2 = b.x + Math.cos(b.angle + Math.PI / 2) * b.len;
+      const y2 = b.y + Math.sin(b.angle + Math.PI / 2) * b.len;
+      const grad = ctx.createLinearGradient(b.x, b.y, x2, y2);
+      grad.addColorStop(0, `rgba(${b.color},0)`);
+      grad.addColorStop(0.5, `rgba(${b.color},${b.alpha})`);
+      grad.addColorStop(1, `rgba(${b.color},0)`);
+      ctx.save();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.restore();
+
+      b.y += b.speed;
+      if (b.y > H + b.len) { b.y = -b.len; b.x = randomBetween(0, W); }
+    });
+  }
+
+  // Radial glow in centre
+  function drawGlow() {
+    const cx = W / 2, cy = H / 2;
+    const r  = Math.min(W, H) * 0.55;
+    const g  = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0,   'rgba(0,255,255,0.04)');
+    g.addColorStop(0.5, 'rgba(0,255,136,0.02)');
+    g.addColorStop(1,   'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    drawGlow();
+    drawBeams();
+    drawParticles();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', () => { resize(); initParticles(); initBeams(); });
+  resize();
+  initParticles();
+  initBeams();
+  loop();
+})();
+</script>
+</body>
+</html>
