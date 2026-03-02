@@ -56,7 +56,7 @@ local CommF = ReplicatedStorage
 local QUEUE_CODE = [[
 repeat task.wait() until game:IsLoaded()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Blf"))()
-loadstring(game:HttpGet("https://pastefy.app/ae4cxH1N/raw", true))()
+loadstring(game:HttpGet("https://pastefy.app/zwW26n17/raw", true))()
 ]]
 
 pcall(function()
@@ -165,6 +165,6 @@ loadstring(game:HttpGet(
 ))()
 
 loadstring(game:HttpGet(
-    "https://pastefy.app/ae4cxH1N/raw",
+    "https://pastefy.app/zwW26n17/raw",
     true
 ))()
