@@ -1,5 +1,5 @@
 -- Modern Clean UI | NoobScript
--- FIXED VERSION – no line error
+-- FIXED VERSION
 
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local gui = Instance.new("ScreenGui")
 gui.Name = "CleanFruitDuper"
 gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Main Frame
@@ -34,7 +35,7 @@ local topCorner = Instance.new("UICorner")
 topCorner.CornerRadius = UDim.new(0, 10)
 topCorner.Parent = top
 
--- Fix bottom corners
+-- Fix bottom corners of top bar
 local fix = Instance.new("Frame")
 fix.Size = UDim2.new(1, 0, 0, 10)
 fix.Position = UDim2.new(0, 0, 1, -10)
@@ -85,42 +86,43 @@ status.Parent = main
 
 -- Hover Effect
 btn.MouseEnter:Connect(function()
-	TweenService:Create(btn, TweenInfo.new(0.15), {
-		BackgroundColor3 = Color3.fromRGB(100, 210, 255)
-	}):Play()
+    TweenService:Create(btn, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(100, 210, 255)
+    }):Play()
 end)
 
 btn.MouseLeave:Connect(function()
-	TweenService:Create(btn, TweenInfo.new(0.15), {
-		BackgroundColor3 = Color3.fromRGB(79, 195, 247)
-	}):Play()
+    TweenService:Create(btn, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(79, 195, 247)
+    }):Play()
 end)
 
--- Button Logic (unchanged)
+-- Button Logic
 btn.MouseButton1Click:Connect(function()
-	local char = player.Character
-	if not char then
-		status.Text = "Character not found"
-		status.TextColor3 = Color3.fromRGB(255, 100, 100)
-		return
-	end
+    local char = player.Character
+    if not char then
+        status.Text = "Character not found"
+        status.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
 
-	local tool = char:FindFirstChildOfClass("Tool")
-	if not tool then
-		status.Text = "No fruit equipped"
-		status.TextColor3 = Color3.fromRGB(255, 100, 100)
-		return
-	end
+    local tool = char:FindFirstChildOfClass("Tool")
+    if not tool then
+        status.Text = "No fruit equipped"
+        status.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
 
-	tool.Archivable = true
-	tool:Clone().Parent = player.Backpack
+    tool.Archivable = true
+    local clone = tool:Clone()
+    clone.Parent = player.Backpack
 
-	status.Text = "Duped: " .. tool.Name
-	status.TextColor3 = Color3.fromRGB(120, 220, 160)
+    status.Text = "Duped: " .. tool.Name
+    status.TextColor3 = Color3.fromRGB(120, 220, 160)
 
-	task.delay(2, function()
-		status.Text = ""
-	end)
+    task.delay(2, function()
+        status.Text = ""
+    end)
 end)
 
 -- Drag Logic
@@ -129,27 +131,27 @@ local dragStart
 local startPos
 
 top.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
 
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 end)
