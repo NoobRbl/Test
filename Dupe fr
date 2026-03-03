@@ -1,5 +1,5 @@
 -- Modern Clean UI | NoobScript
--- Roblox LocalScript
+-- FIXED VERSION – no line error
 
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -9,7 +9,7 @@ local TweenService = game:GetService("TweenService")
 local gui = Instance.new("ScreenGui")
 gui.Name = "CleanFruitDuper"
 gui.ResetOnSpawn = false
-gui.Parent = player.PlayerGui
+gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Main Frame
 local main = Instance.new("Frame")
@@ -19,7 +19,9 @@ main.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
 main.BorderSizePixel = 0
 main.Parent = gui
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.Parent = main
 
 -- Top Bar
 local top = Instance.new("Frame")
@@ -28,9 +30,11 @@ top.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
 top.BorderSizePixel = 0
 top.Parent = main
 
-Instance.new("UICorner", top).CornerRadius = UDim.new(0, 10)
+local topCorner = Instance.new("UICorner")
+topCorner.CornerRadius = UDim.new(0, 10)
+topCorner.Parent = top
 
--- Fix corner
+-- Fix bottom corners
 local fix = Instance.new("Frame")
 fix.Size = UDim2.new(1, 0, 0, 10)
 fix.Position = UDim2.new(0, 0, 1, -10)
@@ -47,10 +51,10 @@ title.Text = "Fruit Duper"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
 title.TextColor3 = Color3.fromRGB(240, 240, 240)
-title.TextXAlignment = Left
+title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = top
 
--- Button
+-- Dupe Button
 local btn = Instance.new("TextButton")
 btn.Size = UDim2.new(1, -40, 0, 44)
 btn.Position = UDim2.new(0, 20, 0, 70)
@@ -60,9 +64,12 @@ btn.Font = Enum.Font.GothamBold
 btn.TextSize = 15
 btn.TextColor3 = Color3.fromRGB(15, 15, 15)
 btn.BorderSizePixel = 0
+btn.AutoButtonColor = false
 btn.Parent = main
 
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.Parent = btn
 
 -- Status
 local status = Instance.new("TextLabel")
@@ -73,73 +80,76 @@ status.Text = ""
 status.Font = Enum.Font.GothamMedium
 status.TextSize = 13
 status.TextColor3 = Color3.fromRGB(180, 180, 180)
-status.TextXAlignment = Center
+status.TextXAlignment = Enum.TextXAlignment.Center
 status.Parent = main
 
--- Hover effect
+-- Hover Effect
 btn.MouseEnter:Connect(function()
-    TweenService:Create(btn, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(100, 210, 255)
-    }):Play()
+	TweenService:Create(btn, TweenInfo.new(0.15), {
+		BackgroundColor3 = Color3.fromRGB(100, 210, 255)
+	}):Play()
 end)
 
 btn.MouseLeave:Connect(function()
-    TweenService:Create(btn, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(79, 195, 247)
-    }):Play()
+	TweenService:Create(btn, TweenInfo.new(0.15), {
+		BackgroundColor3 = Color3.fromRGB(79, 195, 247)
+	}):Play()
 end)
 
--- Logic (unchanged)
+-- Button Logic (unchanged)
 btn.MouseButton1Click:Connect(function()
-    local char = player.Character
-    if not char then
-        status.Text = "Character not found"
-        status.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
+	local char = player.Character
+	if not char then
+		status.Text = "Character not found"
+		status.TextColor3 = Color3.fromRGB(255, 100, 100)
+		return
+	end
 
-    local tool = char:FindFirstChildOfClass("Tool")
-    if not tool then
-        status.Text = "No fruit equipped"
-        status.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
+	local tool = char:FindFirstChildOfClass("Tool")
+	if not tool then
+		status.Text = "No fruit equipped"
+		status.TextColor3 = Color3.fromRGB(255, 100, 100)
+		return
+	end
 
-    tool.Archivable = true
-    tool:Clone().Parent = player.Backpack
+	tool.Archivable = true
+	tool:Clone().Parent = player.Backpack
 
-    status.Text = "Duped: " .. tool.Name
-    status.TextColor3 = Color3.fromRGB(120, 220, 160)
+	status.Text = "Duped: " .. tool.Name
+	status.TextColor3 = Color3.fromRGB(120, 220, 160)
 
-    task.delay(2, function()
-        status.Text = ""
-    end)
+	task.delay(2, function()
+		status.Text = ""
+	end)
 end)
 
--- Drag
-local dragging, dragStart, startPos
+-- Drag Logic
+local dragging = false
+local dragStart
+local startPos
 
 top.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == End then
-                dragging = false
-            end
-        end)
-    end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == MouseMovement then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
 end)
