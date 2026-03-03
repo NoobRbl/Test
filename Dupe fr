@@ -1,9 +1,10 @@
 -- Modern Clean UI | NoobScript
--- FIXED VERSION
+-- FIXED VERSION – Smooth Draggable
 
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 -- ScreenGui
 local gui = Instance.new("ScreenGui")
@@ -125,33 +126,53 @@ btn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Drag Logic
-local dragging = false
-local dragStart
-local startPos
+-- ═══════════════════════════════════════
+--   DRAG LOGIC  –  RunService (mượt)
+-- ═══════════════════════════════════════
+
+local dragging    = false
+local dragOffsetX = 0
+local dragOffsetY = 0
+local dragConn    = nil
 
 top.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+        dragging = true
+
+        -- Tính offset giữa góc trái-trên của main và vị trí chuột
+        local absPos = main.AbsolutePosition
+        dragOffsetX = input.Position.X - absPos.X
+        dragOffsetY = input.Position.Y - absPos.Y
+
+        -- Kết nối RenderStepped để cập nhật mỗi frame → mượt nhất
+        dragConn = RunService.RenderStepped:Connect(function()
+            if not dragging then
+                dragConn:Disconnect()
+                dragConn = nil
+                return
             end
+            local mousePos = UIS:GetMouseLocation()
+            main.Position = UDim2.new(
+                0, mousePos.X - dragOffsetX,
+                0, mousePos.Y - dragOffsetY
+            )
         end)
     end
 end)
 
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+top.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Dừng drag nếu thả chuột bên ngoài top bar
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
