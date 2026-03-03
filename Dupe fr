@@ -2,89 +2,174 @@ local player = game.Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
+-- ═══════════════════════════════════════════
+--   ZERO FRUIT DUPER  |  Glass + Dark + Neon
+-- ═══════════════════════════════════════════
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "ZeroFruitDuper"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = player.PlayerGui
 
+-- ── Main container ──────────────────────────
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 300, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.Size = UDim2.new(0, 320, 0, 220)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -110)
 mainFrame.BackgroundTransparency = 1
 mainFrame.Parent = gui
 
+-- ── Outer glow / shadow layer ───────────────
+local glowFrame = Instance.new("Frame")
+glowFrame.Name = "GlowFrame"
+glowFrame.Size = UDim2.new(1, 20, 1, 20)
+glowFrame.Position = UDim2.new(0, -10, 0, -10)
+glowFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+glowFrame.BackgroundTransparency = 0.88
+glowFrame.BorderSizePixel = 0
+glowFrame.ZIndex = 1
+glowFrame.Parent = mainFrame
+
+local glowCorner = Instance.new("UICorner")
+glowCorner.CornerRadius = UDim.new(0, 26)
+glowCorner.Parent = glowFrame
+
+-- ── Glass background ────────────────────────
 local bg = Instance.new("Frame")
 bg.Name = "Background"
 bg.Size = UDim2.new(1, 0, 1, 0)
-bg.Position = UDim2.new(0, 0, 0, 0)
-bg.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+bg.BackgroundColor3 = Color3.fromRGB(8, 10, 18)
+bg.BackgroundTransparency = 0.12
 bg.BorderSizePixel = 0
+bg.ZIndex = 2
 bg.Parent = mainFrame
 
 local bgCorner = Instance.new("UICorner")
 bgCorner.CornerRadius = UDim.new(0, 18)
 bgCorner.Parent = bg
 
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 150, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 100, 220))
+-- Subtle dark-to-darker gradient for depth
+local bgGradient = Instance.new("UIGradient")
+bgGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,  Color3.fromRGB(18, 22, 38)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 13, 24)),
+    ColorSequenceKeypoint.new(1,  Color3.fromRGB(6,  8,  18))
 }
-gradient.Rotation = 135
-gradient.Parent = bg
+bgGradient.Rotation = 135
+bgGradient.Parent = bg
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(80, 180, 255)
-stroke.Thickness = 2
-stroke.Transparency = 0.3
-stroke.Parent = bg
+-- Neon cyan border stroke
+local bgStroke = Instance.new("UIStroke")
+bgStroke.Color = Color3.fromRGB(0, 230, 200)
+bgStroke.Thickness = 1.5
+bgStroke.Transparency = 0.25
+bgStroke.Parent = bg
 
+-- ── Top bar (drag handle) ───────────────────
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 55)
-topBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-topBar.BackgroundTransparency = 0.92
+topBar.Size = UDim2.new(1, 0, 0, 52)
+topBar.BackgroundColor3 = Color3.fromRGB(0, 240, 210)
+topBar.BackgroundTransparency = 0.88
 topBar.BorderSizePixel = 0
+topBar.ZIndex = 3
 topBar.Parent = bg
 
 local topBarCorner = Instance.new("UICorner")
 topBarCorner.CornerRadius = UDim.new(0, 18)
 topBarCorner.Parent = topBar
 
+-- Square bottom corners for topBar
 local topBarBottom = Instance.new("Frame")
 topBarBottom.Size = UDim2.new(1, 0, 0, 18)
 topBarBottom.Position = UDim2.new(0, 0, 1, -18)
-topBarBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-topBarBottom.BackgroundTransparency = 0.92
+topBarBottom.BackgroundColor3 = Color3.fromRGB(0, 240, 210)
+topBarBottom.BackgroundTransparency = 0.88
 topBarBottom.BorderSizePixel = 0
+topBarBottom.ZIndex = 3
 topBarBottom.Parent = topBar
 
+-- Neon line at bottom of topBar
+local topBarLine = Instance.new("Frame")
+topBarLine.Size = UDim2.new(1, -24, 0, 1)
+topBarLine.Position = UDim2.new(0, 12, 1, -1)
+topBarLine.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+topBarLine.BackgroundTransparency = 0.5
+topBarLine.BorderSizePixel = 0
+topBarLine.ZIndex = 4
+topBarLine.Parent = topBar
+
+-- ── Icon dot (neon accent) ──────────────────
+local iconDot = Instance.new("Frame")
+iconDot.Size = UDim2.new(0, 10, 0, 10)
+iconDot.Position = UDim2.new(0, 14, 0.5, -5)
+iconDot.BackgroundColor3 = Color3.fromRGB(0, 255, 190)
+iconDot.BorderSizePixel = 0
+iconDot.ZIndex = 5
+iconDot.Parent = topBar
+
+local iconDotCorner = Instance.new("UICorner")
+iconDotCorner.CornerRadius = UDim.new(1, 0)
+iconDotCorner.Parent = iconDot
+
+-- ── Title ───────────────────────────────────
 local title = Instance.new("TextLabel")
 title.Name = "Title"
-title.Size = UDim2.new(1, -20, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
+title.Size = UDim2.new(1, -50, 1, 0)
+title.Position = UDim2.new(0, 32, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "NoobScript's Fruit Duper"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 20
+title.Text = "Fruit Duper"
+title.TextColor3 = Color3.fromRGB(200, 255, 245)
+title.TextSize = 17
 title.Font = Enum.Font.GothamBold
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.TextStrokeTransparency = 0.5
+title.TextStrokeTransparency = 0.6
+title.TextStrokeColor3 = Color3.fromRGB(0, 255, 200)
+title.ZIndex = 5
 title.Parent = topBar
+
+-- ── Sub-label (author tag) ──────────────────
+local subLabel = Instance.new("TextLabel")
+subLabel.Size = UDim2.new(1, -50, 0, 14)
+subLabel.Position = UDim2.new(0, 32, 0.58, 0)
+subLabel.BackgroundTransparency = 1
+subLabel.Text = "by NoobScript"
+subLabel.TextColor3 = Color3.fromRGB(0, 200, 170)
+subLabel.TextSize = 11
+subLabel.Font = Enum.Font.GothamMedium
+subLabel.TextXAlignment = Enum.TextXAlignment.Left
+subLabel.TextTransparency = 0.3
+subLabel.ZIndex = 5
+subLabel.Parent = topBar
+
+-- ── Dupe button ─────────────────────────────
+local btnGlow = Instance.new("Frame")
+btnGlow.Size = UDim2.new(0, 232, 0, 56)
+btnGlow.Position = UDim2.new(0.5, -116, 0, 70)
+btnGlow.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+btnGlow.BackgroundTransparency = 0.82
+btnGlow.BorderSizePixel = 0
+btnGlow.ZIndex = 3
+btnGlow.Parent = bg
+
+local btnGlowCorner = Instance.new("UICorner")
+btnGlowCorner.CornerRadius = UDim.new(0, 14)
+btnGlowCorner.Parent = btnGlow
 
 local btn = Instance.new("TextButton")
 btn.Name = "DupeButton"
-btn.Size = UDim2.new(0, 220, 0, 50)
-btn.Position = UDim2.new(0.5, -110, 0, 75)
-btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+btn.Size = UDim2.new(0, 220, 0, 48)
+btn.Position = UDim2.new(0.5, -110, 0, 74)
+btn.BackgroundColor3 = Color3.fromRGB(0, 30, 28)
+btn.BackgroundTransparency = 0.1
 btn.BorderSizePixel = 0
-btn.Text = "Dupe Fruit"
-btn.TextColor3 = Color3.fromRGB(30, 100, 220)
-btn.TextSize = 18
+btn.Text = "⬡  DUPE FRUIT"
+btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+btn.TextSize = 15
 btn.Font = Enum.Font.GothamBold
 btn.AutoButtonColor = false
+btn.ZIndex = 4
 btn.Parent = bg
 
 local btnCorner = Instance.new("UICorner")
@@ -92,79 +177,115 @@ btnCorner.CornerRadius = UDim.new(0, 12)
 btnCorner.Parent = btn
 
 local btnStroke = Instance.new("UIStroke")
-btnStroke.Color = Color3.fromRGB(120, 200, 255)
-btnStroke.Thickness = 2
-btnStroke.Transparency = 0
+btnStroke.Color = Color3.fromRGB(0, 255, 200)
+btnStroke.Thickness = 1.5
+btnStroke.Transparency = 0.1
 btnStroke.Parent = btn
 
+-- Button inner gradient (glass sheen)
+local btnGradient = Instance.new("UIGradient")
+btnGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,   Color3.fromRGB(0, 55, 48)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 20, 18)),
+    ColorSequenceKeypoint.new(1,   Color3.fromRGB(0, 35, 30))
+}
+btnGradient.Rotation = 90
+btnGradient.Parent = btn
+
+-- ── Status label ────────────────────────────
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Name = "StatusLabel"
-statusLabel.Size = UDim2.new(1, -20, 0, 25)
-statusLabel.Position = UDim2.new(0, 10, 0, 135)
+statusLabel.Size = UDim2.new(1, -24, 0, 24)
+statusLabel.Position = UDim2.new(0, 12, 0, 138)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = ""
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.TextSize = 14
+statusLabel.TextColor3 = Color3.fromRGB(150, 255, 220)
+statusLabel.TextSize = 13
 statusLabel.Font = Enum.Font.GothamBold
 statusLabel.TextStrokeTransparency = 0.5
+statusLabel.TextStrokeColor3 = Color3.fromRGB(0, 200, 160)
+statusLabel.ZIndex = 4
 statusLabel.Parent = bg
 
+-- ── Credit label ─────────────────────────────
 local creditLabel = Instance.new("TextLabel")
 creditLabel.Name = "CreditLabel"
-creditLabel.Size = UDim2.new(1, -20, 0, 18)
-creditLabel.Position = UDim2.new(0, 10, 1, -26)
+creditLabel.Size = UDim2.new(1, -24, 0, 16)
+creditLabel.Position = UDim2.new(0, 12, 1, -22)
 creditLabel.BackgroundTransparency = 1
-creditLabel.Text = "Made By Noob | Tiktok: NoobScriptsOnTop"
-creditLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-creditLabel.TextSize = 12
+creditLabel.Text = "Made By Noob  ·  Tiktok: NoobScriptsOnTop"
+creditLabel.TextColor3 = Color3.fromRGB(0, 180, 150)
+creditLabel.TextSize = 11
 creditLabel.Font = Enum.Font.GothamMedium
 creditLabel.TextXAlignment = Enum.TextXAlignment.Center
-creditLabel.TextTransparency = 0.2
+creditLabel.TextTransparency = 0.35
+creditLabel.ZIndex = 4
 creditLabel.Parent = bg
 
+-- ═══════════════════════════════════════════
+--   BUTTON INTERACTIONS  (same logic)
+-- ═══════════════════════════════════════════
+
 btn.MouseEnter:Connect(function()
-    TweenService:Create(btn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(120, 200, 255),
-        TextColor3 = Color3.fromRGB(255, 255, 255)
+    TweenService:Create(btn, TweenInfo.new(0.18), {
+        BackgroundColor3 = Color3.fromRGB(0, 55, 48),
+        TextColor3       = Color3.fromRGB(255, 255, 255)
+    }):Play()
+    TweenService:Create(btnStroke, TweenInfo.new(0.18), {
+        Transparency = 0
+    }):Play()
+    TweenService:Create(btnGlow, TweenInfo.new(0.18), {
+        BackgroundTransparency = 0.65
     }):Play()
 end)
 
 btn.MouseLeave:Connect(function()
-    TweenService:Create(btn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        TextColor3 = Color3.fromRGB(30, 100, 220)
+    TweenService:Create(btn, TweenInfo.new(0.18), {
+        BackgroundColor3 = Color3.fromRGB(0, 30, 28),
+        TextColor3       = Color3.fromRGB(0, 255, 200)
+    }):Play()
+    TweenService:Create(btnStroke, TweenInfo.new(0.18), {
+        Transparency = 0.1
+    }):Play()
+    TweenService:Create(btnGlow, TweenInfo.new(0.18), {
+        BackgroundTransparency = 0.82
     }):Play()
 end)
 
 btn.MouseButton1Click:Connect(function()
     local char = player.Character
-    if not char then 
-        statusLabel.Text = "Character not found"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
-        return 
+    if not char then
+        statusLabel.Text = "✗  Character not found"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 90, 110)
+        return
     end
-    
+
     local tool = char:FindFirstChildOfClass("Tool")
-    if not tool then 
-        statusLabel.Text = "No Fruit Held"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
-        return 
+    if not tool then
+        statusLabel.Text = "✗  No Fruit Held"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 90, 110)
+        return
     end
-    
+
     tool.Archivable = true
     local clone = tool:Clone()
     clone.Parent = player.Backpack
-    
-    statusLabel.Text = "✓ Duped: " .. tool.Name
-    statusLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
-    
-    TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 46)}):Play()
+
+    statusLabel.Text = "✓  Duped: " .. tool.Name
+    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 180)
+
+    -- click pulse
+    TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 44)}):Play()
     wait(0.1)
-    TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, 220, 0, 50)}):Play()
-    
+    TweenService:Create(btn, TweenInfo.new(0.12), {Size = UDim2.new(0, 220, 0, 48)}):Play()
+
     wait(2.5)
     statusLabel.Text = ""
 end)
+
+-- ═══════════════════════════════════════════
+--   DRAG  (same logic, topBar as handle)
+-- ═══════════════════════════════════════════
 
 local dragging = false
 local dragInput, dragStart, startPos
@@ -180,11 +301,11 @@ local function update(input)
 end
 
 topBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging  = true
         dragStart = input.Position
-        startPos = mainFrame.Position
-        
+        startPos  = mainFrame.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -194,7 +315,8 @@ topBar.InputBegan:Connect(function(input)
 end)
 
 topBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
