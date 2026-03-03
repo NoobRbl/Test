@@ -1,10 +1,11 @@
 -- Modern Clean UI | NoobScript
--- FIXED VERSION – Smooth Draggable
+-- FIXED VERSION – Smooth Draggable (inset fix)
 
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
 
 -- ScreenGui
 local gui = Instance.new("ScreenGui")
@@ -126,9 +127,13 @@ btn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ═══════════════════════════════════════
---   DRAG LOGIC  –  RunService (mượt)
--- ═══════════════════════════════════════
+-- ═══════════════════════════════════════════════
+--   DRAG LOGIC  –  GuiInset fix + RenderStepped
+-- ═══════════════════════════════════════════════
+
+-- GetMouseLocation() trả về tọa độ kể cả topbar Roblox (36px)
+-- AbsolutePosition KHÔNG tính topbar đó → phải trừ inset ra
+local inset = GuiService:GetGuiInset()
 
 local dragging    = false
 local dragOffsetX = 0
@@ -141,28 +146,34 @@ top.InputBegan:Connect(function(input)
 
         dragging = true
 
-        -- Tính offset giữa góc trái-trên của main và vị trí chuột
-        local absPos = main.AbsolutePosition
-        dragOffsetX = input.Position.X - absPos.X
-        dragOffsetY = input.Position.Y - absPos.Y
+        -- Lấy vị trí chuột đã trừ inset để khớp với AbsolutePosition
+        local mouseX = input.Position.X
+        local mouseY = input.Position.Y - inset.Y
 
-        -- Kết nối RenderStepped để cập nhật mỗi frame → mượt nhất
+        dragOffsetX = mouseX - main.AbsolutePosition.X
+        dragOffsetY = mouseY - main.AbsolutePosition.Y
+
+        if dragConn then dragConn:Disconnect() end
+
         dragConn = RunService.RenderStepped:Connect(function()
             if not dragging then
                 dragConn:Disconnect()
                 dragConn = nil
                 return
             end
-            local mousePos = UIS:GetMouseLocation()
+
+            local mouse = UIS:GetMouseLocation()
+            -- Trừ inset khi tính vị trí đặt frame
             main.Position = UDim2.new(
-                0, mousePos.X - dragOffsetX,
-                0, mousePos.Y - dragOffsetY
+                0, mouse.X - dragOffsetX,
+                0, mouse.Y - inset.Y - dragOffsetY
             )
         end)
     end
 end)
 
-top.InputEnded:Connect(function(input)
+-- Dừng drag khi thả chuột dù ở đâu
+UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
