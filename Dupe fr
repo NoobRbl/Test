@@ -168,11 +168,3 @@ top.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
-
--- Dừng drag nếu thả chuột bên ngoài top bar
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
