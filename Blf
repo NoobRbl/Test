@@ -19,7 +19,7 @@ ScreenGui.IgnoreGuiInset = true
 -- ─── Main Frame (Glass Panel) ─────────────────────────────────────────────────
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 220, 0, 210)
+MainFrame.Size = UDim2.new(0, 220, 0, 254)
 MainFrame.Position = UDim2.new(0.5, -110, 0.5, -105)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
@@ -114,7 +114,7 @@ local Label = Instance.new("TextLabel")
 Label.Parent = ToggleRow
 Label.Size = UDim2.new(1, -60, 1, 0)
 Label.Position = UDim2.new(0, 11, 0, 0)
-Label.Text = "Auto Trade Lock🔒"
+Label.Text = "Freeze Trade🔒"
 Label.TextColor3 = Color3.fromRGB(210, 225, 255)
 Label.BackgroundTransparency = 1
 Label.Font = Enum.Font.GothamMedium
@@ -192,10 +192,83 @@ local function ToggleSwitch()
 end
 ClickButton.MouseButton1Click:Connect(ToggleSwitch)
 
+-- ─── Force Accept Toggle Row ─────────────────────────────────────────────────
+local FARow = Instance.new("Frame")
+FARow.Name = "FARow"
+FARow.Size = UDim2.new(1, -24, 0, 38)
+FARow.Position = UDim2.new(0, 12, 0, 108)
+FARow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+FARow.BackgroundTransparency = 0.93
+FARow.BorderSizePixel = 0
+FARow.Parent = MainFrame
+Instance.new("UICorner", FARow).CornerRadius = UDim.new(0, 9)
+
+local FARowStroke = Instance.new("UIStroke")
+FARowStroke.Color = Color3.fromRGB(255, 255, 255)
+FARowStroke.Transparency = 0.88
+FARowStroke.Thickness = 1
+FARowStroke.Parent = FARow
+
+local FALabel = Instance.new("TextLabel")
+FALabel.Parent = FARow
+FALabel.Size = UDim2.new(1, -60, 1, 0)
+FALabel.Position = UDim2.new(0, 11, 0, 0)
+FALabel.Text = "Force Accept✔"
+FALabel.TextColor3 = Color3.fromRGB(210, 225, 255)
+FALabel.BackgroundTransparency = 1
+FALabel.Font = Enum.Font.GothamMedium
+FALabel.TextSize = 13
+FALabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local FAToggleFrame = Instance.new("Frame")
+FAToggleFrame.Parent = FARow
+FAToggleFrame.Size = UDim2.new(0, 42, 0, 20)
+FAToggleFrame.Position = UDim2.new(1, -52, 0.5, -10)
+FAToggleFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 20)
+FAToggleFrame.BorderSizePixel = 0
+Instance.new("UICorner", FAToggleFrame).CornerRadius = UDim.new(1, 0)
+
+local FATogglePillStroke = Instance.new("UIStroke")
+FATogglePillStroke.Color = Color3.fromRGB(255, 80, 80)
+FATogglePillStroke.Transparency = 0.5
+FATogglePillStroke.Thickness = 1
+FATogglePillStroke.Parent = FAToggleFrame
+
+local FAKnob = Instance.new("Frame")
+FAKnob.Parent = FAToggleFrame
+FAKnob.Size = UDim2.new(0, 16, 0, 16)
+FAKnob.Position = UDim2.new(0, 2, 0, 2)
+FAKnob.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+FAKnob.BorderSizePixel = 0
+Instance.new("UICorner", FAKnob).CornerRadius = UDim.new(1, 0)
+
+local FAClickButton = Instance.new("TextButton")
+FAClickButton.Parent = FAToggleFrame
+FAClickButton.BackgroundTransparency = 1
+FAClickButton.Size = UDim2.new(1, 0, 1, 0)
+FAClickButton.Text = ""
+
+local FAToggleOn = false
+local function FAToggleSwitch()
+	FAToggleOn = not FAToggleOn
+	if FAToggleOn then
+		TweenService:Create(FAToggleFrame,      tweenInfoColor, { BackgroundColor3 = COLOR_ON_BG }):Play()
+		TweenService:Create(FAKnob,             tweenInfo,      { Position = UDim2.new(1, -18, 0, 2) }):Play()
+		TweenService:Create(FAKnob,             tweenInfoColor, { BackgroundColor3 = COLOR_ON_KNOB }):Play()
+		TweenService:Create(FATogglePillStroke, tweenInfoColor, { Color = COLOR_ON_STROKE, Transparency = 0.4 }):Play()
+	else
+		TweenService:Create(FAToggleFrame,      tweenInfoColor, { BackgroundColor3 = COLOR_OFF_BG }):Play()
+		TweenService:Create(FAKnob,             tweenInfo,      { Position = UDim2.new(0, 2, 0, 2) }):Play()
+		TweenService:Create(FAKnob,             tweenInfoColor, { BackgroundColor3 = COLOR_OFF_KNOB }):Play()
+		TweenService:Create(FATogglePillStroke, tweenInfoColor, { Color = COLOR_OFF_STROKE, Transparency = 0.5 }):Play()
+	end
+end
+FAClickButton.MouseButton1Click:Connect(FAToggleSwitch)
+
 -- ─── Fruit Input Row ──────────────────────────────────────────────────────────
 local InputRow = Instance.new("Frame")
 InputRow.Size = UDim2.new(1, -24, 0, 38)
-InputRow.Position = UDim2.new(0, 12, 0, 108)
+InputRow.Position = UDim2.new(0, 12, 0, 152)
 InputRow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 InputRow.BackgroundTransparency = 0.93
 InputRow.BorderSizePixel = 0
@@ -244,7 +317,7 @@ PetBoxStroke.Parent = PetBox
 local RejoinBtn = Instance.new("TextButton")
 RejoinBtn.Parent = MainFrame
 RejoinBtn.Size = UDim2.new(1, -24, 0, 34)
-RejoinBtn.Position = UDim2.new(0, 12, 0, 158)
+RejoinBtn.Position = UDim2.new(0, 12, 0, 202)
 RejoinBtn.Text = "⇌  Server Hop"
 RejoinBtn.TextColor3 = Color3.fromRGB(8, 12, 22)
 RejoinBtn.BackgroundColor3 = Color3.fromRGB(90, 190, 255)
