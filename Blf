@@ -1,244 +1,198 @@
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
 -- ╔══════════════════════════════════════╗
--- ║     Trade Scam GUI — Glass Edition          ║
--- ║          Script By Noob Script              ║
+-- ║     Trade Scam GUI — Sleek Dark      ║
+-- ║          Script By Meow Script       ║
 -- ╚══════════════════════════════════════╝
 
--- ─── ScreenGui ───────────────────────────────────────────────────────────────
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TradeScamGUI"
+ScreenGui.Name = "TradeScamGUI_Meow"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 
--- ─── Main Frame (Glass Panel) ─────────────────────────────────────────────────
+-- ─── 1. Khung chính (Main Frame) được thu gọn ──────────────────────────────────
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 220, 0, 254)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -105)
+MainFrame.Size = UDim2.new(0, 230, 0, 190) -- Thu nhỏ chiều cao do đã bỏ bớt nút
+MainFrame.Position = UDim2.new(0.5, -115, 0.5, -95)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
-MainFrame.BackgroundTransparency = 0.28
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- Style màu tối khối đặc (Solid Dark)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ClipsDescendants = false 
 MainFrame.Parent = ScreenGui
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
-MainCorner.Parent = MainFrame
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
--- Outer glass border
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Transparency = 0.82
-MainStroke.Thickness = 1
+MainStroke.Color = Color3.fromRGB(60, 60, 75)
+MainStroke.Thickness = 1.5
 MainStroke.Parent = MainFrame
 
--- Inner highlight line (top shimmer)
-local TopShimmer = Instance.new("Frame")
-TopShimmer.Name = "TopShimmer"
-TopShimmer.Size = UDim2.new(0.7, 0, 0, 1)
-TopShimmer.Position = UDim2.new(0.15, 0, 0, 1)
-TopShimmer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TopShimmer.BackgroundTransparency = 0.6
-TopShimmer.BorderSizePixel = 0
-TopShimmer.Parent = MainFrame
-Instance.new("UICorner", TopShimmer).CornerRadius = UDim.new(1, 0)
-
--- ─── Accent bar (top left colored line) ──────────────────────────────────────
-local AccentBar = Instance.new("Frame")
-AccentBar.Size = UDim2.new(0, 3, 0, 22)
-AccentBar.Position = UDim2.new(0, 10, 0, 12)
-AccentBar.BackgroundColor3 = Color3.fromRGB(90, 190, 255)
-AccentBar.BorderSizePixel = 0
-AccentBar.Parent = MainFrame
-Instance.new("UICorner", AccentBar).CornerRadius = UDim.new(1, 0)
-
--- ─── Title ────────────────────────────────────────────────────────────────────
+-- ─── 2. Tiêu đề (Header) ───────────────────────────────────────────────────────
 local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
 Title.Size = UDim2.new(1, -20, 0, 22)
-Title.Position = UDim2.new(0, 20, 0, 12)
+Title.Position = UDim2.new(0, 15, 0, 10)
 Title.Text = "Trade Scam"
-Title.TextColor3 = Color3.fromRGB(230, 240, 255)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 15
+Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- ─── Subtitle / version ────────────────────────────────────────────────────────
 local Sub = Instance.new("TextLabel")
 Sub.Parent = MainFrame
 Sub.Size = UDim2.new(1, -20, 0, 14)
-Sub.Position = UDim2.new(0, 20, 0, 32)
-Sub.Text = "by Noob Script  •  v1.0"
-Sub.TextColor3 = Color3.fromRGB(90, 190, 255)
+Sub.Position = UDim2.new(0, 15, 0, 30)
+Sub.Text = "by Meow Script  •  v1.0"
+Sub.TextColor3 = Color3.fromRGB(150, 150, 180)
 Sub.BackgroundTransparency = 1
 Sub.Font = Enum.Font.Gotham
-Sub.TextSize = 10
+Sub.TextSize = 11
 Sub.TextXAlignment = Enum.TextXAlignment.Left
 
--- ─── Divider ──────────────────────────────────────────────────────────────────
 local Divider = Instance.new("Frame")
-Divider.Size = UDim2.new(1, -24, 0, 1)
-Divider.Position = UDim2.new(0, 12, 0, 54)
-Divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Divider.BackgroundTransparency = 0.88
+Divider.Size = UDim2.new(1, -30, 0, 1)
+Divider.Position = UDim2.new(0, 15, 0, 50)
+Divider.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
 Divider.BorderSizePixel = 0
 Divider.Parent = MainFrame
 
--- ─── Toggle Row ───────────────────────────────────────────────────────────────
-local ToggleRow = Instance.new("Frame")
-ToggleRow.Name = "ToggleRow"
-ToggleRow.Size = UDim2.new(1, -24, 0, 38)
-ToggleRow.Position = UDim2.new(0, 12, 0, 62)
-ToggleRow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ToggleRow.BackgroundTransparency = 0.93
-ToggleRow.BorderSizePixel = 0
-ToggleRow.Parent = MainFrame
-Instance.new("UICorner", ToggleRow).CornerRadius = UDim.new(0, 9)
+-- ─── 3. Dropdown: Freeze Trade Player ──────────────────────────────────────────
+local DropdownRow = Instance.new("Frame")
+DropdownRow.Size = UDim2.new(1, -30, 0, 34)
+DropdownRow.Position = UDim2.new(0, 15, 0, 60)
+DropdownRow.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+DropdownRow.BorderSizePixel = 0
+DropdownRow.Parent = MainFrame
+Instance.new("UICorner", DropdownRow).CornerRadius = UDim.new(0, 8)
 
-local ToggleRowStroke = Instance.new("UIStroke")
-ToggleRowStroke.Color = Color3.fromRGB(255, 255, 255)
-ToggleRowStroke.Transparency = 0.88
-ToggleRowStroke.Thickness = 1
-ToggleRowStroke.Parent = ToggleRow
+local DropdownLabel = Instance.new("TextLabel")
+DropdownLabel.Parent = DropdownRow
+DropdownLabel.Size = UDim2.new(1, -25, 1, 0) -- Chừa chỗ cho mũi tên
+DropdownLabel.Position = UDim2.new(0, 10, 0, 0)
+DropdownLabel.Text = "👤 Freeze Trade: Unknown"
+DropdownLabel.TextColor3 = Color3.fromRGB(220, 220, 235)
+DropdownLabel.BackgroundTransparency = 1
+DropdownLabel.Font = Enum.Font.GothamMedium
+DropdownLabel.TextSize = 12
+DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- Fix tràn chữ: Tự động hiện "..." nếu tên quá dài
+DropdownLabel.TextTruncate = Enum.TextTruncate.AtEnd 
 
-local Label = Instance.new("TextLabel")
-Label.Parent = ToggleRow
-Label.Size = UDim2.new(1, -60, 1, 0)
-Label.Position = UDim2.new(0, 11, 0, 0)
-Label.Text = "Freeze Trade🔒"
-Label.TextColor3 = Color3.fromRGB(210, 225, 255)
-Label.BackgroundTransparency = 1
-Label.Font = Enum.Font.GothamMedium
-Label.TextSize = 13
-Label.TextXAlignment = Enum.TextXAlignment.Left
+-- Icon mũi tên nhỏ bên phải
+local DropdownIcon = Instance.new("TextLabel")
+DropdownIcon.Parent = DropdownRow
+DropdownIcon.Size = UDim2.new(0, 20, 1, 0)
+DropdownIcon.Position = UDim2.new(1, -25, 0, 0)
+DropdownIcon.Text = "▼"
+DropdownIcon.TextColor3 = Color3.fromRGB(150, 150, 180)
+DropdownIcon.BackgroundTransparency = 1
+DropdownIcon.Font = Enum.Font.Gotham
+DropdownIcon.TextSize = 10
 
--- Toggle pill
-local ToggleFrame = Instance.new("Frame")
-ToggleFrame.Parent = ToggleRow
-ToggleFrame.Size = UDim2.new(0, 42, 0, 20)
-ToggleFrame.Position = UDim2.new(1, -52, 0.5, -10)
-ToggleFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 20)
-ToggleFrame.BorderSizePixel = 0
-Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(1, 0)
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Parent = DropdownRow
+DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+DropdownButton.BackgroundTransparency = 1
+DropdownButton.Text = ""
 
-local TogglePillStroke = Instance.new("UIStroke")
-TogglePillStroke.Color = Color3.fromRGB(255, 80, 80)
-TogglePillStroke.Transparency = 0.5
-TogglePillStroke.Thickness = 1
-TogglePillStroke.Parent = ToggleFrame
+-- Danh sách Dropdown (Nổi đè lên UI)
+local DropdownList = Instance.new("ScrollingFrame")
+DropdownList.Parent = MainFrame
+DropdownList.Size = UDim2.new(1, -30, 0, 110)
+DropdownList.Position = UDim2.new(0, 15, 0, 98) 
+DropdownList.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+DropdownList.BorderSizePixel = 0
+DropdownList.ZIndex = 50
+DropdownList.Visible = false
+DropdownList.ScrollBarThickness = 3
+Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", DropdownList).Color = Color3.fromRGB(80, 80, 100)
 
-local Knob = Instance.new("Frame")
-Knob.Parent = ToggleFrame
-Knob.Size = UDim2.new(0, 16, 0, 16)
-Knob.Position = UDim2.new(0, 2, 0, 2)
-Knob.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-Knob.BorderSizePixel = 0
-Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Parent = DropdownList
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local ClickButton = Instance.new("TextButton")
-ClickButton.Parent = ToggleFrame
-ClickButton.BackgroundTransparency = 1
-ClickButton.Size = UDim2.new(1, 0, 1, 0)
-ClickButton.Text = ""
+local function AddDropdownOption(nameText)
+	local OptionBtn = Instance.new("TextButton")
+	OptionBtn.Parent = DropdownList
+	OptionBtn.Size = UDim2.new(1, 0, 0, 28)
+	OptionBtn.BackgroundTransparency = 1
+	OptionBtn.Text = "  " .. nameText
+	OptionBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	OptionBtn.Font = Enum.Font.Gotham
+	OptionBtn.TextSize = 12
+	OptionBtn.TextXAlignment = Enum.TextXAlignment.Left
+	OptionBtn.TextTruncate = Enum.TextTruncate.AtEnd -- Fix tràn chữ trong danh sách
+	OptionBtn.ZIndex = 51
 
--- ─── Toggle Logic — Smooth TweenService animations ───────────────────────────
-local ToggleOn = false
-local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-local tweenInfoColor = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
--- Colors
-local COLOR_OFF_BG      = Color3.fromRGB(60,  20,  20)
-local COLOR_ON_BG       = Color3.fromRGB(15,  40,  30)
-local COLOR_OFF_KNOB    = Color3.fromRGB(255, 80,  80)
-local COLOR_ON_KNOB     = Color3.fromRGB(60,  220, 130)
-local COLOR_OFF_STROKE  = Color3.fromRGB(255, 80,  80)
-local COLOR_ON_STROKE   = Color3.fromRGB(60,  220, 130)
-
-local function ToggleSwitch()
-	ToggleOn = not ToggleOn
-
-	if ToggleOn then
-		-- Pill background
-		TweenService:Create(ToggleFrame,  tweenInfoColor, { BackgroundColor3 = COLOR_ON_BG }):Play()
-		-- Knob slide right + recolor
-		TweenService:Create(Knob,         tweenInfo,      { Position = UDim2.new(1, -18, 0, 2) }):Play()
-		TweenService:Create(Knob,         tweenInfoColor, { BackgroundColor3 = COLOR_ON_KNOB }):Play()
-		-- Stroke recolor (color tween on UIStroke via its Color property)
-		TweenService:Create(TogglePillStroke, tweenInfoColor, {
-			Color       = COLOR_ON_STROKE,
-			Transparency = 0.4,
-		}):Play()
-	else
-		-- Pill background
-		TweenService:Create(ToggleFrame,  tweenInfoColor, { BackgroundColor3 = COLOR_OFF_BG }):Play()
-		-- Knob slide left + recolor
-		TweenService:Create(Knob,         tweenInfo,      { Position = UDim2.new(0, 2, 0, 2) }):Play()
-		TweenService:Create(Knob,         tweenInfoColor, { BackgroundColor3 = COLOR_OFF_KNOB }):Play()
-		-- Stroke recolor
-		TweenService:Create(TogglePillStroke, tweenInfoColor, {
-			Color        = COLOR_OFF_STROKE,
-			Transparency = 0.5,
-		}):Play()
-	end
+	OptionBtn.MouseButton1Click:Connect(function()
+		DropdownLabel.Text = "👤 Freeze Trade: " .. nameText
+		DropdownList.Visible = false
+		DropdownIcon.Text = "▼"
+	end)
 end
-ClickButton.MouseButton1Click:Connect(ToggleSwitch)
 
--- ─── Force Accept Toggle Row ─────────────────────────────────────────────────
+DropdownButton.MouseButton1Click:Connect(function()
+	DropdownList.Visible = not DropdownList.Visible
+	if DropdownList.Visible then
+		DropdownIcon.Text = "▲"
+		for _, child in pairs(DropdownList:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+		
+		AddDropdownOption("Unknown")
+		for _, player in pairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer then
+				AddDropdownOption(player.Name)
+			end
+		end
+		DropdownList.CanvasSize = UDim2.new(0, 0, 0, #DropdownList:GetChildren() * 28)
+	else
+		DropdownIcon.Text = "▼"
+	end
+end)
+
+-- ─── 4. Force Accept Toggle (Giờ nằm ở giữa) ───────────────────────────────────
 local FARow = Instance.new("Frame")
-FARow.Name = "FARow"
-FARow.Size = UDim2.new(1, -24, 0, 38)
-FARow.Position = UDim2.new(0, 12, 0, 108)
-FARow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-FARow.BackgroundTransparency = 0.93
+FARow.Size = UDim2.new(1, -30, 0, 34)
+FARow.Position = UDim2.new(0, 15, 0, 100)
+FARow.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 FARow.BorderSizePixel = 0
 FARow.Parent = MainFrame
-Instance.new("UICorner", FARow).CornerRadius = UDim.new(0, 9)
-
-local FARowStroke = Instance.new("UIStroke")
-FARowStroke.Color = Color3.fromRGB(255, 255, 255)
-FARowStroke.Transparency = 0.88
-FARowStroke.Thickness = 1
-FARowStroke.Parent = FARow
+Instance.new("UICorner", FARow).CornerRadius = UDim.new(0, 8)
 
 local FALabel = Instance.new("TextLabel")
 FALabel.Parent = FARow
 FALabel.Size = UDim2.new(1, -60, 1, 0)
-FALabel.Position = UDim2.new(0, 11, 0, 0)
-FALabel.Text = "Force Accept✔"
-FALabel.TextColor3 = Color3.fromRGB(210, 225, 255)
+FALabel.Position = UDim2.new(0, 10, 0, 0)
+FALabel.Text = "✔️ Force Accept"
+FALabel.TextColor3 = Color3.fromRGB(220, 220, 235)
 FALabel.BackgroundTransparency = 1
 FALabel.Font = Enum.Font.GothamMedium
-FALabel.TextSize = 13
+FALabel.TextSize = 12
 FALabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local FAToggleFrame = Instance.new("Frame")
 FAToggleFrame.Parent = FARow
-FAToggleFrame.Size = UDim2.new(0, 42, 0, 20)
-FAToggleFrame.Position = UDim2.new(1, -52, 0.5, -10)
-FAToggleFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 20)
+FAToggleFrame.Size = UDim2.new(0, 38, 0, 18)
+FAToggleFrame.Position = UDim2.new(1, -48, 0.5, -9)
+FAToggleFrame.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
 FAToggleFrame.BorderSizePixel = 0
 Instance.new("UICorner", FAToggleFrame).CornerRadius = UDim.new(1, 0)
 
-local FATogglePillStroke = Instance.new("UIStroke")
-FATogglePillStroke.Color = Color3.fromRGB(255, 80, 80)
-FATogglePillStroke.Transparency = 0.5
-FATogglePillStroke.Thickness = 1
-FATogglePillStroke.Parent = FAToggleFrame
-
 local FAKnob = Instance.new("Frame")
 FAKnob.Parent = FAToggleFrame
-FAKnob.Size = UDim2.new(0, 16, 0, 16)
+FAKnob.Size = UDim2.new(0, 14, 0, 14)
 FAKnob.Position = UDim2.new(0, 2, 0, 2)
-FAKnob.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+FAKnob.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
 FAKnob.BorderSizePixel = 0
 Instance.new("UICorner", FAKnob).CornerRadius = UDim.new(1, 0)
 
@@ -248,116 +202,56 @@ FAClickButton.BackgroundTransparency = 1
 FAClickButton.Size = UDim2.new(1, 0, 1, 0)
 FAClickButton.Text = ""
 
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local tweenInfoColor = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local COLOR_OFF_BG, COLOR_ON_BG = Color3.fromRGB(50, 30, 30), Color3.fromRGB(30, 60, 40)
+local COLOR_OFF_KNOB, COLOR_ON_KNOB = Color3.fromRGB(220, 80, 80), Color3.fromRGB(80, 220, 120)
+
 local FAToggleOn = false
-local function FAToggleSwitch()
+FAClickButton.MouseButton1Click:Connect(function()
 	FAToggleOn = not FAToggleOn
 	if FAToggleOn then
-		TweenService:Create(FAToggleFrame,      tweenInfoColor, { BackgroundColor3 = COLOR_ON_BG }):Play()
-		TweenService:Create(FAKnob,             tweenInfo,      { Position = UDim2.new(1, -18, 0, 2) }):Play()
-		TweenService:Create(FAKnob,             tweenInfoColor, { BackgroundColor3 = COLOR_ON_KNOB }):Play()
-		TweenService:Create(FATogglePillStroke, tweenInfoColor, { Color = COLOR_ON_STROKE, Transparency = 0.4 }):Play()
+		TweenService:Create(FAToggleFrame, tweenInfoColor, { BackgroundColor3 = COLOR_ON_BG }):Play()
+		TweenService:Create(FAKnob, tweenInfo, { Position = UDim2.new(1, -16, 0, 2) }):Play()
+		TweenService:Create(FAKnob, tweenInfoColor, { BackgroundColor3 = COLOR_ON_KNOB }):Play()
 	else
-		TweenService:Create(FAToggleFrame,      tweenInfoColor, { BackgroundColor3 = COLOR_OFF_BG }):Play()
-		TweenService:Create(FAKnob,             tweenInfo,      { Position = UDim2.new(0, 2, 0, 2) }):Play()
-		TweenService:Create(FAKnob,             tweenInfoColor, { BackgroundColor3 = COLOR_OFF_KNOB }):Play()
-		TweenService:Create(FATogglePillStroke, tweenInfoColor, { Color = COLOR_OFF_STROKE, Transparency = 0.5 }):Play()
+		TweenService:Create(FAToggleFrame, tweenInfoColor, { BackgroundColor3 = COLOR_OFF_BG }):Play()
+		TweenService:Create(FAKnob, tweenInfo, { Position = UDim2.new(0, 2, 0, 2) }):Play()
+		TweenService:Create(FAKnob, tweenInfoColor, { BackgroundColor3 = COLOR_OFF_KNOB }):Play()
 	end
-end
-FAClickButton.MouseButton1Click:Connect(FAToggleSwitch)
+end)
 
--- ─── Fruit Input Row ──────────────────────────────────────────────────────────
-local InputRow = Instance.new("Frame")
-InputRow.Size = UDim2.new(1, -24, 0, 38)
-InputRow.Position = UDim2.new(0, 12, 0, 152)
-InputRow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-InputRow.BackgroundTransparency = 0.93
-InputRow.BorderSizePixel = 0
-InputRow.Parent = MainFrame
-Instance.new("UICorner", InputRow).CornerRadius = UDim.new(0, 9)
+-- ─── 5. Nút Add Fruit (Giờ nằm ở dưới cùng) ────────────────────────────────────
+local AddFruitBtn = Instance.new("TextButton")
+AddFruitBtn.Size = UDim2.new(1, -30, 0, 34)
+AddFruitBtn.Position = UDim2.new(0, 15, 0, 140)
+AddFruitBtn.BackgroundColor3 = Color3.fromRGB(110, 70, 200) -- Màu tím Sleek Purple
+AddFruitBtn.Text = "🍎 Add Fruit"
+AddFruitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AddFruitBtn.Font = Enum.Font.GothamBold
+AddFruitBtn.TextSize = 13
+AddFruitBtn.Parent = MainFrame
+Instance.new("UICorner", AddFruitBtn).CornerRadius = UDim.new(0, 8)
 
-local InputRowStroke = Instance.new("UIStroke")
-InputRowStroke.Color = Color3.fromRGB(255, 255, 255)
-InputRowStroke.Transparency = 0.88
-InputRowStroke.Thickness = 1
-InputRowStroke.Parent = InputRow
-
-local PetLabel = Instance.new("TextLabel")
-PetLabel.Parent = InputRow
-PetLabel.Size = UDim2.new(0, 72, 1, 0)
-PetLabel.Position = UDim2.new(0, 11, 0, 0)
-PetLabel.Text = "Find Fruit🔎:"
-PetLabel.TextColor3 = Color3.fromRGB(90, 190, 255)
-PetLabel.BackgroundTransparency = 1
-PetLabel.Font = Enum.Font.GothamMedium
-PetLabel.TextSize = 12
-PetLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local PetBox = Instance.new("TextBox")
-PetBox.Parent = InputRow
-PetBox.Size = UDim2.new(0, 96, 0, 24)
-PetBox.Position = UDim2.new(1, -104, 0.5, -12)
-PetBox.PlaceholderText = "Enter fruit..."
-PetBox.Text = ""
-PetBox.BackgroundColor3 = Color3.fromRGB(8, 10, 18)
-PetBox.BackgroundTransparency = 0.2
-PetBox.TextColor3 = Color3.fromRGB(210, 225, 255)
-PetBox.PlaceholderColor3 = Color3.fromRGB(80, 100, 130)
-PetBox.Font = Enum.Font.Gotham
-PetBox.TextSize = 12
-PetBox.ClearTextOnFocus = false
-Instance.new("UICorner", PetBox).CornerRadius = UDim.new(0, 6)
-
-local PetBoxStroke = Instance.new("UIStroke")
-PetBoxStroke.Color = Color3.fromRGB(90, 190, 255)
-PetBoxStroke.Transparency = 0.7
-PetBoxStroke.Thickness = 1
-PetBoxStroke.Parent = PetBox
-
--- ─── Server Hop Button ────────────────────────────────────────────────────────
-local RejoinBtn = Instance.new("TextButton")
-RejoinBtn.Parent = MainFrame
-RejoinBtn.Size = UDim2.new(1, -24, 0, 34)
-RejoinBtn.Position = UDim2.new(0, 12, 0, 202)
-RejoinBtn.Text = "⇌  Server Hop"
-RejoinBtn.TextColor3 = Color3.fromRGB(8, 12, 22)
-RejoinBtn.BackgroundColor3 = Color3.fromRGB(90, 190, 255)
-RejoinBtn.Font = Enum.Font.GothamBold
-RejoinBtn.TextSize = 13
-RejoinBtn.BorderSizePixel = 0
-Instance.new("UICorner", RejoinBtn).CornerRadius = UDim.new(0, 9)
-
--- ─── Rejoin Logic (original) ──────────────────────────────────────────────────
-RejoinBtn.MouseButton1Click:Connect(function()
-	if PetBox.Text == "" then
-		local Popup = Instance.new("TextLabel")
-		Popup.Parent = ScreenGui
-		Popup.Size = UDim2.new(0, 220, 0, 44)
-		Popup.Position = UDim2.new(0.5, -110, 0.5, -22)
-		Popup.BackgroundColor3 = Color3.fromRGB(10, 14, 22)
-		Popup.BackgroundTransparency = 0.1
-		Popup.Text = "⚠  Please enter a fruit name"
-		Popup.TextColor3 = Color3.fromRGB(255, 160, 60)
-		Popup.Font = Enum.Font.GothamBold
-		Popup.TextSize = 13
-		Popup.ZIndex = 10
-
-		local PC = Instance.new("UICorner")
-		PC.CornerRadius = UDim.new(0, 10)
-		PC.Parent = Popup
-
-		local PS = Instance.new("UIStroke")
-		PS.Color = Color3.fromRGB(255, 160, 60)
-		PS.Transparency = 0.5
-		PS.Thickness = 1
-		PS.Parent = Popup
-
-		game:GetService("Debris"):AddItem(Popup, 4)
-	else
-		RejoinBtn.Text = "Hopping servers..."
-		RejoinBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 180)
-
-		local PlaceId = game.PlaceId
-		local JobId = game.JobId
-		TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
+local isCooldown = false
+AddFruitBtn.MouseButton1Click:Connect(function()
+	if isCooldown then return end
+	isCooldown = true
+	local duration = 5.0
+	local startTime = tick()
+	local originalColor = AddFruitBtn.BackgroundColor3
+	
+	while tick() - startTime < duration do
+		local timeLeft = duration - (tick() - startTime)
+		AddFruitBtn.Text = string.format("⏳ Adding Fruit... %.1fs", timeLeft)
+		task.wait(0.03)
 	end
+	
+	AddFruitBtn.Text = "✅ Added Fruit"
+	AddFruitBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 90) -- Xanh lá cây
+	task.wait(1)
+	AddFruitBtn.Text = "🍎 Add Fruit"
+	AddFruitBtn.BackgroundColor3 = originalColor
+	isCooldown = false
 end)
