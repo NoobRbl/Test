@@ -2,25 +2,44 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- ╔══════════════════════════════════════╗
--- ║     Trade Scam GUI — Sleek Dark      ║
--- ║          Script By Meow Script       ║
--- ╚══════════════════════════════════════╝
+-- ╔══════════════════════════════════════════════════════════════════════╗
+-- ║     Trade Scam GUI — Easter Egg Update (Pastel Spring Theme)         ║
+-- ║               Script By Meow Script                                  ║
+-- ╚══════════════════════════════════════════════════════════════════════╝
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TradeScamGUI_Meow"
+ScreenGui.Name = "TradeScamGUI_Meow_Easter"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 
--- ─── 1. Khung chính (Main Frame) được thu gọn ──────────────────────────────────
+-- ─── 0. Nút Điều Hướng Giao Diện (Open/Close Toggle) ──────────────────────────
+local OpenToggle = Instance.new("ImageButton")
+OpenToggle.Name = "MainUIToggle"
+OpenToggle.Parent = ScreenGui
+OpenToggle.Size = UDim2.new(0, 50, 0, 50) -- Hình vuông 50x50
+OpenToggle.Position = UDim2.new(0, 15, 0.5, -25) -- Neo tại cạnh trái giữa màn hình
+OpenToggle.BackgroundColor3 = Color3.fromRGB(253, 240, 215) -- Đồng bộ màu Derby nền MainFrame
+OpenToggle.Image = "rbxassetid://91638338049445" -- Icon theo yêu cầu
+OpenToggle.Active = true
+OpenToggle.Draggable = true -- Có thể di chuyển để không che khuất màn hình
+
+Instance.new("UICorner", OpenToggle).CornerRadius = UDim.new(0, 15) -- Bo góc 15px
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(217, 196, 236) -- Viền Tím Nhạt Thư Giãn đồng bộ
+ToggleStroke.Thickness = 1.5
+ToggleStroke.Parent = OpenToggle
+
+-- ─── 1. Khung chính (Main Frame) được tinh chỉnh kích thước quang học ──────────
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 230, 0, 190) -- Thu nhỏ chiều cao do đã bỏ bớt nút
-MainFrame.Position = UDim2.new(0.5, -115, 0.5, -95)
+-- Mở rộng Size X lên mức 280 pixels để đảm bảo chuỗi văn bản danh pháp dài hiển thị trọn vẹn
+MainFrame.Size = UDim2.new(0, 280, 0, 190) 
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -95)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- Style màu tối khối đặc (Solid Dark)
+MainFrame.BackgroundColor3 = Color3.fromRGB(253, 240, 215) 
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -30,28 +49,33 @@ MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(60, 60, 75)
+MainStroke.Color = Color3.fromRGB(217, 196, 236)
 MainStroke.Thickness = 1.5
 MainStroke.Parent = MainFrame
 
--- ─── 2. Tiêu đề (Header) ───────────────────────────────────────────────────────
+-- Kết nối logic Bật/Tắt giao diện cho nút Toggle
+OpenToggle.MouseButton1Click:Connect(function()
+	MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- ─── 2. Phân vùng Tiêu đề (Header) với tích hợp Icon Unicode ────────────────────
 local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
 Title.Size = UDim2.new(1, -20, 0, 22)
 Title.Position = UDim2.new(0, 15, 0, 10)
-Title.Text = "Trade Scam"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "🐰 Trade Scam(Easter Egg Update) 🥚"
+Title.TextColor3 = Color3.fromRGB(53, 33, 84) 
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 13 
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local Sub = Instance.new("TextLabel")
 Sub.Parent = MainFrame
 Sub.Size = UDim2.new(1, -20, 0, 14)
 Sub.Position = UDim2.new(0, 15, 0, 30)
-Sub.Text = "by Meow Script  •  v1.0"
-Sub.TextColor3 = Color3.fromRGB(150, 150, 180)
+Sub.Text = "by Meow Script  •  v1.0 (Easter Edition)"
+Sub.TextColor3 = Color3.fromRGB(165, 137, 209) 
 Sub.BackgroundTransparency = 1
 Sub.Font = Enum.Font.Gotham
 Sub.TextSize = 11
@@ -60,39 +84,37 @@ Sub.TextXAlignment = Enum.TextXAlignment.Left
 local Divider = Instance.new("Frame")
 Divider.Size = UDim2.new(1, -30, 0, 1)
 Divider.Position = UDim2.new(0, 15, 0, 50)
-Divider.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+Divider.BackgroundColor3 = Color3.fromRGB(217, 196, 236)
 Divider.BorderSizePixel = 0
 Divider.Parent = MainFrame
 
--- ─── 3. Dropdown: Freeze Trade Player ──────────────────────────────────────────
+-- ─── 3. Thành phần Dropdown: Thu thập thôngcription đối tượng ────────
 local DropdownRow = Instance.new("Frame")
 DropdownRow.Size = UDim2.new(1, -30, 0, 34)
 DropdownRow.Position = UDim2.new(0, 15, 0, 60)
-DropdownRow.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+DropdownRow.BackgroundColor3 = Color3.fromRGB(254, 249, 239) 
 DropdownRow.BorderSizePixel = 0
 DropdownRow.Parent = MainFrame
 Instance.new("UICorner", DropdownRow).CornerRadius = UDim.new(0, 8)
 
 local DropdownLabel = Instance.new("TextLabel")
 DropdownLabel.Parent = DropdownRow
-DropdownLabel.Size = UDim2.new(1, -25, 1, 0) -- Chừa chỗ cho mũi tên
+DropdownLabel.Size = UDim2.new(1, -25, 1, 0)
 DropdownLabel.Position = UDim2.new(0, 10, 0, 0)
 DropdownLabel.Text = "👤 Freeze Trade: Unknown"
-DropdownLabel.TextColor3 = Color3.fromRGB(220, 220, 235)
+DropdownLabel.TextColor3 = Color3.fromRGB(53, 33, 84)
 DropdownLabel.BackgroundTransparency = 1
 DropdownLabel.Font = Enum.Font.GothamMedium
 DropdownLabel.TextSize = 12
 DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
--- Fix tràn chữ: Tự động hiện "..." nếu tên quá dài
 DropdownLabel.TextTruncate = Enum.TextTruncate.AtEnd 
 
--- Icon mũi tên nhỏ bên phải
 local DropdownIcon = Instance.new("TextLabel")
 DropdownIcon.Parent = DropdownRow
 DropdownIcon.Size = UDim2.new(0, 20, 1, 0)
 DropdownIcon.Position = UDim2.new(1, -25, 0, 0)
 DropdownIcon.Text = "▼"
-DropdownIcon.TextColor3 = Color3.fromRGB(150, 150, 180)
+DropdownIcon.TextColor3 = Color3.fromRGB(165, 137, 209)
 DropdownIcon.BackgroundTransparency = 1
 DropdownIcon.Font = Enum.Font.Gotham
 DropdownIcon.TextSize = 10
@@ -103,18 +125,18 @@ DropdownButton.Size = UDim2.new(1, 0, 1, 0)
 DropdownButton.BackgroundTransparency = 1
 DropdownButton.Text = ""
 
--- Danh sách Dropdown (Nổi đè lên UI)
+-- Danh sách đổ xuống (ZIndex ưu tiên, đè lên hệ thống nền)
 local DropdownList = Instance.new("ScrollingFrame")
 DropdownList.Parent = MainFrame
 DropdownList.Size = UDim2.new(1, -30, 0, 110)
 DropdownList.Position = UDim2.new(0, 15, 0, 98) 
-DropdownList.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+DropdownList.BackgroundColor3 = Color3.fromRGB(253, 240, 215)
 DropdownList.BorderSizePixel = 0
 DropdownList.ZIndex = 50
 DropdownList.Visible = false
 DropdownList.ScrollBarThickness = 3
 Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", DropdownList).Color = Color3.fromRGB(80, 80, 100)
+Instance.new("UIStroke", DropdownList).Color = Color3.fromRGB(217, 196, 236)
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.Parent = DropdownList
@@ -125,16 +147,16 @@ local function AddDropdownOption(nameText)
 	OptionBtn.Parent = DropdownList
 	OptionBtn.Size = UDim2.new(1, 0, 0, 28)
 	OptionBtn.BackgroundTransparency = 1
-	OptionBtn.Text = "  " .. nameText
-	OptionBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	OptionBtn.Text = "  ".. nameText
+	OptionBtn.TextColor3 = Color3.fromRGB(53, 33, 84)
 	OptionBtn.Font = Enum.Font.Gotham
 	OptionBtn.TextSize = 12
 	OptionBtn.TextXAlignment = Enum.TextXAlignment.Left
-	OptionBtn.TextTruncate = Enum.TextTruncate.AtEnd -- Fix tràn chữ trong danh sách
+	OptionBtn.TextTruncate = Enum.TextTruncate.AtEnd 
 	OptionBtn.ZIndex = 51
 
 	OptionBtn.MouseButton1Click:Connect(function()
-		DropdownLabel.Text = "👤 Freeze Trade: " .. nameText
+		DropdownLabel.Text = "👤 Freeze Trade: ".. nameText
 		DropdownList.Visible = false
 		DropdownIcon.Text = "▼"
 	end)
@@ -160,11 +182,11 @@ DropdownButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ─── 4. Force Accept Toggle (Giờ nằm ở giữa) ───────────────────────────────────
+-- ─── 4. Thành phần Toggle Force Accept (Cơ chế nội suy TweenService) ───────────
 local FARow = Instance.new("Frame")
 FARow.Size = UDim2.new(1, -30, 0, 34)
 FARow.Position = UDim2.new(0, 15, 0, 100)
-FARow.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+FARow.BackgroundColor3 = Color3.fromRGB(254, 249, 239)
 FARow.BorderSizePixel = 0
 FARow.Parent = MainFrame
 Instance.new("UICorner", FARow).CornerRadius = UDim.new(0, 8)
@@ -174,7 +196,7 @@ FALabel.Parent = FARow
 FALabel.Size = UDim2.new(1, -60, 1, 0)
 FALabel.Position = UDim2.new(0, 10, 0, 0)
 FALabel.Text = "✔️ Force Accept"
-FALabel.TextColor3 = Color3.fromRGB(220, 220, 235)
+FALabel.TextColor3 = Color3.fromRGB(53, 33, 84)
 FALabel.BackgroundTransparency = 1
 FALabel.Font = Enum.Font.GothamMedium
 FALabel.TextSize = 12
@@ -184,7 +206,7 @@ local FAToggleFrame = Instance.new("Frame")
 FAToggleFrame.Parent = FARow
 FAToggleFrame.Size = UDim2.new(0, 38, 0, 18)
 FAToggleFrame.Position = UDim2.new(1, -48, 0.5, -9)
-FAToggleFrame.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
+FAToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 220, 200)
 FAToggleFrame.BorderSizePixel = 0
 Instance.new("UICorner", FAToggleFrame).CornerRadius = UDim.new(1, 0)
 
@@ -192,7 +214,7 @@ local FAKnob = Instance.new("Frame")
 FAKnob.Parent = FAToggleFrame
 FAKnob.Size = UDim2.new(0, 14, 0, 14)
 FAKnob.Position = UDim2.new(0, 2, 0, 2)
-FAKnob.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+FAKnob.BackgroundColor3 = Color3.fromRGB(255, 164, 133)
 FAKnob.BorderSizePixel = 0
 Instance.new("UICorner", FAKnob).CornerRadius = UDim.new(1, 0)
 
@@ -205,8 +227,8 @@ FAClickButton.Text = ""
 local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 local tweenInfoColor = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-local COLOR_OFF_BG, COLOR_ON_BG = Color3.fromRGB(50, 30, 30), Color3.fromRGB(30, 60, 40)
-local COLOR_OFF_KNOB, COLOR_ON_KNOB = Color3.fromRGB(220, 80, 80), Color3.fromRGB(80, 220, 120)
+local COLOR_OFF_BG, COLOR_ON_BG = Color3.fromRGB(255, 220, 200), Color3.fromRGB(220, 240, 220)
+local COLOR_OFF_KNOB, COLOR_ON_KNOB = Color3.fromRGB(255, 164, 133), Color3.fromRGB(119, 221, 119)
 
 local FAToggleOn = false
 FAClickButton.MouseButton1Click:Connect(function()
@@ -222,13 +244,13 @@ FAClickButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ─── 5. Nút Add Fruit (Giờ nằm ở dưới cùng) ────────────────────────────────────
+-- ─── 5. Nút Kích Hoạt Tác Vụ Add Fruit ──────────
 local AddFruitBtn = Instance.new("TextButton")
 AddFruitBtn.Size = UDim2.new(1, -30, 0, 34)
 AddFruitBtn.Position = UDim2.new(0, 15, 0, 140)
-AddFruitBtn.BackgroundColor3 = Color3.fromRGB(110, 70, 200) -- Màu tím Sleek Purple
+AddFruitBtn.BackgroundColor3 = Color3.fromRGB(186, 224, 247) 
 AddFruitBtn.Text = "🍎 Add Fruit"
-AddFruitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AddFruitBtn.TextColor3 = Color3.fromRGB(53, 33, 84) 
 AddFruitBtn.Font = Enum.Font.GothamBold
 AddFruitBtn.TextSize = 13
 AddFruitBtn.Parent = MainFrame
@@ -249,7 +271,7 @@ AddFruitBtn.MouseButton1Click:Connect(function()
 	end
 	
 	AddFruitBtn.Text = "✅ Added Fruit"
-	AddFruitBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 90) -- Xanh lá cây
+	AddFruitBtn.BackgroundColor3 = Color3.fromRGB(155, 246, 255) 
 	task.wait(1)
 	AddFruitBtn.Text = "🍎 Add Fruit"
 	AddFruitBtn.BackgroundColor3 = originalColor
