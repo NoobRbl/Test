@@ -55,8 +55,8 @@ local CommF = ReplicatedStorage
 -- ================== QUEUE ON TELEPORT ==================
 local QUEUE_CODE = [[
 repeat task.wait() until game:IsLoaded()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Blf"))()
-loadstring(game:HttpGet("https://pastefy.app/zwW26n17/raw", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TwinHubv4/twix/refs/heads/main/twix%20visual"))()
+loadstring(game:HttpGet("https://pastefy.app/2a52L5JD/raw", true))()
 ]]
 
 pcall(function()
@@ -161,10 +161,10 @@ end
 
 -- ================== SECOND SEA RUN ==================
 loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/NoobRbl/Test/refs/heads/main/Blf"
+    "https://raw.githubusercontent.com/TwinHubv4/twix/refs/heads/main/twix%20visual"
 ))()
 
 loadstring(game:HttpGet(
-    "https://pastefy.app/zwW26n17/raw",
+    "https://pastefy.app/2a52L5JD/raw",
     true
 ))()
