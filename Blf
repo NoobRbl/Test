@@ -2,24 +2,26 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
 -- ╔══════════════════════════════════════════════════════════════════════╗
--- ║     Trade Scam  —   Premium    -     Buy this in discord    ║
+-- ║     Trade Scam  —   Premium    -     Summer Update 🌞                ║
 -- ╚══════════════════════════════════════════════════════════════════════╝
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TradeScamGUI_SmoothPink"
+ScreenGui.Name = "TradeScamGUI_SummerUpdate"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 
--- ─── 1. Khung chính (Main Frame) Gọn Gàng ────────────────────────────────────
+-- ─── 1. Khung chính (Main Frame) Gọn Gàng & Chuyên Nghiệp ────────────────────
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 250, 0, 155) -- Kích thước chữ nhật nhỏ gọn
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -77)
+-- Mở rộng chiều ngang (310) để chứa đủ chữ "(Summer Update🌞)"
+MainFrame.Size = UDim2.new(0, 310, 0, 155) 
+MainFrame.Position = UDim2.new(0.5, -155, 0.5, -77)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 30) -- Nền tím hồng mận mượt mà
-MainFrame.BackgroundTransparency = 0.15 
+-- Nền xanh đại dương sâu thẳm (Deep Ocean Blue) mang lại cảm giác mát mẻ nhưng vẫn Pro
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 35, 50) 
+MainFrame.BackgroundTransparency = 0.15 -- Giữ hiệu ứng Glassmorphism mờ nhẹ
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -29,7 +31,8 @@ MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 130, 190) -- Viền hồng nhạt dịu mắt
+-- Viền màu Vàng/Cam nắng chói lọi (Sunny Gold) tạo điểm nhấn mùa hè
+MainStroke.Color = Color3.fromRGB(255, 170, 60) 
 MainStroke.Thickness = 1.2
 MainStroke.Parent = MainFrame
 
@@ -38,8 +41,8 @@ local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
 Title.Size = UDim2.new(1, -70, 0, 20)
 Title.Position = UDim2.new(0, 15, 0, 12)
-Title.Text = "Trade Panel"
-Title.TextColor3 = Color3.fromRGB(255, 180, 215)
+Title.Text = "Trade Panel (Summer Update🌞)"
+Title.TextColor3 = Color3.fromRGB(255, 215, 100) -- Vàng nắng nhạt
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14 
@@ -48,7 +51,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 local Divider = Instance.new("Frame")
 Divider.Size = UDim2.new(1, -30, 0, 1)
 Divider.Position = UDim2.new(0, 15, 0, 40)
-Divider.BackgroundColor3 = Color3.fromRGB(255, 130, 190)
+Divider.BackgroundColor3 = Color3.fromRGB(255, 170, 60) -- Đồng bộ viền
 Divider.BackgroundTransparency = 0.7
 Divider.BorderSizePixel = 0
 Divider.Parent = MainFrame
@@ -70,22 +73,27 @@ local function createDot(parent, color, posX)
 	return dot
 end
 
+-- 3 chấm phong cách macOS mượt mà
 createDot(WindowControls, Color3.fromRGB(255, 95, 87), 0)   -- Đỏ
 createDot(WindowControls, Color3.fromRGB(255, 189, 46), 16) -- Vàng
 createDot(WindowControls, Color3.fromRGB(39, 201, 63), 32)  -- Xanh
 
--- ─── HÀM TẠO TOGGLE (Giúp code gọn hơn khi có 2 nút giống nhau) ──────────────
+-- ─── HÀM TẠO TOGGLE (Logic cũ, thay đổi bảng màu) ────────────────────────────
 local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 local tweenInfoColor = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-local COLOR_OFF_BG, COLOR_ON_BG = Color3.fromRGB(80, 45, 65), Color3.fromRGB(255, 105, 180)
-local COLOR_OFF_KNOB, COLOR_ON_KNOB = Color3.fromRGB(200, 180, 190), Color3.fromRGB(255, 255, 255)
+-- Toggle OFF: Màu xanh biển nhạt dịu mắt
+local COLOR_OFF_BG = Color3.fromRGB(30, 60, 80)
+local COLOR_OFF_KNOB = Color3.fromRGB(150, 190, 210)
+-- Toggle ON: Màu Cam hoàng hôn rực rỡ
+local COLOR_ON_BG = Color3.fromRGB(255, 120, 50)
+local COLOR_ON_KNOB = Color3.fromRGB(255, 255, 255)
 
 local function CreateToggleSwitch(parent, text, posY)
 	local Row = Instance.new("Frame")
 	Row.Size = UDim2.new(1, -30, 0, 36)
 	Row.Position = UDim2.new(0, 15, 0, posY)
-	Row.BackgroundColor3 = Color3.fromRGB(55, 28, 48)
+	Row.BackgroundColor3 = Color3.fromRGB(20, 45, 65) -- Nền hàng nút tách biệt nhẹ so với nền chính
 	Row.BorderSizePixel = 0
 	Row.Parent = parent
 	Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 8)
@@ -95,7 +103,7 @@ local function CreateToggleSwitch(parent, text, posY)
 	Label.Size = UDim2.new(1, -60, 1, 0)
 	Label.Position = UDim2.new(0, 12, 0, 0)
 	Label.Text = text
-	Label.TextColor3 = Color3.fromRGB(255, 215, 235)
+	Label.TextColor3 = Color3.fromRGB(240, 248, 255) -- Trắng tinh khiết 
 	Label.BackgroundTransparency = 1
 	Label.Font = Enum.Font.GothamMedium
 	Label.TextSize = 12
@@ -137,7 +145,6 @@ local function CreateToggleSwitch(parent, text, posY)
 		end
 	end)
 	
-	-- Trả về biến trạng thái (isOn) nếu bạn cần hook logic hack vào sau này
 	return Row
 end
 
