@@ -1,153 +1,200 @@
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local LocalPlayer = game:GetService("Players").LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
--- ╔══════════════════════════════════════════════════════════════════════╗
--- ║     Trade Scam  —   Premium    -     Summer Update 🌞                ║
--- ╚══════════════════════════════════════════════════════════════════════╝
+local player = Players.LocalPlayer
+local guiContainer = game:GetService("CoreGui") or player:WaitForChild("PlayerGui")
 
+-- Dọn UI cũ (nếu có) trước khi tạo UI mới, tránh bị trùng lặp
+if guiContainer:FindFirstChild("OptimizedGradientUI") then
+    guiContainer.OptimizedGradientUI:Destroy()
+end
+-- Dọn luôn BlurEffect của bản cũ (nếu trước đó từng tạo) -> bản hiện tại không dùng Blur
+if Lighting:FindFirstChild("UIBlurEffect") then
+    Lighting.UIBlurEffect:Destroy()
+end
+
+local COLOR_NAVY_BG     = Color3.fromRGB(8, 14, 28)     -- nền chính UI (xanh navy rất tối)
+local COLOR_NEON_BLUE   = Color3.fromRGB(0, 170, 255)   -- xanh dương sáng (glow, highlight, nhấn)
+local COLOR_MID_BLUE    = Color3.fromRGB(45, 120, 220)  -- xanh dương trung bình (giữa gradient toggle)
+local COLOR_DARK_BLUE   = Color3.fromRGB(15, 35, 70)    -- xanh dương đậm (2 đầu gradient toggle)
+local COLOR_TRACK_BG    = Color3.fromRGB(8, 14, 28)     -- nền track toggle (đồng bộ với nền UI)
+
+-- ========================= MAIN FRAME =========================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TradeScamGUI_SummerUpdate"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "OptimizedGradientUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = guiContainer
 
--- ─── 1. Khung chính (Main Frame) Gọn Gàng & Chuyên Nghiệp ────────────────────
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
--- Mở rộng chiều ngang (310) để chứa đủ chữ "(Summer Update🌞)"
-MainFrame.Size = UDim2.new(0, 310, 0, 155) 
-MainFrame.Position = UDim2.new(0.5, -155, 0.5, -77)
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
--- Nền xanh đại dương sâu thẳm (Deep Ocean Blue) mang lại cảm giác mát mẻ nhưng vẫn Pro
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 35, 50) 
-MainFrame.BackgroundTransparency = 0.15 -- Giữ hiệu ứng Glassmorphism mờ nhẹ
+MainFrame.Size = UDim2.new(0, 320, 0, 200)        
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
+MainFrame.BackgroundColor3 = COLOR_NAVY_BG
+MainFrame.BackgroundTransparency = 0.3
 MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.ClipsDescendants = false 
 MainFrame.Parent = ScreenGui
 
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
 
-local MainStroke = Instance.new("UIStroke")
--- Viền màu Vàng/Cam nắng chói lọi (Sunny Gold) tạo điểm nhấn mùa hè
-MainStroke.Color = Color3.fromRGB(255, 170, 60) 
-MainStroke.Thickness = 1.2
-MainStroke.Parent = MainFrame
+-- Viền ngoài UI
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2.5
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Transparency = 0.1
+UIStroke.Parent = MainFrame
 
--- ─── 2. Phân vùng Tiêu đề & 3 Chấm Góc Phải ──────────────────────────────────
+-- Gradient cho viền
+local StrokeGradient = Instance.new("UIGradient")
+StrokeGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,   COLOR_NAVY_BG),
+    ColorSequenceKeypoint.new(0.4, COLOR_NAVY_BG),
+    ColorSequenceKeypoint.new(0.5, COLOR_NEON_BLUE),
+    ColorSequenceKeypoint.new(0.6, COLOR_NAVY_BG),
+    ColorSequenceKeypoint.new(1,   COLOR_NAVY_BG)
+}
+StrokeGradient.Parent = UIStroke
+
+RunService.RenderStepped:Connect(function(deltaTime)
+    StrokeGradient.Rotation = (StrokeGradient.Rotation + 120 * deltaTime) % 360
+end)
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 15)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.Parent = MainFrame
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingTop = UDim.new(0, 20)
+UIPadding.PaddingBottom = UDim.new(0, 20)
+UIPadding.Parent = MainFrame
+
 local Title = Instance.new("TextLabel")
-Title.Parent = MainFrame
-Title.Size = UDim2.new(1, -70, 0, 20)
-Title.Position = UDim2.new(0, 15, 0, 12)
-Title.Text = "Trade Panel (Summer Update🌞)"
-Title.TextColor3 = Color3.fromRGB(255, 215, 100) -- Vàng nắng nhạt
+Title.Size = UDim2.new(0.9, 0, 0, 30)
 Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14 
-Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Text = "Trade Scam Panel"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Font = UI_FONT
+Title.Parent = MainFrame
 
-local Divider = Instance.new("Frame")
-Divider.Size = UDim2.new(1, -30, 0, 1)
-Divider.Position = UDim2.new(0, 15, 0, 40)
-Divider.BackgroundColor3 = Color3.fromRGB(255, 170, 60) -- Đồng bộ viền
-Divider.BackgroundTransparency = 0.7
-Divider.BorderSizePixel = 0
-Divider.Parent = MainFrame
-
-local WindowControls = Instance.new("Frame")
-WindowControls.Parent = MainFrame
-WindowControls.Size = UDim2.new(0, 45, 0, 15)
-WindowControls.Position = UDim2.new(1, -60, 0, 15)
-WindowControls.BackgroundTransparency = 1
-
-local function createDot(parent, color, posX)
-	local dot = Instance.new("Frame")
-	dot.Parent = parent
-	dot.Size = UDim2.new(0, 10, 0, 10)
-	dot.Position = UDim2.new(0, posX, 0, 0)
-	dot.BackgroundColor3 = color
-	dot.BorderSizePixel = 0
-	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-	return dot
+local function applyDiagonalGradient(parent)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0,   COLOR_DARK_BLUE),
+        ColorSequenceKeypoint.new(0.5, COLOR_MID_BLUE),
+        ColorSequenceKeypoint.new(1,   COLOR_DARK_BLUE)
+    }
+    gradient.Rotation = 15
+    gradient.Parent = parent
+    return gradient
 end
 
--- 3 chấm phong cách macOS mượt mà
-createDot(WindowControls, Color3.fromRGB(255, 95, 87), 0)   -- Đỏ
-createDot(WindowControls, Color3.fromRGB(255, 189, 46), 16) -- Vàng
-createDot(WindowControls, Color3.fromRGB(39, 201, 63), 32)  -- Xanh
 
--- ─── HÀM TẠO TOGGLE (Logic cũ, thay đổi bảng màu) ────────────────────────────
-local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-local tweenInfoColor = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+-- Trả về: Container (Frame) và hàm getState() để đọc trạng thái Bật/Tắt hiện tại.
+local function createToggle(labelText, layoutOrder)
+    local Container = Instance.new("Frame")
+    Container.Size = UDim2.new(0.85, 0, 0, 45)
+    Container.BackgroundColor3 = COLOR_NEON_BLUE
+    Container.LayoutOrder = layoutOrder
+    Container.Parent = MainFrame
 
--- Toggle OFF: Màu xanh biển nhạt dịu mắt
-local COLOR_OFF_BG = Color3.fromRGB(30, 60, 80)
-local COLOR_OFF_KNOB = Color3.fromRGB(150, 190, 210)
--- Toggle ON: Màu Cam hoàng hôn rực rỡ
-local COLOR_ON_BG = Color3.fromRGB(255, 120, 50)
-local COLOR_ON_KNOB = Color3.fromRGB(255, 255, 255)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Container
 
-local function CreateToggleSwitch(parent, text, posY)
-	local Row = Instance.new("Frame")
-	Row.Size = UDim2.new(1, -30, 0, 36)
-	Row.Position = UDim2.new(0, 15, 0, posY)
-	Row.BackgroundColor3 = Color3.fromRGB(20, 45, 65) -- Nền hàng nút tách biệt nhẹ so với nền chính
-	Row.BorderSizePixel = 0
-	Row.Parent = parent
-	Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 8)
+    applyDiagonalGradient(Container)
 
-	local Label = Instance.new("TextLabel")
-	Label.Parent = Row
-	Label.Size = UDim2.new(1, -60, 1, 0)
-	Label.Position = UDim2.new(0, 12, 0, 0)
-	Label.Text = text
-	Label.TextColor3 = Color3.fromRGB(240, 248, 255) -- Trắng tinh khiết 
-	Label.BackgroundTransparency = 1
-	Label.Font = Enum.Font.GothamMedium
-	Label.TextSize = 12
-	Label.TextXAlignment = Enum.TextXAlignment.Left
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = labelText
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = UI_FONT
+    Label.TextSize = 16
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Container
 
-	local ToggleFrame = Instance.new("Frame")
-	ToggleFrame.Parent = Row
-	ToggleFrame.Size = UDim2.new(0, 38, 0, 20)
-	ToggleFrame.Position = UDim2.new(1, -48, 0.5, -10)
-	ToggleFrame.BackgroundColor3 = COLOR_OFF_BG
-	ToggleFrame.BorderSizePixel = 0
-	Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(1, 0)
+    local Track = Instance.new("Frame")
+    Track.Size = UDim2.new(0, 40, 0, 20)
+    Track.Position = UDim2.new(1, -50, 0.5, -10)
+    Track.BackgroundColor3 = COLOR_TRACK_BG
+    Track.Parent = Container
 
-	local Knob = Instance.new("Frame")
-	Knob.Parent = ToggleFrame
-	Knob.Size = UDim2.new(0, 16, 0, 16)
-	Knob.Position = UDim2.new(0, 2, 0, 2)
-	Knob.BackgroundColor3 = COLOR_OFF_KNOB
-	Knob.BorderSizePixel = 0
-	Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+    local TrackCorner = Instance.new("UICorner")
+    TrackCorner.CornerRadius = UDim.new(1, 0)
+    TrackCorner.Parent = Track
 
-	local ClickBtn = Instance.new("TextButton")
-	ClickBtn.Parent = ToggleFrame
-	ClickBtn.BackgroundTransparency = 1
-	ClickBtn.Size = UDim2.new(1, 0, 1, 0)
-	ClickBtn.Text = ""
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 16, 0, 16)
+    Knob.Position = UDim2.new(0, 2, 0.5, -8)
+    Knob.BackgroundColor3 = Color3.fromRGB(180, 200, 220)
+    Knob.Parent = Track
 
-	local isOn = false
-	ClickBtn.MouseButton1Click:Connect(function()
-		isOn = not isOn
-		if isOn then
-			TweenService:Create(ToggleFrame, tweenInfoColor, { BackgroundColor3 = COLOR_ON_BG }):Play()
-			TweenService:Create(Knob, tweenInfo, { Position = UDim2.new(1, -18, 0, 2) }):Play()
-			TweenService:Create(Knob, tweenInfoColor, { BackgroundColor3 = COLOR_ON_KNOB }):Play()
-		else
-			TweenService:Create(ToggleFrame, tweenInfoColor, { BackgroundColor3 = COLOR_OFF_BG }):Play()
-			TweenService:Create(Knob, tweenInfo, { Position = UDim2.new(0, 2, 0, 2) }):Play()
-			TweenService:Create(Knob, tweenInfoColor, { BackgroundColor3 = COLOR_OFF_KNOB }):Play()
-		end
-	end)
-	
-	return Row
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = Knob
+
+    local ClickButton = Instance.new("TextButton")
+    ClickButton.Size = UDim2.new(1, 0, 1, 0)
+    ClickButton.BackgroundTransparency = 1
+    ClickButton.Text = ""
+    ClickButton.Parent = Container
+
+    -- Logic bật/tắt -> khi BẬT, track sáng lên xanh neon, núm chuyển xanh navy đậm
+    local isOn = false
+    ClickButton.MouseButton1Click:Connect(function()
+        isOn = not isOn
+        if isOn then
+            TweenService:Create(Track, TweenInfo.new(0.3), {BackgroundColor3 = COLOR_NEON_BLUE}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.3), {Position = UDim2.new(1, -18, 0.5, -8), BackgroundColor3 = COLOR_NAVY_BG}):Play()
+        else
+            TweenService:Create(Track, TweenInfo.new(0.3), {BackgroundColor3 = COLOR_TRACK_BG}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.3), {Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = Color3.fromRGB(180, 200, 220)}):Play()
+        end
+
+        -- ============ GẮN CHỨC NĂNG THỰC TẾ CỦA TOGGLE TẠI ĐÂY ============
+        -- "isOn" = true/false là trạng thái mới nhất ngay sau khi bấm.
+        -- Ví dụ: if labelText == "Freeze Trade" then ... end
+    end)
+
+    return Container, function() return isOn end
 end
 
--- ─── 3. Thành phần Toggle: Freeze Trade & Force Accept ───────────────────────
-CreateToggleSwitch(MainFrame, "❄️ Freeze Trade", 55)
-CreateToggleSwitch(MainFrame, "✔️ Force Accept", 100)
+-- ============================ TOGGLE: FREEZE TRADE ============================
+local FreezeTradeContainer, getFreezeTradeState = createToggle("Freeze Trade", 1)
+
+-- ============================ TOGGLE: FORCE ACCEPT ============================
+local ForceAcceptContainer, getForceAcceptState = createToggle("Force Accept", 2)
+
+-- ===================== KÉO THẢ DI CHUYỂN UI (DRAG) =====================
+local dragToggle = false
+local dragStart, startPos
+
+MainFrame.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        dragToggle = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = newPos}):Play()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = false
+    end
+end)
