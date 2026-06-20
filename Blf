@@ -1,3 +1,19 @@
+--[[
+    ===================================================================
+    SCRIPT HUB UI - THEME XANH DƯƠNG (BLUE THEME)
+    ===================================================================
+    Cấu trúc UI hiện tại:
+    1. Viền glow chạy quanh UI (StrokeGradient xanh dương)
+    2. Nền UI xanh navy, trong suốt 30% (không Blur phía sau UI)
+    3. 2 nút Toggle Bật/Tắt:
+         - "Freeze Trade"
+         - "Force Accept"
+    4. Font chữ: Michroma (phong cách công nghệ/sci-fi, hợp với
+       theme glow xanh dương của UI)
+    5. Kéo thả để di chuyển UI (Drag)
+    ===================================================================
+]]
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -16,11 +32,18 @@ if Lighting:FindFirstChild("UIBlurEffect") then
     Lighting.UIBlurEffect:Destroy()
 end
 
+--[[ ============== BẢNG MÀU XANH DƯƠNG DÙNG CHUNG ==============
+     Khai báo riêng thành biến để sau này muốn đổi tông màu chỉ cần
+     sửa ở đây, không cần tìm rải rác trong code.
+]]
 local COLOR_NAVY_BG     = Color3.fromRGB(8, 14, 28)     -- nền chính UI (xanh navy rất tối)
 local COLOR_NEON_BLUE   = Color3.fromRGB(0, 170, 255)   -- xanh dương sáng (glow, highlight, nhấn)
 local COLOR_MID_BLUE    = Color3.fromRGB(45, 120, 220)  -- xanh dương trung bình (giữa gradient toggle)
 local COLOR_DARK_BLUE   = Color3.fromRGB(15, 35, 70)    -- xanh dương đậm (2 đầu gradient toggle)
 local COLOR_TRACK_BG    = Color3.fromRGB(8, 14, 28)     -- nền track toggle (đồng bộ với nền UI)
+
+-- Font dùng cho toàn bộ UI -> Michroma: font công nghệ/sci-fi, hợp với theme glow xanh dương
+local UI_FONT = Enum.Font.Michroma
 
 -- ========================= MAIN FRAME =========================
 local ScreenGui = Instance.new("ScreenGui")
@@ -30,7 +53,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = guiContainer
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 320, 0, 200)        
+MainFrame.Size = UDim2.new(0, 320, 0, 200)        -- thu nhỏ lại cho vừa 2 toggle (bớt khoảng trống thừa)
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
 MainFrame.BackgroundColor3 = COLOR_NAVY_BG
 MainFrame.BackgroundTransparency = 0.3
@@ -48,7 +71,7 @@ UIStroke.Color = Color3.fromRGB(255, 255, 255)
 UIStroke.Transparency = 0.1
 UIStroke.Parent = MainFrame
 
--- Gradient cho viền
+-- Gradient cho viền (đây chính là dải "glow" chạy vòng quanh UI)
 local StrokeGradient = Instance.new("UIGradient")
 StrokeGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0,   COLOR_NAVY_BG),
@@ -59,6 +82,7 @@ StrokeGradient.Color = ColorSequence.new{
 }
 StrokeGradient.Parent = UIStroke
 
+-- Vòng lặp xoay gradient viền liên tục -> tạo hiệu ứng glow chạy vòng quanh UI
 RunService.RenderStepped:Connect(function(deltaTime)
     StrokeGradient.Rotation = (StrokeGradient.Rotation + 120 * deltaTime) % 360
 end)
@@ -83,6 +107,8 @@ Title.TextScaled = true
 Title.Font = UI_FONT
 Title.Parent = MainFrame
 
+-- ===================== HÀM TẠO GRADIENT CHÉO =====================
+-- Dùng cho nền của các nút Toggle -> tông xanh dương (đậm -> trung bình -> đậm), chéo 15 độ
 local function applyDiagonalGradient(parent)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
@@ -95,7 +121,9 @@ local function applyDiagonalGradient(parent)
     return gradient
 end
 
-
+-- ===================== HÀM TẠO 1 NÚT TOGGLE (TÁI SỬ DỤNG) =====================
+-- Vì UI có nhiều toggle giống nhau (Freeze Trade, Force Accept...), tách ra 1 hàm
+-- để không phải lặp code -> sau này thêm toggle mới chỉ cần gọi lại hàm này.
 -- Trả về: Container (Frame) và hàm getState() để đọc trạng thái Bật/Tắt hiện tại.
 local function createToggle(labelText, layoutOrder)
     local Container = Instance.new("Frame")
